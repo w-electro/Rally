@@ -90,7 +90,7 @@ function AndroidIcon({ className = 'w-8 h-8' }: { className?: string }) {
 
 /* ─── Download URLs ─── */
 const DOWNLOAD_URLS: Record<string, string> = {
-  'windows-x64': '/downloads/Rally-1.0.0-win-x64.zip',
+  'windows-x64': '/downloads/Rally.exe',
 };
 
 /* ─── Download card component ─── */
@@ -257,7 +257,7 @@ export default function DownloadPage() {
               </a>
 
               <p className="text-xs text-rally-dimmed mt-4 font-sans">
-                Version 1.0.0 &middot; ~150 MB (zip)
+                Version 1.0.0 &middot; ~204 MB
               </p>
 
               {/* Decorative glow */}
