@@ -1,4 +1,15 @@
-const API_BASE = '/api';
+// In packaged Electron, file:// protocol can't use relative paths for API calls.
+// Detect Electron and use the full server URL instead.
+function getServerUrl(): string {
+  if (typeof window !== 'undefined' && (window as any).electronAPI) {
+    // Desktop app: connect to the backend server directly
+    return localStorage.getItem('rally_server_url') || 'http://localhost:3001';
+  }
+  return ''; // Web app: relative paths work via Vite proxy / same-origin
+}
+
+export const SERVER_URL = getServerUrl();
+const API_BASE = `${SERVER_URL}/api`;
 
 async function request<T>(
   path: string,

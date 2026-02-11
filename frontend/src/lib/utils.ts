@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import { SERVER_URL } from '@/lib/api';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,7 +33,7 @@ export function formatFileSize(bytes: number): string {
 export function getAvatarUrl(avatar?: string): string | null {
   if (!avatar) return null;
   if (avatar.startsWith('http')) return avatar;
-  return `/uploads/avatars/${avatar}`;
+  return `${SERVER_URL}/uploads/avatars/${avatar}`;
 }
 
 export function getInitials(name: string): string {

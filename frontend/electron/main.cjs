@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -49,6 +49,17 @@ function createWindow() {
     mainWindow = null;
   });
 }
+
+// Window control IPC handlers
+ipcMain.on('window:minimize', () => mainWindow?.minimize());
+ipcMain.on('window:maximize', () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow?.maximize();
+  }
+});
+ipcMain.on('window:close', () => mainWindow?.close());
 
 app.whenReady().then(createWindow);
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/stores/authStore';
 import { useMessageStore } from '@/stores/messageStore';
+import { SERVER_URL } from '@/lib/api';
 
 let globalSocket: Socket | null = null;
 
@@ -20,7 +21,7 @@ export function useSocket() {
     if (!token || !isAuthenticated) return;
     if (socketRef.current?.connected) return;
 
-    const socket = io(window.location.origin, {
+    const socket = io(SERVER_URL || window.location.origin, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
     });

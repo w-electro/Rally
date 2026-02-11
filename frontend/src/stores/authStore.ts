@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { SERVER_URL } from '@/lib/api';
 
 interface User {
   id: string;
@@ -48,7 +49,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     set({ isLoading: true });
     try {
-      const res = await fetch('/api/users/@me', {
+      const res = await fetch(`${SERVER_URL}/api/users/@me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
