@@ -5,4 +5,5 @@ dist/
 .DS_Store
 *.tsbuildinfo
 frontend/release/
+frontend/public/downloads/
 downloads/
