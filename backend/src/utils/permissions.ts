@@ -1,148 +1,396 @@
-import prisma from '../lib/prisma';
-
 /**
- * Permission bit flags.
- * Each permission is a power of 2 so they can be combined with bitwise OR.
+ * Rally Permission System
+ *
+ * Permissions are stored as a BigInt bitmask. Each permission is a single bit.
+ * A member's effective permissions are computed by combining all their role
+ * permissions and then applying any channel-level overrides.
+ *
+ * The server owner always has all permissions regardless of roles.
  */
-export const Permissions = {
-  ADMINISTRATOR:       BigInt(1) << BigInt(0),   // 0x01
-  MANAGE_SERVER:       BigInt(1) << BigInt(1),   // 0x02
-  MANAGE_CHANNELS:     BigInt(1) << BigInt(2),   // 0x04
-  MANAGE_ROLES:        BigInt(1) << BigInt(3),   // 0x08
-  MANAGE_MESSAGES:     BigInt(1) << BigInt(4),   // 0x10
-  KICK_MEMBERS:        BigInt(1) << BigInt(5),   // 0x20
-  SEND_MESSAGES:       BigInt(1) << BigInt(6),   // 0x40
-  READ_MESSAGES:       BigInt(1) << BigInt(7),   // 0x80
-  EMBED_LINKS:         BigInt(1) << BigInt(8),   // 0x100
-  ATTACH_FILES:        BigInt(1) << BigInt(9),   // 0x200
-  MANAGE_EMOJIS:       BigInt(1) << BigInt(10),  // 0x400
-  CONNECT_VOICE:       BigInt(1) << BigInt(11),  // 0x800
-  SPEAK:               BigInt(1) << BigInt(12),  // 0x1000
-  MUTE_MEMBERS:        BigInt(1) << BigInt(13),  // 0x2000
-  DEAFEN_MEMBERS:      BigInt(1) << BigInt(14),  // 0x4000
-  MOVE_MEMBERS:        BigInt(1) << BigInt(15),  // 0x8000
-  BAN_MEMBERS:         BigInt(1) << BigInt(16),  // 0x10000
-  CREATE_INVITE:       BigInt(1) << BigInt(17),  // 0x20000
-  CHANGE_NICKNAME:     BigInt(1) << BigInt(18),  // 0x40000
-  MANAGE_NICKNAMES:    BigInt(1) << BigInt(19),  // 0x80000
-  MANAGE_WEBHOOKS:     BigInt(1) << BigInt(20),  // 0x100000
-  VIEW_AUDIT_LOG:      BigInt(1) << BigInt(21),  // 0x200000
-  PIN_MESSAGES:        BigInt(1) << BigInt(22),  // 0x400000
-  MENTION_EVERYONE:    BigInt(1) << BigInt(23),  // 0x800000
-} as const;
 
-/**
- * Default permissions given to the @everyone role.
- */
+// ─── Permission Flag Definitions ────────────────────────────────────────────────
+
+/** Full administrator access - bypasses all permission checks */
+export const ADMINISTRATOR        = 1n << 0n;
+
+/** Manage server settings (name, icon, region, etc.) */
+export const MANAGE_SERVER        = 1n << 1n;
+
+/** Create, edit, delete, and reorder channels */
+export const MANAGE_CHANNELS      = 1n << 2n;
+
+/** Create, edit, delete, and reorder roles below the user's highest role */
+export const MANAGE_ROLES         = 1n << 3n;
+
+/** Kick members from the server */
+export const KICK_MEMBERS         = 1n << 4n;
+
+/** Ban members from the server */
+export const BAN_MEMBERS          = 1n << 5n;
+
+/** Send messages in text channels */
+export const SEND_MESSAGES        = 1n << 6n;
+
+/** Delete or pin messages from other members */
+export const MANAGE_MESSAGES      = 1n << 7n;
+
+/** Upload files and media attachments */
+export const ATTACH_FILES         = 1n << 8n;
+
+/** Read message history in channels */
+export const READ_MESSAGE_HISTORY = 1n << 9n;
+
+/** Mention @everyone, @here, and all roles */
+export const MENTION_EVERYONE     = 1n << 10n;
+
+/** Add reactions to messages */
+export const ADD_REACTIONS        = 1n << 11n;
+
+/** Connect to voice channels */
+export const CONNECT_VOICE        = 1n << 12n;
+
+/** Speak in voice channels */
+export const SPEAK                = 1n << 13n;
+
+/** Share video in voice channels */
+export const VIDEO                = 1n << 14n;
+
+/** Mute other members in voice channels */
+export const MUTE_MEMBERS         = 1n << 15n;
+
+/** Deafen other members in voice channels */
+export const DEAFEN_MEMBERS       = 1n << 16n;
+
+/** Move members between voice channels */
+export const MOVE_MEMBERS         = 1n << 17n;
+
+/** Use voice activity detection (vs push-to-talk requirement) */
+export const USE_VOICE_ACTIVITY   = 1n << 18n;
+
+/** Manage server emoji (create, rename, delete) */
+export const MANAGE_EMOJIS        = 1n << 19n;
+
+/** View audit log */
+export const VIEW_AUDIT_LOG       = 1n << 20n;
+
+/** Manage webhooks */
+export const MANAGE_WEBHOOKS      = 1n << 21n;
+
+/** Create and manage server invites */
+export const CREATE_INVITES       = 1n << 22n;
+
+/** Change own nickname */
+export const CHANGE_NICKNAME      = 1n << 23n;
+
+/** Change other members' nicknames */
+export const MANAGE_NICKNAMES     = 1n << 24n;
+
+/** Share screen in voice channels */
+export const SHARE_SCREEN         = 1n << 25n;
+
+/** Embed links (auto-preview URLs) */
+export const EMBED_LINKS          = 1n << 26n;
+
+/** Use external emoji from other servers */
+export const USE_EXTERNAL_EMOJIS  = 1n << 27n;
+
+/** View channels (required to see a channel at all) */
+export const VIEW_CHANNEL         = 1n << 28n;
+
+// ─── Preset Permission Sets ─────────────────────────────────────────────────────
+
+/** All permissions combined */
+export const ALL_PERMISSIONS =
+  ADMINISTRATOR |
+  MANAGE_SERVER |
+  MANAGE_CHANNELS |
+  MANAGE_ROLES |
+  KICK_MEMBERS |
+  BAN_MEMBERS |
+  SEND_MESSAGES |
+  MANAGE_MESSAGES |
+  ATTACH_FILES |
+  READ_MESSAGE_HISTORY |
+  MENTION_EVERYONE |
+  ADD_REACTIONS |
+  CONNECT_VOICE |
+  SPEAK |
+  VIDEO |
+  MUTE_MEMBERS |
+  DEAFEN_MEMBERS |
+  MOVE_MEMBERS |
+  USE_VOICE_ACTIVITY |
+  MANAGE_EMOJIS |
+  VIEW_AUDIT_LOG |
+  MANAGE_WEBHOOKS |
+  CREATE_INVITES |
+  CHANGE_NICKNAME |
+  MANAGE_NICKNAMES |
+  SHARE_SCREEN |
+  EMBED_LINKS |
+  USE_EXTERNAL_EMOJIS |
+  VIEW_CHANNEL;
+
+/** Default permissions for the @everyone role */
 export const DEFAULT_PERMISSIONS =
-  Permissions.SEND_MESSAGES |
-  Permissions.READ_MESSAGES |
-  Permissions.CONNECT_VOICE |
-  Permissions.SPEAK |
-  Permissions.EMBED_LINKS |
-  Permissions.ATTACH_FILES |
-  Permissions.CREATE_INVITE |
-  Permissions.CHANGE_NICKNAME;
+  VIEW_CHANNEL |
+  SEND_MESSAGES |
+  READ_MESSAGE_HISTORY |
+  ADD_REACTIONS |
+  ATTACH_FILES |
+  EMBED_LINKS |
+  CONNECT_VOICE |
+  SPEAK |
+  VIDEO |
+  USE_VOICE_ACTIVITY |
+  CHANGE_NICKNAME |
+  CREATE_INVITES;
+
+// ─── Permission Checking Functions ──────────────────────────────────────────────
 
 /**
- * Check if a combined permission value includes a specific permission.
+ * Check whether a permission bitmask includes a specific permission.
+ *
+ * @param userPermissions - The combined permission bitmask for the user.
+ * @param requiredPermission - The permission flag to check for.
+ * @returns true if the user has the permission (or is an administrator).
  */
-export function hasPermission(permissions: bigint, permission: bigint): boolean {
-  // Administrator bypasses all checks
-  if ((permissions & Permissions.ADMINISTRATOR) === Permissions.ADMINISTRATOR) {
+export function hasPermission(userPermissions: bigint, requiredPermission: bigint): boolean {
+  // Administrators bypass all checks
+  if ((userPermissions & ADMINISTRATOR) === ADMINISTRATOR) {
     return true;
   }
-  return (permissions & permission) === permission;
+  return (userPermissions & requiredPermission) === requiredPermission;
 }
 
 /**
- * Compute the combined permissions for a member across all their roles.
- */
-export function computePermissions(rolePermissions: bigint[]): bigint {
-  let combined = BigInt(0);
-  for (const perms of rolePermissions) {
-    combined |= perms;
-  }
-  return combined;
-}
-
-/**
- * Get the combined permissions for a specific user in a specific server.
- * Returns the bitwise OR of all permissions from all roles the member has.
- * Returns BigInt(0) if the user is not a member of the server.
+ * Check whether a permission bitmask includes ALL of the given permissions.
  *
- * Server owners always have ADMINISTRATOR permission.
+ * @param userPermissions - The combined permission bitmask for the user.
+ * @param requiredPermissions - Array of permission flags that are all required.
+ * @returns true if the user has every listed permission (or is an administrator).
  */
-export async function getMemberPermissions(userId: string, serverId: string): Promise<bigint> {
-  // Check if the user is the server owner
-  const server = await prisma.server.findUnique({
-    where: { id: serverId },
-    select: { ownerId: true },
-  });
-
-  if (!server) {
-    return BigInt(0);
+export function hasAllPermissions(userPermissions: bigint, requiredPermissions: bigint[]): boolean {
+  if ((userPermissions & ADMINISTRATOR) === ADMINISTRATOR) {
+    return true;
   }
-
-  // Server owner has all permissions
-  if (server.ownerId === userId) {
-    return Object.values(Permissions).reduce((acc, perm) => acc | perm, BigInt(0));
-  }
-
-  // Get the member's entry
-  const member = await prisma.serverMember.findUnique({
-    where: {
-      userId_serverId: { userId, serverId },
-    },
-    include: {
-      roles: {
-        include: {
-          role: { select: { permissions: true } },
-        },
-      },
-    },
-  });
-
-  if (!member) {
-    return BigInt(0);
-  }
-
-  // Get the @everyone role for this server (all members implicitly have it)
-  const defaultRole = await prisma.role.findFirst({
-    where: { serverId, isDefault: true },
-    select: { permissions: true },
-  });
-
-  const rolePermissions: bigint[] = [];
-
-  if (defaultRole) {
-    rolePermissions.push(defaultRole.permissions);
-  }
-
-  for (const memberRole of member.roles) {
-    rolePermissions.push(memberRole.role.permissions);
-  }
-
-  return computePermissions(rolePermissions);
+  return requiredPermissions.every(
+    (perm) => (userPermissions & perm) === perm
+  );
 }
 
 /**
- * Check if a user has a specific permission in a server.
+ * Check whether a permission bitmask includes ANY of the given permissions.
+ *
+ * @param userPermissions - The combined permission bitmask for the user.
+ * @param requiredPermissions - Array of permission flags where at least one is required.
+ * @returns true if the user has at least one listed permission (or is an administrator).
  */
-export async function checkMemberPermission(
-  userId: string,
-  serverId: string,
-  permission: bigint
-): Promise<boolean> {
-  const perms = await getMemberPermissions(userId, serverId);
-  return hasPermission(perms, permission);
+export function hasAnyPermission(userPermissions: bigint, requiredPermissions: bigint[]): boolean {
+  if ((userPermissions & ADMINISTRATOR) === ADMINISTRATOR) {
+    return true;
+  }
+  return requiredPermissions.some(
+    (perm) => (userPermissions & perm) === perm
+  );
+}
+
+// ─── Role / Member Permission Computation ───────────────────────────────────────
+
+interface RolePermissionData {
+  permissions: bigint;
+}
+
+interface ChannelOverride {
+  roleId: string;
+  allow: bigint;
+  deny: bigint;
+}
+
+/**
+ * Compute the effective permissions for a server member.
+ *
+ * Algorithm:
+ * 1. If the member is the server owner, return ALL_PERMISSIONS.
+ * 2. Start with the @everyone role's permissions.
+ * 3. OR in the permissions from every additional role the member has.
+ * 4. If the result includes ADMINISTRATOR, return ALL_PERMISSIONS.
+ * 5. Return the computed permission bitmask.
+ *
+ * @param isOwner - Whether this member owns the server.
+ * @param everyonePermissions - The base @everyone role permission bitmask.
+ * @param memberRoles - Array of role permission data for the member's assigned roles.
+ * @returns The effective permission bitmask.
+ */
+export function computeServerPermissions(
+  isOwner: boolean,
+  everyonePermissions: bigint,
+  memberRoles: RolePermissionData[]
+): bigint {
+  // Server owner always has full permissions
+  if (isOwner) {
+    return ALL_PERMISSIONS;
+  }
+
+  // Start with @everyone permissions
+  let permissions = everyonePermissions;
+
+  // OR in each role's permissions
+  for (const role of memberRoles) {
+    permissions |= role.permissions;
+  }
+
+  // Administrators get everything
+  if ((permissions & ADMINISTRATOR) === ADMINISTRATOR) {
+    return ALL_PERMISSIONS;
+  }
+
+  return permissions;
+}
+
+/**
+ * Compute the effective permissions for a member within a specific channel,
+ * taking into account channel-level permission overrides.
+ *
+ * Algorithm:
+ * 1. Start with the member's server-level permissions.
+ * 2. If the member is an admin (server-level), return ALL_PERMISSIONS.
+ * 3. Apply channel overrides:
+ *    a. First apply the @everyone override (deny then allow).
+ *    b. Then apply all role-specific overrides the member has.
+ * 4. Return the resulting permission bitmask.
+ *
+ * @param serverPermissions - The member's computed server-level permissions.
+ * @param everyoneRoleId - The ID of the @everyone role.
+ * @param memberRoleIds - Array of role IDs the member has.
+ * @param channelOverrides - Array of channel permission overrides for the channel.
+ * @returns The effective channel-level permission bitmask.
+ */
+export function computeChannelPermissions(
+  serverPermissions: bigint,
+  everyoneRoleId: string,
+  memberRoleIds: string[],
+  channelOverrides: ChannelOverride[]
+): bigint {
+  // Administrators bypass channel-level overrides
+  if ((serverPermissions & ADMINISTRATOR) === ADMINISTRATOR) {
+    return ALL_PERMISSIONS;
+  }
+
+  let permissions = serverPermissions;
+
+  // Apply @everyone channel overrides first
+  const everyoneOverride = channelOverrides.find(
+    (o) => o.roleId === everyoneRoleId
+  );
+  if (everyoneOverride) {
+    permissions &= ~everyoneOverride.deny;
+    permissions |= everyoneOverride.allow;
+  }
+
+  // Collect allow/deny from all the member's role overrides
+  let roleAllow = 0n;
+  let roleDeny = 0n;
+
+  for (const override of channelOverrides) {
+    if (memberRoleIds.includes(override.roleId) && override.roleId !== everyoneRoleId) {
+      roleAllow |= override.allow;
+      roleDeny |= override.deny;
+    }
+  }
+
+  permissions &= ~roleDeny;
+  permissions |= roleAllow;
+
+  return permissions;
+}
+
+/**
+ * Get a human-readable list of permission names from a bitmask.
+ * Useful for debugging and display purposes.
+ */
+export function getPermissionNames(permissions: bigint): string[] {
+  const names: string[] = [];
+  const permMap: [bigint, string][] = [
+    [ADMINISTRATOR, "ADMINISTRATOR"],
+    [MANAGE_SERVER, "MANAGE_SERVER"],
+    [MANAGE_CHANNELS, "MANAGE_CHANNELS"],
+    [MANAGE_ROLES, "MANAGE_ROLES"],
+    [KICK_MEMBERS, "KICK_MEMBERS"],
+    [BAN_MEMBERS, "BAN_MEMBERS"],
+    [SEND_MESSAGES, "SEND_MESSAGES"],
+    [MANAGE_MESSAGES, "MANAGE_MESSAGES"],
+    [ATTACH_FILES, "ATTACH_FILES"],
+    [READ_MESSAGE_HISTORY, "READ_MESSAGE_HISTORY"],
+    [MENTION_EVERYONE, "MENTION_EVERYONE"],
+    [ADD_REACTIONS, "ADD_REACTIONS"],
+    [CONNECT_VOICE, "CONNECT_VOICE"],
+    [SPEAK, "SPEAK"],
+    [VIDEO, "VIDEO"],
+    [MUTE_MEMBERS, "MUTE_MEMBERS"],
+    [DEAFEN_MEMBERS, "DEAFEN_MEMBERS"],
+    [MOVE_MEMBERS, "MOVE_MEMBERS"],
+    [USE_VOICE_ACTIVITY, "USE_VOICE_ACTIVITY"],
+    [MANAGE_EMOJIS, "MANAGE_EMOJIS"],
+    [VIEW_AUDIT_LOG, "VIEW_AUDIT_LOG"],
+    [MANAGE_WEBHOOKS, "MANAGE_WEBHOOKS"],
+    [CREATE_INVITES, "CREATE_INVITES"],
+    [CHANGE_NICKNAME, "CHANGE_NICKNAME"],
+    [MANAGE_NICKNAMES, "MANAGE_NICKNAMES"],
+    [SHARE_SCREEN, "SHARE_SCREEN"],
+    [EMBED_LINKS, "EMBED_LINKS"],
+    [USE_EXTERNAL_EMOJIS, "USE_EXTERNAL_EMOJIS"],
+    [VIEW_CHANNEL, "VIEW_CHANNEL"],
+  ];
+
+  for (const [flag, name] of permMap) {
+    if ((permissions & flag) === flag) {
+      names.push(name);
+    }
+  }
+
+  return names;
 }
 
 export default {
-  Permissions,
+  // Permission flags
+  ADMINISTRATOR,
+  MANAGE_SERVER,
+  MANAGE_CHANNELS,
+  MANAGE_ROLES,
+  KICK_MEMBERS,
+  BAN_MEMBERS,
+  SEND_MESSAGES,
+  MANAGE_MESSAGES,
+  ATTACH_FILES,
+  READ_MESSAGE_HISTORY,
+  MENTION_EVERYONE,
+  ADD_REACTIONS,
+  CONNECT_VOICE,
+  SPEAK,
+  VIDEO,
+  MUTE_MEMBERS,
+  DEAFEN_MEMBERS,
+  MOVE_MEMBERS,
+  USE_VOICE_ACTIVITY,
+  MANAGE_EMOJIS,
+  VIEW_AUDIT_LOG,
+  MANAGE_WEBHOOKS,
+  CREATE_INVITES,
+  CHANGE_NICKNAME,
+  MANAGE_NICKNAMES,
+  SHARE_SCREEN,
+  EMBED_LINKS,
+  USE_EXTERNAL_EMOJIS,
+  VIEW_CHANNEL,
+  // Presets
+  ALL_PERMISSIONS,
   DEFAULT_PERMISSIONS,
+  // Functions
   hasPermission,
-  computePermissions,
-  getMemberPermissions,
-  checkMemberPermission,
+  hasAllPermissions,
+  hasAnyPermission,
+  computeServerPermissions,
+  computeChannelPermissions,
+  getPermissionNames,
 };
