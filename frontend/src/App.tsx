@@ -4,6 +4,9 @@ import { useAuthStore } from '@/stores/authStore';
 import { useSocket } from '@/hooks/useSocket';
 import LandingPage from '@/pages/LandingPage';
 import DownloadPage from '@/pages/DownloadPage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import AppLayout from '@/components/app/AppLayout';
 
 export default function App() {
   const { isAuthenticated, isLoading, fetchCurrentUser, token } = useAuthStore();
@@ -18,7 +21,7 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Public pages - always accessible */}
+      {/* Public pages */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/download" element={<DownloadPage />} />
 
@@ -26,31 +29,13 @@ export default function App() {
       <Route
         path="/login"
         element={
-          !isAuthenticated ? (
-            <div className="app-layout flex items-center justify-center bg-rally-darkBg">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Login</h1>
-                <p className="text-rally-muted">Login page coming soon</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/channels/@me" />
-          )
+          !isAuthenticated ? <LoginPage /> : <Navigate to="/channels/@me" />
         }
       />
       <Route
         path="/register"
         element={
-          !isAuthenticated ? (
-            <div className="app-layout flex items-center justify-center bg-rally-darkBg">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Register</h1>
-                <p className="text-rally-muted">Registration page coming soon</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/channels/@me" />
-          )
+          !isAuthenticated ? <RegisterPage /> : <Navigate to="/channels/@me" />
         }
       />
 
@@ -59,20 +44,16 @@ export default function App() {
         path="/channels/*"
         element={
           isAuthenticated ? (
-            <div className="app-layout bg-rally-darkBg">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-rally-cyan border-t-transparent rounded-full animate-spin" />
-                    <p className="text-rally-muted">Loading Rally...</p>
-                  </div>
+            isLoading ? (
+              <div className="app-layout flex items-center justify-center bg-rally-darkBg">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 border-4 border-rally-cyan border-t-transparent rounded-full animate-spin" />
+                  <p className="text-rally-muted">Loading Rally...</p>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-rally-muted">App Layout - Coming Soon</p>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <AppLayout />
+            )
           ) : (
             <Navigate to="/login" />
           )

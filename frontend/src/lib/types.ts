@@ -28,7 +28,7 @@ export interface Channel {
   id: string;
   serverId: string;
   name: string;
-  type: 'text' | 'voice';
+  type: 'text' | 'voice' | 'TEXT' | 'VOICE';
   topic?: string;
   position: number;
   isPrivate: boolean;
