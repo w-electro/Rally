@@ -6,4 +6,5 @@ dist/
 *.tsbuildinfo
 frontend/release/
 frontend/public/downloads/
+frontend/desktop-build/
 downloads/
