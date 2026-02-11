@@ -88,6 +88,11 @@ function AndroidIcon({ className = 'w-8 h-8' }: { className?: string }) {
   );
 }
 
+/* ─── Download URLs ─── */
+const DOWNLOAD_URLS: Record<string, string> = {
+  'windows-x64': '/downloads/Rally-1.0.0-win-x64.zip',
+};
+
 /* ─── Download card component ─── */
 function DownloadCard({
   icon,
@@ -95,12 +100,14 @@ function DownloadCard({
   description,
   primary = false,
   options,
+  href,
 }: {
   icon: React.ReactNode;
   platform: string;
   description: string;
   primary?: boolean;
-  options?: { label: string; sublabel?: string }[];
+  options?: { label: string; sublabel?: string; href?: string }[];
+  href?: string;
 }) {
   return (
     <div
@@ -125,31 +132,35 @@ function DownloadCard({
         {options ? (
           <div className="flex flex-col gap-2 w-full">
             {options.map((opt) => (
-              <button
-                key={opt.label}
-                className={`w-full py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 ${
+              <a
+                key={opt.label + (opt.sublabel || '')}
+                href={opt.href || '#'}
+                download
+                className={`w-full py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 text-center block ${
                   primary
                     ? 'bg-rally-cyan/10 hover:bg-rally-cyan/20 text-rally-cyan border border-rally-cyan/20 hover:border-rally-cyan/40'
                     : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20'
-                }`}
+                } ${!opt.href ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 {opt.label}
                 {opt.sublabel && (
                   <span className="text-xs text-rally-dimmed ml-2">{opt.sublabel}</span>
                 )}
-              </button>
+              </a>
             ))}
           </div>
         ) : (
-          <button
-            className={`w-full py-3 px-6 rounded-lg font-semibold text-sm transition-all duration-200 ${
+          <a
+            href={href || '#'}
+            download
+            className={`w-full py-3 px-6 rounded-lg font-semibold text-sm transition-all duration-200 text-center block ${
               primary
                 ? 'bg-gradient-to-r from-rally-purple to-rally-cyan text-white hover:opacity-90 glow-cyan'
                 : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20'
-            }`}
+            } ${!href ? 'opacity-50 pointer-events-none' : ''}`}
           >
             Download
-          </button>
+          </a>
         )}
       </div>
     </div>
@@ -234,15 +245,19 @@ export default function DownloadPage() {
                 rallying your squad in seconds.
               </p>
 
-              <button className="inline-flex items-center gap-3 px-10 py-4 rounded-md font-bold text-lg text-white bg-gradient-to-r from-rally-purple via-rally-cyan to-rally-neonGreen hover:opacity-90 transition-all duration-300 hover:scale-105 glow-cyan">
+              <a
+                href={DOWNLOAD_URLS[`${platform}-x64`] || DOWNLOAD_URLS['windows-x64']}
+                download
+                className="inline-flex items-center gap-3 px-10 py-4 rounded-md font-bold text-lg text-white bg-gradient-to-r from-rally-purple via-rally-cyan to-rally-neonGreen hover:opacity-90 transition-all duration-300 hover:scale-105 glow-cyan"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 Download Now
-              </button>
+              </a>
 
               <p className="text-xs text-rally-dimmed mt-4 font-sans">
-                Version 1.0.0 &middot; {platform === 'windows' ? '~85 MB' : platform === 'macos' ? '~120 MB' : '~95 MB'}
+                Version 1.0.0 &middot; ~150 MB (zip)
               </p>
 
               {/* Decorative glow */}
@@ -270,8 +285,7 @@ export default function DownloadPage() {
                 description="Windows 10 or newer"
                 primary={platform === 'windows'}
                 options={[
-                  { label: 'Download', sublabel: 'x64' },
-                  { label: 'Download', sublabel: 'ARM64' },
+                  { label: 'Download', sublabel: 'x64', href: DOWNLOAD_URLS['windows-x64'] },
                 ]}
               />
             </AnimatedSection>
@@ -279,7 +293,7 @@ export default function DownloadPage() {
               <DownloadCard
                 icon={<AppleIcon className="w-12 h-12" />}
                 platform="macOS"
-                description="macOS 11 Big Sur or newer"
+                description="macOS 11 Big Sur or newer — Coming Soon"
                 primary={platform === 'macos'}
               />
             </AnimatedSection>
@@ -287,12 +301,8 @@ export default function DownloadPage() {
               <DownloadCard
                 icon={<LinuxIcon className="w-12 h-12" />}
                 platform="Linux"
-                description="Ubuntu 20.04+, Fedora 33+"
+                description="Ubuntu 20.04+, Fedora 33+ — Coming Soon"
                 primary={platform === 'linux'}
-                options={[
-                  { label: 'Download', sublabel: '.deb' },
-                  { label: 'Download', sublabel: '.tar.gz' },
-                ]}
               />
             </AnimatedSection>
           </div>
