@@ -19,6 +19,7 @@ import streamRoutes from './routes/stream';
 import aiRoutes from './routes/ai';
 import commerceRoutes from './routes/commerce';
 import gamingRoutes from './routes/gaming';
+import inviteRoutes from './routes/invites';
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,6 +61,7 @@ app.use('/api/stream', streamRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/commerce', commerceRoutes);
 app.use('/api/gaming', gamingRoutes);
+app.use('/api', inviteRoutes);
 
 // Error handler
 app.use(errorHandler);

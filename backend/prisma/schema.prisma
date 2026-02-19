@@ -65,6 +65,7 @@ model User {
   friendOf        Friendship[]      @relation("FriendB")
   refreshTokens   RefreshToken[]
   notifications   Notification[]
+  serverInvites   ServerInvite[]
 
   @@index([username])
   @@index([email])
@@ -159,9 +160,27 @@ model Server {
   rewards     PointReward[]
   gameSessions GameSession[]
   aiConfig    AiServerConfig?
+  invites     ServerInvite[]
 
   @@index([ownerId])
   @@index([vanityUrl])
+}
+
+model ServerInvite {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  serverId  String
+  creatorId String
+  expiresAt DateTime?
+  maxUses   Int?
+  uses      Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  server    Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  creator   User      @relation(fields: [creatorId], references: [id])
+
+  @@index([code])
+  @@index([serverId])
 }
 
 model ServerMember {
