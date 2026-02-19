@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useVoiceStore } from '@/stores/voiceStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useSocket } from '@/hooks/useSocket';
 import { cn, getInitials, generateAvatarGradient } from '@/lib/utils';
 import type { VoiceParticipant } from '@/lib/types';
 
@@ -31,12 +32,13 @@ export function VoiceChannel() {
     isDeafened,
     participants,
     spatialPositions,
+    remoteStreams,
     toggleMute,
     toggleDeafen,
-    leaveChannel,
     updateSpatialPosition,
   } = useVoiceStore();
   const user = useAuthStore((s) => s.user);
+  const { leaveVoice } = useSocket();
 
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isCameraOn, setIsCameraOn] = useState(false);
@@ -46,8 +48,8 @@ export function VoiceChannel() {
   const streamingParticipant = participants.find((p) => p.isStreaming);
 
   const handleDisconnect = useCallback(() => {
-    leaveChannel();
-  }, [leaveChannel]);
+    leaveVoice();
+  }, [leaveVoice]);
 
   const handleToggleCamera = useCallback(() => {
     setIsCameraOn((prev) => !prev);
@@ -92,6 +94,18 @@ export function VoiceChannel() {
 
   return (
     <div className="flex h-full flex-col bg-rally-dark-bg">
+      {/* Hidden audio elements for remote streams */}
+      {Object.entries(remoteStreams).map(([userId, stream]) => (
+        <audio
+          key={userId}
+          ref={(el) => {
+            if (el) el.srcObject = stream;
+          }}
+          autoPlay
+          muted={isDeafened}
+        />
+      ))}
+
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-rally-border/30 px-4 py-2">
         <div className="flex items-center gap-2">

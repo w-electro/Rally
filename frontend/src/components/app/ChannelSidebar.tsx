@@ -18,6 +18,7 @@ import { useServerStore } from '@/stores/serverStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useVoiceStore } from '@/stores/voiceStore';
+import { useSocket } from '@/hooks/useSocket';
 import api from '@/lib/api';
 import { cn, getInitials, getStatusColor } from '@/lib/utils';
 import type { Channel, Story } from '@/lib/types';
@@ -259,9 +260,27 @@ export function ChannelSidebar() {
   const openModal = useUIStore((s) => s.openModal);
   const isMuted = useVoiceStore((s) => s.isMuted);
   const isDeafened = useVoiceStore((s) => s.isDeafened);
+  const voiceChannelId = useVoiceStore((s) => s.channelId);
   const toggleMute = useVoiceStore((s) => s.toggleMute);
   const toggleDeafen = useVoiceStore((s) => s.toggleDeafen);
+  const { joinVoice, leaveVoice } = useSocket();
   const [showServerMenu, setShowServerMenu] = useState(false);
+
+  const handleChannelClick = useCallback((channel: Channel) => {
+    if (channel.type === 'VOICE') {
+      // If already in this voice channel, just set it as active view (no-op on voice)
+      if (voiceChannelId === channel.id) {
+        setActiveChannel(channel);
+        return;
+      }
+      // Join the voice channel (leaveVoice is handled internally by joinVoice)
+      joinVoice(channel.id);
+      // Also set as active channel so VoiceChannel UI renders in main area
+      setActiveChannel(channel);
+    } else {
+      setActiveChannel(channel);
+    }
+  }, [voiceChannelId, joinVoice, setActiveChannel]);
 
   if (!activeServer) return null;
 
@@ -348,7 +367,7 @@ export function ChannelSidebar() {
                   key={channel.id}
                   channel={channel}
                   isActive={activeChannel?.id === channel.id}
-                  onClick={() => setActiveChannel(channel)}
+                  onClick={() => handleChannelClick(channel)}
                 />
               ))}
           </div>
@@ -361,7 +380,7 @@ export function ChannelSidebar() {
             name={group.name}
             channels={group.channels}
             activeChannelId={activeChannel?.id ?? null}
-            onChannelClick={setActiveChannel}
+            onChannelClick={handleChannelClick}
           />
         ))}
       </div>

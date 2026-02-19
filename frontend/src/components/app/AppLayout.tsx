@@ -15,6 +15,7 @@ import { VoiceBar } from './VoiceBar';
 import { ChatArea } from '@/components/chat/ChatArea';
 import { FeedView } from '@/components/feed/FeedView';
 import { PulseView } from '@/components/pulse/PulseView';
+import { VoiceChannel } from '@/components/voice/VoiceChannel';
 import { AiAssistant } from '@/components/ai/AiAssistant';
 import { PointsPanel } from '@/components/stream/PointsPanel';
 
@@ -64,8 +65,14 @@ export function AppLayout() {
     }
 
     if (view === 'servers' && activeServer && activeChannel) {
+      if (activeChannel.type === 'VOICE') {
+        return <VoiceChannel />;
+      }
       if (activeChannel.type === 'FEED') {
         return <FeedView channelId={activeChannel.id} channelName={activeChannel.name} />;
+      }
+      if (activeChannel.type === 'ANNOUNCEMENT') {
+        return <PulseView />;
       }
       return <ChatArea channel={activeChannel} />;
     }

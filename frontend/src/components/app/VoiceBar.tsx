@@ -5,7 +5,7 @@ import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Signal } from 'lucide-
 import { cn } from '@/lib/utils';
 
 export function VoiceBar() {
-  const { channelId, isMuted, isDeafened, toggleMute, toggleDeafen, leaveChannel: leaveVoiceStore } = useVoiceStore();
+  const { channelId, isMuted, isDeafened, toggleMute, toggleDeafen } = useVoiceStore();
   const { activeServer } = useServerStore();
   const { leaveVoice } = useSocket();
 
@@ -14,8 +14,7 @@ export function VoiceBar() {
   const channel = activeServer?.channels?.find((c) => c.id === channelId);
 
   const handleDisconnect = () => {
-    leaveVoice(channelId);
-    leaveVoiceStore();
+    leaveVoice();
   };
 
   return (

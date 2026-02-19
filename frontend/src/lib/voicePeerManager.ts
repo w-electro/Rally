@@ -203,7 +203,7 @@ export class VoicePeerManager {
           targetUserId,
           answer: signalData,
         });
-      } else if (signalData.candidate) {
+      } else if ('candidate' in signalData) {
         // ICE candidate (signalData has { candidate, sdpMid, sdpMLineIndex })
         socket.emit('webrtc:ice_candidate', {
           targetUserId,
