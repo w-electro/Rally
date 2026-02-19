@@ -6,7 +6,6 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import { errorHandler } from './utils/errors';
 import { createSocketServer } from './socket';
-import { setupWebRTCSignaling } from './webrtc/signaling';
 
 // Route imports
 import authRoutes from './routes/auth';
@@ -26,7 +25,10 @@ const httpServer = createServer(app);
 
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: config.corsOrigin, credentials: true }));
+app.use(cors({
+  origin: config.nodeEnv === 'production' ? config.corsOrigin : true,
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -62,12 +64,11 @@ app.use('/api/gaming', gamingRoutes);
 // Error handler
 app.use(errorHandler);
 
-// WebSocket server
+// WebSocket server (WebRTC signaling is handled inside the socket handler)
 const io = createSocketServer(httpServer);
-setupWebRTCSignaling(io);
 
 // Start server
-httpServer.listen(config.port, () => {
+httpServer.listen(config.port, '0.0.0.0', () => {
   console.log(`
   ╔═══════════════════════════════════════╗
   ║          RALLY SERVER v1.0.0          ║
