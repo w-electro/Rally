@@ -82,6 +82,15 @@
     color: #00D9FF;
   }
 
+  /* Aliases used by AppLayout */
+  .app-drag {
+    -webkit-app-region: drag;
+  }
+
+  .app-no-drag {
+    -webkit-app-region: no-drag;
+  }
+
   .titlebar-btn.close:hover {
     background: rgba(255, 0, 110, 0.8);
     color: white;

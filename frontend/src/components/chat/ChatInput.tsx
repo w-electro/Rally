@@ -126,7 +126,7 @@ export function ChatInput({
           <span className="flex-1 truncate">
             Replying to{' '}
             <span className="font-semibold text-rally-blue">
-              @{replyingTo.author.displayName}
+              @{replyingTo.author?.displayName ?? 'Unknown'}
             </span>
           </span>
           <button

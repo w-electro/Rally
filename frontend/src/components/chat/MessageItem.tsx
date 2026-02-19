@@ -122,6 +122,7 @@ export function MessageItem({
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const isOwn = user?.id === message.authorId;
+  const author = message.author ?? { id: message.authorId, username: 'unknown', displayName: 'Unknown', avatarUrl: undefined };
   const isSystem =
     message.type === 'SYSTEM' ||
     message.type === 'JOIN' ||
@@ -151,10 +152,10 @@ export function MessageItem({
   // ---- Attachments ----
   const attachments = message.attachments ?? [];
   const imageAttachments = attachments.filter((a) =>
-    a.type.startsWith('image/'),
+    a.type?.startsWith('image/'),
   );
   const fileAttachments = attachments.filter(
-    (a) => !a.type.startsWith('image/'),
+    (a) => !a.type?.startsWith('image/'),
   );
 
   // ---- Render ----
@@ -180,8 +181,8 @@ export function MessageItem({
       ) : (
         <div className="shrink-0 pt-0.5">
           <Avatar
-            src={message.author.avatarUrl}
-            name={message.author.displayName}
+            src={author.avatarUrl}
+            name={author.displayName}
             size="sm"
           />
         </div>
@@ -194,7 +195,7 @@ export function MessageItem({
           <div className="mb-0.5 flex items-center gap-1.5 text-xs text-gray-500 truncate">
             <Reply className="h-3 w-3 rotate-180 text-gray-600" />
             <span className="font-semibold text-gray-400">
-              {message.replyTo.author.displayName}
+              {message.replyTo.author?.displayName ?? 'Unknown'}
             </span>
             <span className="truncate opacity-70">
               {message.replyTo.content}
@@ -206,7 +207,7 @@ export function MessageItem({
         {!isCompact && (
           <div className="flex items-baseline gap-2 leading-5">
             <span className="font-display font-semibold text-sm text-rally-blue hover:underline cursor-pointer">
-              {message.author.displayName}
+              {author.displayName}
             </span>
             <span className="text-[10px] text-gray-600 select-none">
               {formatTime(message.createdAt)}
@@ -224,7 +225,7 @@ export function MessageItem({
           {isCompact && (
             <>
               <span className="font-display font-semibold text-rally-blue mr-1 cursor-pointer hover:underline text-xs">
-                {message.author.displayName}
+                {author.displayName}
               </span>
               {message.isEdited && (
                 <span className="text-[10px] text-gray-600 italic mr-1 select-none">
@@ -233,7 +234,7 @@ export function MessageItem({
               )}
             </>
           )}
-          {renderContent(message.content)}
+          {renderContent(message.content ?? '')}
         </div>
 
         {/* Image attachments */}
@@ -282,7 +283,8 @@ export function MessageItem({
         {Object.keys(reactions).length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {Object.entries(reactions).map(([emoji, userIds]) => {
-              const hasReacted = user ? userIds.includes(user.id) : false;
+              const ids = Array.isArray(userIds) ? userIds : [];
+              const hasReacted = user ? ids.includes(user.id) : false;
               return (
                 <button
                   key={emoji}
@@ -295,7 +297,7 @@ export function MessageItem({
                   )}
                 >
                   <span>{emoji}</span>
-                  <span className="font-medium">{userIds.length}</span>
+                  <span className="font-medium">{ids.length}</span>
                 </button>
               );
             })}

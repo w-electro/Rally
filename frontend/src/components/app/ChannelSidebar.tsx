@@ -44,7 +44,9 @@ function StoryBar({ serverId }: { serverId: string }) {
   const openModal = useUIStore((s) => s.openModal);
 
   useEffect(() => {
-    api.getStories(serverId).then(setStories).catch(() => {});
+    api.getStories(serverId)
+      .then((data: any) => setStories(Array.isArray(data) ? data : data?.storyGroups ?? data?.stories ?? []))
+      .catch(() => {});
   }, [serverId]);
 
   if (stories.length === 0) return null;

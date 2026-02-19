@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -327,7 +327,7 @@ model FeedPost {
   authorId    String
   caption     String?
   mediaUrls   Json     // [{url, type: "image"|"video", thumbnail}]
-  hashtags    String[] // for pulse/discovery
+  hashtags    Json     @default("[]") // for pulse/discovery
   likeCount   Int      @default(0)
   commentCount Int     @default(0)
   isHighlight Boolean  @default(false)
@@ -418,7 +418,7 @@ model PulsePost {
   authorId    String
   content     String
   mediaUrls   Json?
-  hashtags    String[]
+  hashtags    Json     @default("[]")
   serverId    String?  // optional server origin
   likeCount   Int      @default(0)
   repostCount Int      @default(0)

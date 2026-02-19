@@ -23,16 +23,16 @@ export function PulseView() {
   const loadFeed = async () => {
     setIsLoading(true);
     try {
-      const data = await api.getPulseFeed();
-      setPosts(data);
+      const data: any = await api.getPulseFeed();
+      setPosts(Array.isArray(data) ? data : data?.posts ?? []);
     } catch {}
     setIsLoading(false);
   };
 
   const loadTrending = async () => {
     try {
-      const data = await api.getTrending();
-      setTrending(data);
+      const data: any = await api.getTrending();
+      setTrending(Array.isArray(data) ? data : data?.hashtags ?? data?.trending ?? []);
     } catch {}
   };
 

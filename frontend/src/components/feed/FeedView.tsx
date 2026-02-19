@@ -36,12 +36,13 @@ export function FeedView({ channelId, channelName = 'Feed' }: FeedViewProps) {
   const fetchPosts = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await api.getFeedPosts(channelId);
-      setPosts(data ?? []);
-      if (data && data.length > 0) {
+      const raw: any = await api.getFeedPosts(channelId);
+      const data = Array.isArray(raw) ? raw : raw?.posts ?? raw?.items ?? [];
+      setPosts(data);
+      if (data.length > 0) {
         setCursor(data[data.length - 1].id);
       }
-      setHasMore((data?.length ?? 0) >= 20);
+      setHasMore(data.length >= 20);
     } catch {
       // silently handle
     } finally {
@@ -53,8 +54,9 @@ export function FeedView({ channelId, channelName = 'Feed' }: FeedViewProps) {
     if (isLoadingMore || !hasMore || !cursor) return;
     setIsLoadingMore(true);
     try {
-      const data = await api.getFeedPosts(channelId, cursor);
-      if (data && data.length > 0) {
+      const raw: any = await api.getFeedPosts(channelId, cursor);
+      const data = Array.isArray(raw) ? raw : raw?.posts ?? raw?.items ?? [];
+      if (data.length > 0) {
         setPosts((prev) => [...prev, ...data]);
         setCursor(data[data.length - 1].id);
         setHasMore(data.length >= 20);

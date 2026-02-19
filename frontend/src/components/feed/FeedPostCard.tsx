@@ -27,8 +27,11 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const media = post.mediaUrls[0];
+  const mediaUrls = Array.isArray(post.mediaUrls) ? post.mediaUrls : [];
+  const media = mediaUrls[0];
   const isVideo = media?.type === 'video';
+  const author = post.author ?? { id: post.authorId, username: 'unknown', displayName: 'Unknown', avatarUrl: undefined };
+  const hashtags = Array.isArray(post.hashtags) ? post.hashtags : [];
 
   useEffect(() => {
     // Comments would be loaded here via API
@@ -72,7 +75,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
   };
 
   const renderCaption = (text: string) => {
-    return text.split(/(#[\w]+)/g).map((part, i) =>
+    return (text ?? '').split(/(#[\w]+)/g).map((part, i) =>
       part.startsWith('#') ? (
         <span key={i} className="cursor-pointer font-medium text-rally-blue hover:underline">
           {part}
@@ -130,24 +133,24 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
               clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
             }}
           >
-            {post.author.avatarUrl ? (
+            {author.avatarUrl ? (
               <img
-                src={post.author.avatarUrl}
-                alt={post.author.displayName}
+                src={author.avatarUrl}
+                alt={author.displayName}
                 className="h-full w-full object-cover"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-neon-gradient text-xs font-bold text-rally-dark-surface">
-                {getInitials(post.author.displayName)}
+                {getInitials(author.displayName)}
               </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-sm font-bold text-rally-text">
-              {post.author.displayName}
+              {author.displayName}
             </p>
             <p className="text-xs text-rally-text-muted">
-              @{post.author.username}
+              @{author.username}
             </p>
           </div>
           <span className="text-xs text-rally-text-muted">
@@ -162,13 +165,13 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
             <div className="border-b border-rally-border/30 px-4 py-3">
               <p className="font-body text-sm leading-relaxed text-rally-text">
                 <span className="mr-2 font-display font-bold text-rally-text">
-                  {post.author.username}
+                  {author.username}
                 </span>
                 {renderCaption(post.caption)}
               </p>
-              {post.hashtags.length > 0 && (
+              {hashtags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {post.hashtags.map((tag) => (
+                  {hashtags.map((tag) => (
                     <span
                       key={tag}
                       className="cursor-pointer text-xs font-medium text-rally-blue hover:underline"
@@ -229,7 +232,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
             </button>
           </div>
           <p className="mt-2 font-display text-sm font-bold text-rally-text">
-            {formatNumber(post.likeCount)} {post.likeCount === 1 ? 'like' : 'likes'}
+            {formatNumber(post.likeCount ?? 0)} {post.likeCount === 1 ? 'like' : 'likes'}
           </p>
           <p className="mt-0.5 text-[10px] uppercase tracking-wider text-rally-text-muted">
             {formatDate(post.createdAt)}
@@ -243,7 +246,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
               <span>
                 Replying to{' '}
                 <span className="font-medium text-rally-blue">
-                  @{replyTo.author.username}
+                  @{replyTo.author?.username ?? 'unknown'}
                 </span>
               </span>
               <button
@@ -304,15 +307,15 @@ function CommentItem({ comment, onReply }: CommentItemProps) {
             clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
           }}
         >
-          {comment.author.avatarUrl ? (
+          {comment.author?.avatarUrl ? (
             <img
               src={comment.author.avatarUrl}
-              alt={comment.author.displayName}
+              alt={comment.author?.displayName ?? 'Unknown'}
               className="h-full w-full object-cover"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-rally-surface-light text-[10px] font-bold text-rally-text-muted">
-              {getInitials(comment.author.displayName)}
+              {getInitials(comment.author?.displayName ?? 'Unknown')}
             </div>
           )}
         </div>
@@ -321,7 +324,7 @@ function CommentItem({ comment, onReply }: CommentItemProps) {
         <div className="min-w-0 flex-1">
           <p className="font-body text-xs leading-relaxed text-rally-text">
             <span className="mr-1.5 font-display font-bold">
-              {comment.author.username}
+              {comment.author?.username ?? 'unknown'}
             </span>
             {comment.content}
           </p>

@@ -117,8 +117,9 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
 
       setLoading(true);
       try {
-        const msgs = await api.getMessages(channel.id);
+        const data: any = await api.getMessages(channel.id);
         if (cancelled) return;
+        const msgs = Array.isArray(data) ? data : data?.messages ?? data?.items ?? [];
         setMessages(channel.id, msgs);
         setHasMore(channel.id, msgs.length >= 50);
       } catch (err) {
@@ -183,7 +184,8 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
 
       api
         .getMessages(channel.id, firstMsg.id)
-        .then((older) => {
+        .then((raw: any) => {
+          const older = Array.isArray(raw) ? raw : raw?.messages ?? raw?.items ?? [];
           if (older.length === 0) {
             setHasMore(channel.id, false);
           } else {

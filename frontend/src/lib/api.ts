@@ -34,11 +34,11 @@ class ApiClient {
         }
         return retryRes.json();
       }
-      // Refresh failed, clear auth
+      // Refresh failed, clear auth and throw — let the store handle navigation
       this.token = null;
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
+      localStorage.removeItem('rally-auth');
       throw new Error('Session expired');
     }
 

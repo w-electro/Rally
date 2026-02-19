@@ -45,7 +45,7 @@ export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
 
           {/* Content */}
           <p className="text-sm text-rally-text whitespace-pre-wrap mt-0.5 leading-relaxed">
-            {post.content.split(/(#[\w]+)/g).map((part, i) =>
+            {(post.content ?? '').split(/(#[\w]+)/g).map((part, i) =>
               part.startsWith('#') ? (
                 <span key={i} className="text-rally-blue hover:underline cursor-pointer">{part}</span>
               ) : (
@@ -55,7 +55,7 @@ export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
           </p>
 
           {/* Media */}
-          {post.mediaUrls && post.mediaUrls.length > 0 && (
+          {Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0 && (
             <div className={cn(
               'mt-2 rounded-lg overflow-hidden border border-rally-border grid gap-0.5',
               post.mediaUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
@@ -78,7 +78,7 @@ export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
               <div className="p-1.5 rounded-full group-hover:bg-rally-blue/10 transition-colors">
                 <MessageCircle className="w-4 h-4" />
               </div>
-              <span className="text-xs">{post.replyCount > 0 ? formatNumber(post.replyCount) : ''}</span>
+              <span className="text-xs">{(post.replyCount ?? 0) > 0 ? formatNumber(post.replyCount) : ''}</span>
             </button>
 
             <button
@@ -91,7 +91,7 @@ export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
               <div className="p-1.5 rounded-full group-hover:bg-rally-green/10 transition-colors">
                 <Repeat2 className="w-4 h-4" />
               </div>
-              <span className="text-xs">{post.repostCount > 0 ? formatNumber(post.repostCount) : ''}</span>
+              <span className="text-xs">{(post.repostCount ?? 0) > 0 ? formatNumber(post.repostCount) : ''}</span>
             </button>
 
             <button
@@ -104,14 +104,14 @@ export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
               <div className="p-1.5 rounded-full group-hover:bg-rally-magenta/10 transition-colors">
                 <Heart className={cn('w-4 h-4', post.isLiked && 'fill-current')} />
               </div>
-              <span className="text-xs">{post.likeCount > 0 ? formatNumber(post.likeCount) : ''}</span>
+              <span className="text-xs">{(post.likeCount ?? 0) > 0 ? formatNumber(post.likeCount) : ''}</span>
             </button>
 
             <button className="flex items-center gap-1.5 text-rally-text-muted hover:text-rally-blue transition-colors group">
               <div className="p-1.5 rounded-full group-hover:bg-rally-blue/10 transition-colors">
                 <Eye className="w-4 h-4" />
               </div>
-              <span className="text-xs">{post.viewCount > 0 ? formatNumber(post.viewCount) : ''}</span>
+              <span className="text-xs">{(post.viewCount ?? 0) > 0 ? formatNumber(post.viewCount) : ''}</span>
             </button>
 
             <button className="p-1.5 rounded-full hover:bg-rally-blue/10 text-rally-text-muted hover:text-rally-blue transition-colors">
