@@ -1,0 +1,248 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Exo 2', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #000000;
+    color: #E6EDF3;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar - esports theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 217, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 217, 255, 0.4);
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(0, 217, 255, 0.3);
+    color: #ffffff;
+  }
+}
+
+@layer components {
+  /* Custom titlebar (Electron) */
+  .titlebar {
+    -webkit-app-region: drag;
+    height: 32px;
+    background: #0A0E27;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+  }
+
+  .titlebar-btn {
+    -webkit-app-region: no-drag;
+    width: 36px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #8B949E;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 12px;
+  }
+
+  .titlebar-btn:hover {
+    background: rgba(0, 217, 255, 0.15);
+    color: #00D9FF;
+  }
+
+  .titlebar-btn.close:hover {
+    background: rgba(255, 0, 110, 0.8);
+    color: white;
+  }
+
+  /* Neon glow effects */
+  .neon-border {
+    border: 1px solid rgba(0, 217, 255, 0.2);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .neon-border:hover {
+    border-color: rgba(0, 217, 255, 0.5);
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.1);
+  }
+
+  .neon-border-active {
+    border-color: #00D9FF;
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.2), 0 0 20px rgba(0, 217, 255, 0.1);
+  }
+
+  .neon-text {
+    color: #00D9FF;
+    text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+  }
+
+  .neon-text-green {
+    color: #39FF14;
+    text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+  }
+
+  .neon-text-magenta {
+    color: #FF006E;
+    text-shadow: 0 0 10px rgba(255, 0, 110, 0.3);
+  }
+
+  /* Angular button style */
+  .btn-rally {
+    @apply px-4 py-2 font-display font-semibold text-sm uppercase tracking-wider;
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(57, 255, 20, 0.1));
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    color: #00D9FF;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .btn-rally:hover {
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(57, 255, 20, 0.2));
+    border-color: #00D9FF;
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+  }
+
+  .btn-rally-primary {
+    @apply px-4 py-2 font-display font-semibold text-sm uppercase tracking-wider;
+    background: linear-gradient(135deg, #00D9FF, #39FF14);
+    border: none;
+    color: #000000;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .btn-rally-primary:hover {
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.4), 0 0 40px rgba(57, 255, 20, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .btn-rally-danger {
+    @apply px-4 py-2 font-display font-semibold text-sm uppercase tracking-wider;
+    background: linear-gradient(135deg, rgba(255, 0, 110, 0.1), rgba(139, 0, 255, 0.1));
+    border: 1px solid rgba(255, 0, 110, 0.3);
+    color: #FF006E;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .btn-rally-danger:hover {
+    background: linear-gradient(135deg, rgba(255, 0, 110, 0.2), rgba(139, 0, 255, 0.2));
+    border-color: #FF006E;
+  }
+
+  /* Angular card */
+  .card-rally {
+    background: linear-gradient(135deg, #0D1117, #0A0E27);
+    border: 1px solid rgba(0, 217, 255, 0.15);
+    transition: all 0.3s ease;
+  }
+
+  .card-rally:hover {
+    border-color: rgba(0, 217, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.05);
+  }
+
+  /* Input fields */
+  .input-rally {
+    @apply w-full px-3 py-2 text-sm;
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid rgba(0, 217, 255, 0.15);
+    color: #E6EDF3;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .input-rally:focus {
+    border-color: #00D9FF;
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.15);
+  }
+
+  .input-rally::placeholder {
+    color: #484F58;
+  }
+
+  /* Geometric divider */
+  .divider-geo {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.3), transparent);
+  }
+
+  /* Badge */
+  .badge-rally {
+    @apply px-2 py-0.5 text-xs font-display font-semibold uppercase tracking-wider;
+    background: rgba(0, 217, 255, 0.1);
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    color: #00D9FF;
+  }
+
+  /* Animated background grid */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+@layer utilities {
+  .clip-angular {
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+
+  .clip-angular-sm {
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, #00D9FF, #39FF14);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
