@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 type View = 'servers' | 'dms' | 'pulse' | 'settings';
 type RightPanel = 'members' | 'ai' | 'trending' | 'points' | 'none';
-type Modal = 'createServer' | 'serverSettings' | 'createChannel' | 'userProfile' | 'gameSession' | 'storyViewer' | 'commerce' | null;
+type Modal = 'createServer' | 'serverSettings' | 'createChannel' | 'userProfile' | 'gameSession' | 'storyViewer' | 'commerce' | 'invite' | 'joinServer' | null;
 
 interface UIState {
   view: View;

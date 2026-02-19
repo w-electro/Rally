@@ -19,6 +19,8 @@ import { VoiceChannel } from '@/components/voice/VoiceChannel';
 import { AiAssistant } from '@/components/ai/AiAssistant';
 import { PointsPanel } from '@/components/stream/PointsPanel';
 import { CreateServerModal } from './CreateServerModal';
+import { InviteDialog } from './InviteDialog';
+import { JoinServerDialog } from './JoinServerDialog';
 
 declare global {
   interface Window {
@@ -180,6 +182,8 @@ export function AppLayout() {
 
       {/* Modals */}
       {activeModal === 'createServer' && <CreateServerModal />}
+      {activeModal === 'invite' && <InviteDialog />}
+      {activeModal === 'joinServer' && <JoinServerDialog />}
     </div>
   );
 }

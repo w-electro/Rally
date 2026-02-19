@@ -3,6 +3,7 @@ import {
   Plus,
   Compass,
   MessageCircle,
+  UserPlus,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
@@ -205,6 +206,25 @@ export function ServerList() {
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
               Create Server
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Join Server Button */}
+      <div className="relative mt-2">
+        <button
+          onClick={() => openModal('joinServer')}
+          onMouseEnter={() => setHoveredAction('join')}
+          onMouseLeave={() => setHoveredAction(null)}
+          className="w-12 h-12 flex items-center justify-center rounded-[24px] bg-[#1A1F36] hover:rounded-2xl hover:bg-[#39FF14]/10 transition-all duration-200 group"
+        >
+          <UserPlus className="w-5 h-5 text-[#39FF14] group-hover:text-[#39FF14]" />
+        </button>
+        {hoveredAction === 'join' && (
+          <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
+            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
+              Join a Server
             </div>
           </div>
         )}

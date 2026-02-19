@@ -13,6 +13,7 @@ import {
   MicOff,
   Headphones,
   HeadphoneOff,
+  UserPlus,
 } from 'lucide-react';
 import { useServerStore } from '@/stores/serverStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -327,6 +328,16 @@ export function ChannelSidebar() {
               onClick={() => setShowServerMenu(false)}
             />
             <div className="absolute top-full left-2 right-2 z-50 mt-1 bg-[#1A1F36] border border-white/10 rounded-lg shadow-xl py-1">
+              <button
+                onClick={() => {
+                  setShowServerMenu(false);
+                  openModal('invite');
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                Invite People
+              </button>
               <button
                 onClick={() => {
                   setShowServerMenu(false);
