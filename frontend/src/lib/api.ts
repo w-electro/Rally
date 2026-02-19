@@ -1,4 +1,8 @@
-const API_BASE = '/api';
+function getApiBase(): string {
+  const serverUrl = localStorage.getItem('rally-server-url');
+  if (serverUrl) return `${serverUrl.replace(/\/$/, '')}/api`;
+  return '/api'; // default: same origin (Vite proxy)
+}
 
 class ApiClient {
   private token: string | null = null;
@@ -17,7 +21,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${getApiBase()}${path}`, {
       ...options,
       headers,
     });
@@ -27,7 +31,7 @@ class ApiClient {
       const refreshed = await this.refreshToken();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${this.token}`;
-        const retryRes = await fetch(`${API_BASE}${path}`, { ...options, headers });
+        const retryRes = await fetch(`${getApiBase()}${path}`, { ...options, headers });
         if (!retryRes.ok) {
           const err = await retryRes.json().catch(() => ({ error: 'Request failed' }));
           throw new Error(err.error || 'Request failed');
@@ -56,7 +60,7 @@ class ApiClient {
     if (!refreshToken) return false;
 
     try {
-      const res = await fetch(`${API_BASE}/auth/refresh`, {
+      const res = await fetch(`${getApiBase()}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -258,6 +262,22 @@ class ApiClient {
   }
   rallyCall(serverId: string, message: string) {
     return this.request<any>('/gaming/rally', { method: 'POST', body: JSON.stringify({ serverId, message }) });
+  }
+
+  // Invites
+  createInvite(serverId: string, options?: { expiresAt?: string; maxUses?: number }) {
+    return this.request<any>(`/servers/${serverId}/invites`, {
+      method: 'POST',
+      body: JSON.stringify(options ?? {}),
+    });
+  }
+
+  resolveInvite(code: string) {
+    return this.request<any>(`/invites/${code}`);
+  }
+
+  joinByInvite(code: string) {
+    return this.request<any>(`/invites/${code}/join`, { method: 'POST' });
   }
 }
 
