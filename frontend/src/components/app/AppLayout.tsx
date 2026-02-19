@@ -18,6 +18,7 @@ import { PulseView } from '@/components/pulse/PulseView';
 import { VoiceChannel } from '@/components/voice/VoiceChannel';
 import { AiAssistant } from '@/components/ai/AiAssistant';
 import { PointsPanel } from '@/components/stream/PointsPanel';
+import { CreateServerModal } from './CreateServerModal';
 
 declare global {
   interface Window {
@@ -32,6 +33,7 @@ declare global {
 export function AppLayout() {
   const view = useUIStore((s) => s.view);
   const rightPanel = useUIStore((s) => s.rightPanel);
+  const activeModal = useUIStore((s) => s.activeModal);
   const activeServer = useServerStore((s) => s.activeServer);
   const activeChannel = useServerStore((s) => s.activeChannel);
   const voiceChannelId = useVoiceStore((s) => s.channelId);
@@ -175,6 +177,9 @@ export function AppLayout() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      {activeModal === 'createServer' && <CreateServerModal />}
     </div>
   );
 }
