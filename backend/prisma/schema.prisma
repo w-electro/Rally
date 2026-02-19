@@ -1,0 +1,769 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  username      String   @unique
+  displayName   String
+  passwordHash  String
+  avatarUrl     String?
+  bannerUrl     String?
+  bio           String?
+  status        UserStatus @default(OFFLINE)
+  customStatus  String?
+  currentGame   String?
+  isStreaming    Boolean  @default(false)
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Gaming profile
+  gamingStats   Json?    // { gamesPlayed: [...], achievements: [...], hours: {} }
+  linkedAccounts Json?   // { steam: "...", epic: "...", riot: "..." }
+
+  // Privacy
+  dmPrivacy      DmPrivacy @default(FRIENDS)
+  profilePrivacy ProfilePrivacy @default(PUBLIC)
+
+  // Relations
+  servers         ServerMember[]
+  ownedServers    Server[]          @relation("ServerOwner")
+  messages        Message[]
+  directMessages  DirectMessage[]    @relation("DMSender")
+  receivedDMs     DirectMessage[]    @relation("DMReceiver")
+  dmConversationMembers DmConversationMember[]
+  feedPosts       FeedPost[]
+  feedLikes       FeedLike[]
+  feedComments    FeedComment[]
+  stories         Story[]
+  storyViews      StoryView[]
+  pulsePosts      PulsePost[]
+  pulseLikes      PulseLike[]
+  pulseReposts    PulseRepost[]
+  channelPoints   ChannelPointBalance[]
+  pointTransactions PointTransaction[]
+  streamSessions  StreamSession[]
+  rewardRedemptions RewardRedemption[]
+  products        Product[]         @relation("ProductSeller")
+  purchases       Purchase[]
+  subscriptions   Subscription[]    @relation("Subscriber")
+  creatorSubs     Subscription[]    @relation("Creator")
+  aiInteractions  AiInteraction[]
+  gameSessions    GameSessionMember[]
+  sentFriendReqs  FriendRequest[]   @relation("FriendRequester")
+  recvFriendReqs  FriendRequest[]   @relation("FriendTarget")
+  friends         Friendship[]      @relation("FriendA")
+  friendOf        Friendship[]      @relation("FriendB")
+  refreshTokens   RefreshToken[]
+  notifications   Notification[]
+
+  @@index([username])
+  @@index([email])
+}
+
+enum UserStatus {
+  ONLINE
+  IDLE
+  DND
+  OFFLINE
+  IN_GAME
+  STREAMING
+}
+
+enum DmPrivacy {
+  EVERYONE
+  FRIENDS
+  NONE
+}
+
+enum ProfilePrivacy {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model FriendRequest {
+  id          String   @id @default(uuid())
+  requesterId String
+  targetId    String
+  status      FriendRequestStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+
+  requester   User     @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  target      User     @relation("FriendTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, targetId])
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model Friendship {
+  id        String   @id @default(uuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+
+  userA     User     @relation("FriendA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User     @relation("FriendB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+}
+
+// ==================== SERVER & CHANNELS ====================
+
+model Server {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  iconUrl     String?
+  bannerUrl   String?
+  ownerId     String
+  isPublic    Boolean  @default(false)
+  vanityUrl   String?  @unique
+  features    Json?    // enabled features list
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User     @relation("ServerOwner", fields: [ownerId], references: [id])
+  members     ServerMember[]
+  channels    Channel[]
+  roles       Role[]
+  stories     Story[]
+  products    Product[]
+  streamSessions StreamSession[]
+  rewards     PointReward[]
+  gameSessions GameSession[]
+  aiConfig    AiServerConfig?
+
+  @@index([ownerId])
+  @@index([vanityUrl])
+}
+
+model ServerMember {
+  id        String   @id @default(uuid())
+  userId    String
+  serverId  String
+  nickname  String?
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  roles     MemberRole[]
+
+  @@unique([userId, serverId])
+  @@index([serverId])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  serverId    String
+  name        String
+  color       String   @default("#99AAB5")
+  position    Int      @default(0)
+  permissions BigInt   @default(0)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  members     MemberRole[]
+
+  @@index([serverId])
+}
+
+model MemberRole {
+  id       String @id @default(uuid())
+  memberId String
+  roleId   String
+
+  member   ServerMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role     Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, roleId])
+}
+
+model Channel {
+  id          String      @id @default(uuid())
+  serverId    String
+  name        String
+  topic       String?
+  type        ChannelType
+  position    Int         @default(0)
+  parentId    String?     // for channel categories
+  isNsfw      Boolean     @default(false)
+  slowMode    Int         @default(0) // seconds
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  server      Server      @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  parent      Channel?    @relation("ChannelParent", fields: [parentId], references: [id])
+  children    Channel[]   @relation("ChannelParent")
+  messages    Message[]
+  feedPosts   FeedPost[]
+  streamSessions StreamSession[]
+
+  @@index([serverId])
+  @@index([parentId])
+}
+
+enum ChannelType {
+  TEXT
+  VOICE
+  FEED        // Instagram-style visual feed
+  STAGE       // Stage channel for events
+  CATEGORY
+  ANNOUNCEMENT
+}
+
+// ==================== MESSAGING ====================
+
+model Message {
+  id          String   @id @default(uuid())
+  channelId   String
+  authorId    String
+  content     String
+  type        MessageType @default(DEFAULT)
+  isPinned    Boolean  @default(false)
+  isEdited    Boolean  @default(false)
+  replyToId   String?  // threading
+  repostOf    String?  // repost from another channel
+  embeds      Json?    // rich embeds
+  attachments Json?    // file attachments [{url, name, size, type}]
+  reactions   Json?    // {emoji: [userId]}
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  channel     Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author      User     @relation(fields: [authorId], references: [id])
+  replyTo     Message? @relation("MessageThread", fields: [replyToId], references: [id])
+  replies     Message[] @relation("MessageThread")
+
+  @@index([channelId, createdAt])
+  @@index([authorId])
+  @@index([replyToId])
+}
+
+enum MessageType {
+  DEFAULT
+  SYSTEM
+  JOIN
+  LEAVE
+  PIN
+  BOOST
+}
+
+model DirectMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderId       String
+  receiverId     String
+  content        String
+  isEncrypted    Boolean  @default(false)
+  encryptedData  String?  // E2E encrypted payload
+  attachments    Json?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sender         User     @relation("DMSender", fields: [senderId], references: [id])
+  receiver       User     @relation("DMReceiver", fields: [receiverId], references: [id])
+  conversation   DmConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model DmConversation {
+  id        String   @id @default(uuid())
+  isGroup   Boolean  @default(false)
+  name      String?
+  createdAt DateTime @default(now())
+
+  messages  DirectMessage[]
+  members   DmConversationMember[]
+}
+
+model DmConversationMember {
+  id             String @id @default(uuid())
+  conversationId String
+  userId         String
+
+  conversation   DmConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+// ==================== VISUAL FEED (Instagram-style) ====================
+
+model FeedPost {
+  id          String   @id @default(uuid())
+  channelId   String
+  authorId    String
+  caption     String?
+  mediaUrls   Json     // [{url, type: "image"|"video", thumbnail}]
+  hashtags    String[] // for pulse/discovery
+  likeCount   Int      @default(0)
+  commentCount Int     @default(0)
+  isHighlight Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  channel     Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author      User     @relation(fields: [authorId], references: [id])
+  likes       FeedLike[]
+  comments    FeedComment[]
+
+  @@index([channelId, createdAt])
+  @@index([authorId])
+  @@index([hashtags])
+}
+
+model FeedLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model FeedComment {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  content   String
+  replyToId String?
+  createdAt DateTime @default(now())
+
+  post      FeedPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User        @relation(fields: [authorId], references: [id])
+  replyTo   FeedComment? @relation("CommentThread", fields: [replyToId], references: [id])
+  replies   FeedComment[] @relation("CommentThread")
+
+  @@index([postId, createdAt])
+}
+
+// ==================== STORIES ====================
+
+model Story {
+  id        String    @id @default(uuid())
+  serverId  String
+  authorId  String
+  mediaUrl  String
+  mediaType StoryMediaType
+  caption   String?
+  viewCount Int       @default(0)
+  expiresAt DateTime  // 24hr TTL
+  createdAt DateTime  @default(now())
+
+  server    Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id])
+  views     StoryView[]
+
+  @@index([serverId, createdAt])
+  @@index([expiresAt])
+}
+
+enum StoryMediaType {
+  IMAGE
+  VIDEO
+  TEXT
+}
+
+model StoryView {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  viewedAt  DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+}
+
+// ==================== THE PULSE (Global Discovery) ====================
+
+model PulsePost {
+  id          String   @id @default(uuid())
+  authorId    String
+  content     String
+  mediaUrls   Json?
+  hashtags    String[]
+  serverId    String?  // optional server origin
+  likeCount   Int      @default(0)
+  repostCount Int      @default(0)
+  replyCount  Int      @default(0)
+  viewCount   Int      @default(0)
+  viralScore  Float    @default(0) // algorithmic score
+  replyToId   String?
+  isRepost    Boolean  @default(false)
+  originalId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author      User     @relation(fields: [authorId], references: [id])
+  replyTo     PulsePost? @relation("PulseThread", fields: [replyToId], references: [id])
+  replies     PulsePost[] @relation("PulseThread")
+  likes       PulseLike[]
+  reposts     PulseRepost[]
+
+  @@index([createdAt])
+  @@index([viralScore])
+  @@index([hashtags])
+  @@index([authorId])
+}
+
+model PulseLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      PulsePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model PulseRepost {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      PulsePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model TrendingHashtag {
+  id        String   @id @default(uuid())
+  tag       String   @unique
+  postCount Int      @default(0)
+  score     Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([score])
+}
+
+// ==================== STREAMING & CHANNEL POINTS ====================
+
+model StreamSession {
+  id          String   @id @default(uuid())
+  streamerId  String
+  serverId    String
+  channelId   String
+  title       String?
+  category    String?
+  isLive      Boolean  @default(true)
+  viewerCount Int      @default(0)
+  peakViewers Int      @default(0)
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+
+  streamer    User     @relation(fields: [streamerId], references: [id])
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  channel     Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([streamerId])
+  @@index([isLive])
+}
+
+model ChannelPointBalance {
+  id        String @id @default(uuid())
+  userId    String
+  serverId  String
+  balance   Int    @default(0)
+  totalEarned Int  @default(0)
+  updatedAt DateTime @updatedAt
+
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, serverId])
+  @@index([serverId])
+}
+
+model PointTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  serverId  String
+  amount    Int
+  type      PointTransactionType
+  reason    String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, serverId])
+  @@index([createdAt])
+}
+
+enum PointTransactionType {
+  EARN_WATCH
+  EARN_CHAT
+  EARN_BONUS
+  REDEEM
+  ADMIN_GRANT
+  ADMIN_DEDUCT
+}
+
+model PointReward {
+  id          String   @id @default(uuid())
+  serverId    String
+  title       String
+  description String?
+  cost        Int
+  iconUrl     String?
+  isEnabled   Boolean  @default(true)
+  maxPerStream Int?
+  cooldownSec Int?
+  createdAt   DateTime @default(now())
+
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  redemptions RewardRedemption[]
+
+  @@index([serverId])
+}
+
+model RewardRedemption {
+  id        String   @id @default(uuid())
+  rewardId  String
+  userId    String
+  status    RedemptionStatus @default(PENDING)
+  message   String?
+  createdAt DateTime @default(now())
+
+  reward    PointReward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rewardId])
+  @@index([userId])
+}
+
+enum RedemptionStatus {
+  PENDING
+  FULFILLED
+  REJECTED
+}
+
+// ==================== AI ASSISTANT ====================
+
+model AiServerConfig {
+  id           String  @id @default(uuid())
+  serverId     String  @unique
+  isEnabled    Boolean @default(true)
+  personality  String? // custom AI personality
+  welcomeMsg   Boolean @default(true)
+  autoModerate Boolean @default(false)
+  summarize    Boolean @default(true)
+  answerFaq    Boolean @default(true)
+
+  server       Server  @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model AiInteraction {
+  id        String   @id @default(uuid())
+  userId    String
+  serverId  String?
+  type      AiInteractionType
+  input     String
+  output    String
+  tokensUsed Int     @default(0)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([serverId])
+}
+
+enum AiInteractionType {
+  SUMMARY
+  WELCOME
+  MODERATION
+  FAQ
+  CHANNEL_SUGGEST
+  REPORT
+  GENERAL
+}
+
+// ==================== GAMING INTEGRATION ====================
+
+model GameSession {
+  id          String   @id @default(uuid())
+  serverId    String
+  title       String
+  game        String
+  scheduledAt DateTime
+  maxPlayers  Int?
+  description String?
+  createdAt   DateTime @default(now())
+
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  members     GameSessionMember[]
+
+  @@index([serverId])
+  @@index([scheduledAt])
+}
+
+model GameSessionMember {
+  id        String @id @default(uuid())
+  sessionId String
+  userId    String
+  status    GameSessionStatus @default(INTERESTED)
+
+  session   GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+}
+
+enum GameSessionStatus {
+  INTERESTED
+  CONFIRMED
+  DECLINED
+}
+
+// ==================== COMMERCE ====================
+
+model Product {
+  id          String   @id @default(uuid())
+  serverId    String
+  sellerId    String
+  title       String
+  description String?
+  price       Int      // in cents
+  currency    String   @default("USD")
+  type        ProductType
+  imageUrl    String?
+  digitalUrl  String?  // for digital downloads
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  seller      User     @relation("ProductSeller", fields: [sellerId], references: [id])
+  purchases   Purchase[]
+
+  @@index([serverId])
+  @@index([sellerId])
+}
+
+enum ProductType {
+  DIGITAL_DOWNLOAD
+  ROLE
+  CUSTOM_EMOJI
+  SUBSCRIPTION
+  OTHER
+}
+
+model Purchase {
+  id           String   @id @default(uuid())
+  productId    String
+  buyerId      String
+  amount       Int
+  currency     String
+  status       PurchaseStatus @default(PENDING)
+  stripePaymentId String?
+  createdAt    DateTime @default(now())
+
+  product      Product  @relation(fields: [productId], references: [id])
+  buyer        User     @relation(fields: [buyerId], references: [id])
+
+  @@index([buyerId])
+  @@index([productId])
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+  FAILED
+}
+
+model Subscription {
+  id           String   @id @default(uuid())
+  subscriberId String
+  creatorId    String
+  tierId       String?
+  amount       Int
+  currency     String   @default("USD")
+  status       SubStatus @default(ACTIVE)
+  stripeSubId  String?
+  currentPeriodEnd DateTime?
+  createdAt    DateTime @default(now())
+
+  subscriber   User     @relation("Subscriber", fields: [subscriberId], references: [id])
+  creator      User     @relation("Creator", fields: [creatorId], references: [id])
+
+  @@index([subscriberId])
+  @@index([creatorId])
+}
+
+enum SubStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  data      Json?    // contextual data
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  MESSAGE
+  MENTION
+  FRIEND_REQUEST
+  SERVER_INVITE
+  STREAM_LIVE
+  RALLY_CALL
+  POINT_REWARD
+  PURCHASE
+  SYSTEM
+}
