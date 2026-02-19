@@ -157,6 +157,16 @@ router.post(
         },
       });
 
+      // 3b. Create the Voice Chat voice channel
+      await tx.channel.create({
+        data: {
+          serverId: newServer.id,
+          name: 'Voice Chat',
+          type: 'VOICE',
+          position: 1,
+        },
+      });
+
       // 4. Add the owner as a member
       await tx.serverMember.create({
         data: {
