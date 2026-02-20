@@ -30,13 +30,13 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Voice & Audio state
+  // Voice & Audio state (persisted to localStorage)
   const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
   const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedInputDevice, setSelectedInputDevice] = useState<string>('default');
-  const [selectedOutputDevice, setSelectedOutputDevice] = useState<string>('default');
-  const [inputVolume, setInputVolume] = useState(80);
-  const [outputVolume, setOutputVolume] = useState(100);
+  const [selectedInputDevice, setSelectedInputDevice] = useState<string>(() => localStorage.getItem('rally-audio-input') || 'default');
+  const [selectedOutputDevice, setSelectedOutputDevice] = useState<string>(() => localStorage.getItem('rally-audio-output') || 'default');
+  const [inputVolume, setInputVolume] = useState(() => Number(localStorage.getItem('rally-audio-input-vol')) || 80);
+  const [outputVolume, setOutputVolume] = useState(() => Number(localStorage.getItem('rally-audio-output-vol')) || 100);
 
   // Enumerate audio devices when Voice & Audio tab is active
   useEffect(() => {
@@ -231,7 +231,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
               </label>
               <select
                 value={selectedInputDevice}
-                onChange={(e) => setSelectedInputDevice(e.target.value)}
+                onChange={(e) => { setSelectedInputDevice(e.target.value); localStorage.setItem('rally-audio-input', e.target.value); }}
                 className="input-rally rounded w-full bg-[#0D1117] text-rally-text cursor-pointer"
               >
                 <option value="default">System Default</option>
@@ -259,7 +259,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 min="0"
                 max="100"
                 value={inputVolume}
-                onChange={(e) => setInputVolume(Number(e.target.value))}
+                onChange={(e) => { setInputVolume(Number(e.target.value)); localStorage.setItem('rally-audio-input-vol', e.target.value); }}
                 className="w-full accent-rally-blue"
               />
             </div>
@@ -274,7 +274,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
               </label>
               <select
                 value={selectedOutputDevice}
-                onChange={(e) => setSelectedOutputDevice(e.target.value)}
+                onChange={(e) => { setSelectedOutputDevice(e.target.value); localStorage.setItem('rally-audio-output', e.target.value); }}
                 className="input-rally rounded w-full bg-[#0D1117] text-rally-text cursor-pointer"
               >
                 <option value="default">System Default</option>
@@ -302,7 +302,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 min="0"
                 max="100"
                 value={outputVolume}
-                onChange={(e) => setOutputVolume(Number(e.target.value))}
+                onChange={(e) => { setOutputVolume(Number(e.target.value)); localStorage.setItem('rally-audio-output-vol', e.target.value); }}
                 className="w-full accent-rally-blue"
               />
             </div>

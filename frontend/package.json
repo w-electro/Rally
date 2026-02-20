@@ -39,6 +39,7 @@
     "electron": "^33.3.0",
     "electron-builder": "^25.1.0",
     "postcss": "^8.4.49",
+    "rcedit": "^4.0.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
@@ -47,6 +48,7 @@
   "build": {
     "appId": "com.rally.desktop",
     "productName": "Rally",
+    "afterPack": "./scripts/afterPack.cjs",
     "directories": {
       "output": "release"
     },
@@ -61,7 +63,9 @@
       }
     ],
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "public/icon.ico",
       "signAndEditExecutable": false,
       "signDlls": false
@@ -76,7 +80,9 @@
     },
     "protocols": {
       "name": "Rally",
-      "schemes": ["rally"]
+      "schemes": [
+        "rally"
+      ]
     },
     "publish": {
       "provider": "github",
