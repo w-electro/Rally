@@ -80,7 +80,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "OWNER",
+      "owner": "w-electro",
       "repo": "Rally",
       "releaseType": "release"
     }
