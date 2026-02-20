@@ -7,7 +7,7 @@ import {
   ChevronDown,
   Loader2,
 } from 'lucide-react';
-import { MessageItem } from '@/components/chat/MessageItem';
+import { BubbleMessage } from '@/components/chat/BubbleMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ThreadView } from '@/components/chat/ThreadView';
 import { useMessageStore } from '@/stores/messageStore';
@@ -353,7 +353,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                   </div>
                 )}
 
-                <MessageItem
+                <BubbleMessage
                   message={msg}
                   isCompact={isCompact}
                   onReply={(m) => setReplyingTo(m)}
