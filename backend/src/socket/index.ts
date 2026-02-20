@@ -148,6 +148,7 @@ export function createSocketServer(httpServer: HttpServer): Server {
           }
         }
       } catch (err) {
+        console.error('message:send error:', err);
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
