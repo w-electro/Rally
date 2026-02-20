@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Gaming integration
   detectGames: () => ipcRenderer.invoke('gaming:detect'),
 
+  // Screen sharing
+  getScreenSources: () => ipcRenderer.invoke('screen:getSources'),
+
   // Platform info
   platform: process.platform,
 });

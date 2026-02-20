@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, desktopCapturer } = require('electron');
 const path = require('path');
 
 let mainWindow = null;
@@ -126,6 +126,20 @@ ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false);
 ipcMain.handle('gaming:detect', async () => {
   // In production, scan running processes for known games
   return { detectedGames: [] };
+});
+
+// Screen capture source picker
+ipcMain.handle('screen:getSources', async () => {
+  const sources = await desktopCapturer.getSources({
+    types: ['screen', 'window'],
+    thumbnailSize: { width: 320, height: 180 },
+  });
+  return sources.map((s) => ({
+    id: s.id,
+    name: s.name,
+    thumbnail: s.thumbnail.toDataURL(),
+    appIcon: s.appIcon ? s.appIcon.toDataURL() : null,
+  }));
 });
 
 // App lifecycle
