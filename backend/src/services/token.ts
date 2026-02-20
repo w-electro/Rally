@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 
 export async function createRefreshToken(userId: string): Promise<string> {
   const token = uuid();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
   await prisma.refreshToken.create({
     data: { token, userId, expiresAt },

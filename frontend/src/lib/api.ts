@@ -84,6 +84,19 @@ class ApiClient {
       this.token = data.accessToken;
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
+
+      // Sync the new refresh token to saved accounts
+      try {
+        const raw = localStorage.getItem('rally-saved-accounts');
+        if (raw) {
+          const accounts = JSON.parse(raw);
+          const updated = accounts.map((a: any) =>
+            a.refreshToken === refreshToken ? { ...a, refreshToken: data.refreshToken, lastUsed: Date.now() } : a
+          );
+          localStorage.setItem('rally-saved-accounts', JSON.stringify(updated));
+        }
+      } catch {}
+
       return true;
     } catch {
       return false;

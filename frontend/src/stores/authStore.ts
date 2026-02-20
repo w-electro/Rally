@@ -66,6 +66,17 @@ export function removeSavedAccount(userId: string) {
   localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(accounts));
 }
 
+/** After a token rotation, update any saved account that had the old token */
+function syncSavedAccountToken(oldToken: string, newToken: string) {
+  try {
+    const accounts = getSavedAccounts();
+    const updated = accounts.map((a) =>
+      a.refreshToken === oldToken ? { ...a, refreshToken: newToken, lastUsed: Date.now() } : a
+    );
+    localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
 // ---------------------------------------------------------------------------
 // Auth store
 // ---------------------------------------------------------------------------
@@ -197,6 +208,8 @@ export const useAuthStore = create<AuthState>()(
                 api.setToken(data.accessToken);
                 localStorage.setItem('accessToken', data.accessToken);
                 localStorage.setItem('refreshToken', data.refreshToken);
+                // Sync new refresh token to saved accounts
+                syncSavedAccountToken(refreshToken, data.refreshToken);
                 const meData = await api.getMe();
                 const user = (meData as any).user ?? meData;
                 set({ user, isAuthenticated: true, isLoading: false });
