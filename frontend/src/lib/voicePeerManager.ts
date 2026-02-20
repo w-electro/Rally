@@ -9,12 +9,14 @@ const ICE_SERVERS: RTCIceServer[] = [
 interface VoicePeerManagerCallbacks {
   onSpeakingChange: (speaking: boolean) => void;
   onRemoteStream: (userId: string, stream: MediaStream) => void;
+  onScreenStream: (userId: string, stream: MediaStream) => void;
   onPeerDisconnect: (userId: string) => void;
 }
 
 export class VoicePeerManager {
   private peers: Map<string, SimplePeer.Instance> = new Map();
   private localStream: MediaStream | null = null;
+  private screenStream: MediaStream | null = null;
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private vadInterval: ReturnType<typeof setInterval> | null = null;
@@ -24,6 +26,7 @@ export class VoicePeerManager {
 
   private onSpeakingChange: (speaking: boolean) => void;
   private onRemoteStream: (userId: string, stream: MediaStream) => void;
+  private onScreenStream: (userId: string, stream: MediaStream) => void;
   private onPeerDisconnect: (userId: string) => void;
 
   // Bound socket listener references for cleanup
@@ -34,6 +37,7 @@ export class VoicePeerManager {
   constructor(callbacks: VoicePeerManagerCallbacks) {
     this.onSpeakingChange = callbacks.onSpeakingChange;
     this.onRemoteStream = callbacks.onRemoteStream;
+    this.onScreenStream = callbacks.onScreenStream;
     this.onPeerDisconnect = callbacks.onPeerDisconnect;
 
     this.boundHandleOffer = this.handleOffer.bind(this);
@@ -213,7 +217,11 @@ export class VoicePeerManager {
     });
 
     peer.on('stream', (remoteStream: MediaStream) => {
-      this.onRemoteStream(targetUserId, remoteStream);
+      if (remoteStream.getVideoTracks().length > 0) {
+        this.onScreenStream(targetUserId, remoteStream);
+      } else {
+        this.onRemoteStream(targetUserId, remoteStream);
+      }
     });
 
     peer.on('close', () => {
@@ -294,6 +302,80 @@ export class VoicePeerManager {
   }
 
   /**
+   * Start sharing a screen/window. Acquires the desktop capture stream via
+   * Electron's chromeMediaSource and adds the video track to all existing peers.
+   */
+  async startScreenShare(sourceId: string, withAudio: boolean): Promise<MediaStream> {
+    // Get screen capture stream using Electron's chromeMediaSource
+    this.screenStream = await navigator.mediaDevices.getUserMedia({
+      audio: withAudio ? {
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: sourceId,
+        },
+      } as any : false,
+      video: {
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: sourceId,
+        },
+      } as any,
+    });
+
+    // Add video track to all existing peers
+    const videoTrack = this.screenStream.getVideoTracks()[0];
+    if (videoTrack) {
+      for (const [, peer] of this.peers) {
+        try {
+          peer.addTrack(videoTrack, this.screenStream);
+        } catch (e) {
+          console.error('[VoicePeerManager] Failed to add screen track:', e);
+        }
+      }
+
+      // Listen for track ending (user stops from OS)
+      videoTrack.onended = () => {
+        this.stopScreenShare();
+      };
+    }
+
+    return this.screenStream;
+  }
+
+  /**
+   * Stop the current screen share. Removes the video track from all peers
+   * and stops all tracks on the screen stream.
+   */
+  stopScreenShare(): void {
+    if (!this.screenStream) return;
+
+    // Remove video tracks from all peers
+    const videoTrack = this.screenStream.getVideoTracks()[0];
+    if (videoTrack) {
+      for (const [, peer] of this.peers) {
+        try {
+          peer.removeTrack(videoTrack, this.screenStream);
+        } catch (e) {
+          // Peer may not have the track
+        }
+      }
+    }
+
+    // Stop all tracks in the screen stream
+    for (const track of this.screenStream.getTracks()) {
+      track.stop();
+    }
+    this.screenStream = null;
+  }
+
+  /**
+   * Returns whether screen sharing is currently active.
+   */
+  getScreenSharing(): boolean {
+    return this.screenStream !== null;
+  }
+
+  /**
    * Stop the entire voice session: destroy all peers, stop local stream,
    * clean up VAD, and remove socket listeners.
    */
@@ -327,6 +409,14 @@ export class VoicePeerManager {
     }
     this.analyser = null;
     this.isSpeaking = false;
+
+    // Clean up screen share stream
+    if (this.screenStream) {
+      for (const track of this.screenStream.getTracks()) {
+        track.stop();
+      }
+      this.screenStream = null;
+    }
 
     // Remove socket listeners
     this.detachSocketListeners();
