@@ -23,6 +23,7 @@ import { PointsPanel } from '@/components/stream/PointsPanel';
 import { CreateServerModal } from './CreateServerModal';
 import { InviteDialog } from './InviteDialog';
 import { JoinServerDialog } from './JoinServerDialog';
+import { UserProfilePopup } from './UserProfilePopup';
 
 // electronAPI type is declared in ScreenSharePicker.tsx
 
@@ -171,6 +172,7 @@ export function AppLayout() {
       {activeModal === 'createServer' && <CreateServerModal />}
       {activeModal === 'invite' && <InviteDialog />}
       {activeModal === 'joinServer' && <JoinServerDialog />}
+      <UserProfilePopup />
     </div>
   );
 }
