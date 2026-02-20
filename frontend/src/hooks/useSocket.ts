@@ -94,6 +94,15 @@ export function useSocket() {
       updateParticipant(data.userId, { isDeafened: data.isDeafened });
     });
 
+    socket.on('screen:start', (data: { userId: string; username: string }) => {
+      // Remote user started sharing — the actual stream comes via WebRTC
+      // Just update store to show "X is sharing their screen" UI
+    });
+
+    socket.on('screen:stop', (data: { userId: string }) => {
+      useVoiceStore.getState().clearRemoteScreenShare();
+    });
+
     socket.on('disconnect', () => {
       console.log('Socket disconnected');
       // Clean up voice peer manager on disconnect
@@ -188,6 +197,9 @@ export function useSocket() {
       onPeerDisconnect: (userId: string) => {
         useVoiceStore.getState().removeRemoteStream(userId);
       },
+      onScreenStream: (userId: string, stream: MediaStream) => {
+        useVoiceStore.getState().setRemoteScreenShare(userId, stream);
+      },
     });
 
     // Start microphone capture and VAD
@@ -221,6 +233,29 @@ export function useSocket() {
     voiceState.leaveChannel();
   }, []);
 
+  const startScreenShare = useCallback(async (sourceId: string, withAudio: boolean) => {
+    if (!peerManager) return;
+    try {
+      const stream = await peerManager.startScreenShare(sourceId, withAudio);
+      useVoiceStore.getState().startScreenShare(stream);
+      const voiceState = useVoiceStore.getState();
+      socketRef.current?.emit('screen:start', { channelId: voiceState.channelId });
+    } catch (err) {
+      console.error('[useSocket] Failed to start screen share:', err);
+    }
+  }, []);
+
+  const stopScreenShare = useCallback(() => {
+    if (peerManager) {
+      peerManager.stopScreenShare();
+    }
+    useVoiceStore.getState().stopScreenShare();
+    const voiceState = useVoiceStore.getState();
+    if (voiceState.channelId) {
+      socketRef.current?.emit('screen:stop', { channelId: voiceState.channelId });
+    }
+  }, []);
+
   const sendDm = useCallback((conversationId: string, receiverId: string, content: string) => {
     socketRef.current?.emit('dm:send', { conversationId, receiverId, content });
   }, []);
@@ -241,6 +276,8 @@ export function useSocket() {
     leaveChannel,
     joinVoice,
     leaveVoice,
+    startScreenShare,
+    stopScreenShare,
     sendDm,
     updatePresence,
   };

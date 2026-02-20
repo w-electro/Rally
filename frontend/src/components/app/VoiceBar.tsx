@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useVoiceStore } from '@/stores/voiceStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useSocket } from '@/hooks/useSocket';
+import { ScreenSharePicker } from '@/components/voice/ScreenSharePicker';
 import {
   Mic,
   MicOff,
@@ -17,11 +18,11 @@ import { cn, getInitials } from '@/lib/utils';
 const MAX_VISIBLE_AVATARS = 4;
 
 export function VoiceBar() {
-  const { channelId, isMuted, isDeafened, participants, toggleMute, toggleDeafen } =
+  const { channelId, isMuted, isDeafened, isScreenSharing, participants, toggleMute, toggleDeafen } =
     useVoiceStore();
   const { activeServer } = useServerStore();
-  const { leaveVoice } = useSocket();
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const { leaveVoice, startScreenShare, stopScreenShare } = useSocket();
+  const [showScreenPicker, setShowScreenPicker] = useState(false);
 
   if (!channelId) return null;
 
@@ -34,7 +35,11 @@ export function VoiceBar() {
   };
 
   const handleScreenShare = () => {
-    setIsScreenSharing((prev) => !prev);
+    if (isScreenSharing) {
+      stopScreenShare();
+    } else {
+      setShowScreenPicker(true);
+    }
   };
 
   return (
@@ -148,6 +153,16 @@ export function VoiceBar() {
           <PhoneOff className="w-4 h-4" />
         </button>
       </div>
+
+      {showScreenPicker && (
+        <ScreenSharePicker
+          onSelect={(sourceId, withAudio) => {
+            setShowScreenPicker(false);
+            startScreenShare(sourceId, withAudio);
+          }}
+          onCancel={() => setShowScreenPicker(false)}
+        />
+      )}
     </div>
   );
 }

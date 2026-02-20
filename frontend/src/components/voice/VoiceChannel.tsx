@@ -15,6 +15,7 @@ import { useVoiceStore } from '@/stores/voiceStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useSocket } from '@/hooks/useSocket';
 import { cn, getInitials, generateAvatarGradient } from '@/lib/utils';
+import { ScreenSharePicker } from './ScreenSharePicker';
 import type { VoiceParticipant } from '@/lib/types';
 
 type ViewMode = 'grid' | 'spatial';
@@ -33,19 +34,21 @@ export function VoiceChannel() {
     participants,
     spatialPositions,
     remoteStreams,
+    isScreenSharing,
+    screenShareStream,
+    remoteScreenStream,
+    screenShareUserId,
     toggleMute,
     toggleDeafen,
     updateSpatialPosition,
   } = useVoiceStore();
   const user = useAuthStore((s) => s.user);
-  const { leaveVoice } = useSocket();
+  const { leaveVoice, startScreenShare, stopScreenShare } = useSocket();
 
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isCameraOn, setIsCameraOn] = useState(false);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [showScreenPicker, setShowScreenPicker] = useState(false);
   const [dragState, setDragState] = useState<DragState | null>(null);
-
-  const streamingParticipant = participants.find((p) => p.isStreaming);
 
   const handleDisconnect = useCallback(() => {
     leaveVoice();
@@ -56,8 +59,17 @@ export function VoiceChannel() {
   }, []);
 
   const handleToggleScreenShare = useCallback(() => {
-    setIsScreenSharing((prev) => !prev);
-  }, []);
+    if (isScreenSharing) {
+      stopScreenShare();
+    } else {
+      setShowScreenPicker(true);
+    }
+  }, [isScreenSharing, stopScreenShare]);
+
+  const handleScreenShareSelect = useCallback((sourceId: string, withAudio: boolean) => {
+    setShowScreenPicker(false);
+    startScreenShare(sourceId, withAudio);
+  }, [startScreenShare]);
 
   const handleSpatialMouseDown = useCallback(
     (userId: string, e: React.MouseEvent) => {
@@ -147,20 +159,25 @@ export function VoiceChannel() {
       {/* Main content area */}
       <div className="flex-1 overflow-auto p-4">
         {/* Screen share area */}
-        {streamingParticipant && (
+        {(remoteScreenStream || (isScreenSharing && screenShareStream)) && (
           <div className="mb-4 overflow-hidden rounded-lg border border-[#8B00FF]/40 bg-black">
             <div className="flex items-center gap-2 border-b border-rally-border/30 px-3 py-2">
               <Monitor size={14} className="text-[#39FF14]" />
               <span className="text-xs font-medium text-rally-text">
-                {streamingParticipant.displayName} is sharing their screen
+                {remoteScreenStream ? `${screenShareUserId} is sharing` : 'You are sharing your screen'}
               </span>
             </div>
-            <div className="flex aspect-video items-center justify-center bg-rally-dark-bg/80">
-              <div className="text-center">
-                <Monitor size={48} className="mx-auto mb-2 text-rally-text-muted/40" />
-                <p className="text-sm text-rally-text-muted">Screen share active</p>
-              </div>
-            </div>
+            <video
+              ref={(el) => {
+                if (el) {
+                  el.srcObject = remoteScreenStream || screenShareStream;
+                }
+              }}
+              autoPlay
+              playsInline
+              muted={!!screenShareStream}
+              className="w-full"
+            />
           </div>
         )}
 
@@ -283,6 +300,13 @@ export function VoiceChannel() {
           <span className="text-sm font-medium">Disconnect</span>
         </button>
       </div>
+
+      {showScreenPicker && (
+        <ScreenSharePicker
+          onSelect={handleScreenShareSelect}
+          onCancel={() => setShowScreenPicker(false)}
+        />
+      )}
     </div>
   );
 }
