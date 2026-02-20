@@ -22,6 +22,9 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    global: 'globalThis',
+  },
   base: './',
   build: {
     outDir: 'dist',

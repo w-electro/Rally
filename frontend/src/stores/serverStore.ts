@@ -30,7 +30,8 @@ export const useServerStore = create<ServerState>((set, get) => ({
   loadServers: async () => {
     set({ isLoading: true });
     try {
-      const servers = await api.getServers();
+      const data = await api.getServers();
+      const servers = Array.isArray(data) ? data : (data as any)?.servers ?? [];
       set({ servers, isLoading: false });
     } catch {
       set({ isLoading: false });
@@ -84,7 +85,8 @@ export const useServerStore = create<ServerState>((set, get) => ({
 
   loadMembers: async (serverId) => {
     try {
-      const members = await api.getServerMembers(serverId);
+      const data = await api.getServerMembers(serverId);
+      const members = Array.isArray(data) ? data : (data as any)?.members ?? [];
       set({ members });
     } catch {}
   },

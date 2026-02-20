@@ -1,71 +1,168 @@
+import { useState } from 'react';
 import { useVoiceStore } from '@/stores/voiceStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useSocket } from '@/hooks/useSocket';
-import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Signal } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ScreenSharePicker } from '@/components/voice/ScreenSharePicker';
+import {
+  Mic,
+  MicOff,
+  Headphones,
+  HeadphoneOff,
+  PhoneOff,
+  Signal,
+  Monitor,
+  MonitorOff,
+} from 'lucide-react';
+import { cn, getInitials } from '@/lib/utils';
+
+const MAX_VISIBLE_AVATARS = 4;
 
 export function VoiceBar() {
-  const { channelId, isMuted, isDeafened, toggleMute, toggleDeafen, leaveChannel: leaveVoiceStore } = useVoiceStore();
+  const { channelId, isMuted, isDeafened, isScreenSharing, participants, toggleMute, toggleDeafen } =
+    useVoiceStore();
   const { activeServer } = useServerStore();
-  const { leaveVoice } = useSocket();
+  const { leaveVoice, startScreenShare, stopScreenShare } = useSocket();
+  const [showScreenPicker, setShowScreenPicker] = useState(false);
 
   if (!channelId) return null;
 
   const channel = activeServer?.channels?.find((c) => c.id === channelId);
+  const visibleParticipants = participants.slice(0, MAX_VISIBLE_AVATARS);
+  const overflowCount = Math.max(0, participants.length - MAX_VISIBLE_AVATARS);
 
   const handleDisconnect = () => {
-    leaveVoice(channelId);
-    leaveVoiceStore();
+    leaveVoice();
+  };
+
+  const handleScreenShare = () => {
+    if (isScreenSharing) {
+      stopScreenShare();
+    } else {
+      setShowScreenPicker(true);
+    }
   };
 
   return (
-    <div className="bg-[#0D1117] border-t border-rally-border p-3">
-      {/* Connection info */}
-      <div className="flex items-center gap-2 mb-2">
-        <Signal className="w-4 h-4 text-rally-green" />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-rally-green">Voice Connected</p>
-          <p className="text-xs text-rally-text-muted truncate">
-            {channel?.name || 'Voice Channel'} / {activeServer?.name}
-          </p>
+    <div className="h-12 shrink-0 flex items-center justify-between px-4 bg-[#0A0E27] border-t border-white/5">
+      {/* Left: connection info */}
+      <div className="flex items-center gap-3 min-w-0">
+        <Signal className="w-4 h-4 text-rally-green shrink-0" />
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs font-semibold text-rally-green whitespace-nowrap">
+            Voice Connected
+          </span>
+          <span className="text-xs text-white/40 whitespace-nowrap truncate">
+            {channel?.name || 'Voice Channel'}
+            {activeServer?.name ? ` / ${activeServer.name}` : ''}
+          </span>
         </div>
       </div>
 
-      {/* Controls */}
+      {/* Center: participant avatars */}
       <div className="flex items-center gap-1">
+        {visibleParticipants.map((p) => (
+          <div
+            key={p.userId}
+            className={cn(
+              'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border-2 border-[#0A0E27]',
+              p.isSpeaking
+                ? 'ring-2 ring-rally-green ring-offset-1 ring-offset-[#0A0E27]'
+                : ''
+            )}
+            style={
+              p.avatarUrl
+                ? { backgroundImage: `url(${p.avatarUrl})`, backgroundSize: 'cover' }
+                : {
+                    background: 'linear-gradient(135deg, #00D9FF, #8B00FF)',
+                  }
+            }
+            title={p.displayName || p.username}
+          >
+            {!p.avatarUrl && (
+              <span className="text-white">
+                {getInitials(p.displayName || p.username)}
+              </span>
+            )}
+          </div>
+        ))}
+        {overflowCount > 0 && (
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white/60 bg-white/10 shrink-0 border-2 border-[#0A0E27]">
+            +{overflowCount}
+          </div>
+        )}
+      </div>
+
+      {/* Right: controls */}
+      <div className="flex items-center gap-1">
+        {/* Mute */}
         <button
           onClick={toggleMute}
           className={cn(
-            'flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium transition-colors',
+            'w-8 h-8 flex items-center justify-center rounded transition-colors',
             isMuted
-              ? 'bg-rally-magenta/20 text-rally-magenta'
-              : 'bg-white/5 text-rally-text hover:bg-white/10'
+              ? 'bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30'
+              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
           )}
+          title={isMuted ? 'Unmute' : 'Mute'}
         >
-          {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-          {isMuted ? 'Muted' : 'Mute'}
+          {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
 
+        {/* Deafen */}
         <button
           onClick={toggleDeafen}
           className={cn(
-            'flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium transition-colors',
+            'w-8 h-8 flex items-center justify-center rounded transition-colors',
             isDeafened
-              ? 'bg-rally-magenta/20 text-rally-magenta'
-              : 'bg-white/5 text-rally-text hover:bg-white/10'
+              ? 'bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30'
+              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
           )}
+          title={isDeafened ? 'Undeafen' : 'Deafen'}
         >
-          {isDeafened ? <HeadphoneOff className="w-3.5 h-3.5" /> : <Headphones className="w-3.5 h-3.5" />}
-          {isDeafened ? 'Deaf' : 'Deafen'}
+          {isDeafened ? (
+            <HeadphoneOff className="w-4 h-4" />
+          ) : (
+            <Headphones className="w-4 h-4" />
+          )}
         </button>
 
+        {/* Screen Share */}
+        <button
+          onClick={handleScreenShare}
+          className={cn(
+            'w-8 h-8 flex items-center justify-center rounded transition-colors',
+            isScreenSharing
+              ? 'bg-rally-green/20 text-rally-green hover:bg-rally-green/30'
+              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+          )}
+          title={isScreenSharing ? 'Stop Sharing' : 'Share Screen'}
+        >
+          {isScreenSharing ? (
+            <MonitorOff className="w-4 h-4" />
+          ) : (
+            <Monitor className="w-4 h-4" />
+          )}
+        </button>
+
+        {/* Disconnect */}
         <button
           onClick={handleDisconnect}
-          className="flex items-center justify-center p-1.5 rounded bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30 transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30 transition-colors ml-1"
+          title="Disconnect"
         >
-          <PhoneOff className="w-3.5 h-3.5" />
+          <PhoneOff className="w-4 h-4" />
         </button>
       </div>
+
+      {showScreenPicker && (
+        <ScreenSharePicker
+          onSelect={(sourceId, withAudio) => {
+            setShowScreenPicker(false);
+            startScreenShare(sourceId, withAudio);
+          }}
+          onCancel={() => setShowScreenPicker(false)}
+        />
+      )}
     </div>
   );
 }

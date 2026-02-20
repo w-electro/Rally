@@ -1,4 +1,15 @@
-const API_BASE = '/api';
+function getApiBase(): string {
+  // 1. Explicit override from localStorage (dev/testing)
+  const serverUrl = localStorage.getItem('rally-server-url');
+  if (serverUrl) return `${serverUrl.replace(/\/$/, '')}/api`;
+
+  // 2. Build-time env var (production builds)
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) return `${envUrl.replace(/\/$/, '')}/api`;
+
+  // 3. Fallback: same origin via Vite proxy (dev mode)
+  return '/api';
+}
 
 class ApiClient {
   private token: string | null = null;
@@ -10,6 +21,7 @@ class ApiClient {
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
       ...(options.headers as Record<string, string>),
     };
 
@@ -17,7 +29,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${getApiBase()}${path}`, {
       ...options,
       headers,
     });
@@ -27,18 +39,18 @@ class ApiClient {
       const refreshed = await this.refreshToken();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${this.token}`;
-        const retryRes = await fetch(`${API_BASE}${path}`, { ...options, headers });
+        const retryRes = await fetch(`${getApiBase()}${path}`, { ...options, headers });
         if (!retryRes.ok) {
           const err = await retryRes.json().catch(() => ({ error: 'Request failed' }));
           throw new Error(err.error || 'Request failed');
         }
         return retryRes.json();
       }
-      // Refresh failed, clear auth
+      // Refresh failed, clear auth and throw — let the store handle navigation
       this.token = null;
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
+      localStorage.removeItem('rally-auth');
       throw new Error('Session expired');
     }
 
@@ -56,7 +68,7 @@ class ApiClient {
     if (!refreshToken) return false;
 
     try {
-      const res = await fetch(`${API_BASE}/auth/refresh`, {
+      const res = await fetch(`${getApiBase()}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -258,6 +270,22 @@ class ApiClient {
   }
   rallyCall(serverId: string, message: string) {
     return this.request<any>('/gaming/rally', { method: 'POST', body: JSON.stringify({ serverId, message }) });
+  }
+
+  // Invites
+  createInvite(serverId: string, options?: { expiresAt?: string; maxUses?: number }) {
+    return this.request<any>(`/servers/${serverId}/invites`, {
+      method: 'POST',
+      body: JSON.stringify(options ?? {}),
+    });
+  }
+
+  resolveInvite(code: string) {
+    return this.request<any>(`/invites/${code}`);
+  }
+
+  joinByInvite(code: string) {
+    return this.request<any>(`/invites/${code}/join`, { method: 'POST' });
   }
 }
 

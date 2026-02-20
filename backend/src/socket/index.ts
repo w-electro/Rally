@@ -21,7 +21,7 @@ const voiceChannels = new Map<string, Set<string>>();
 export function createSocketServer(httpServer: HttpServer): Server {
   const io = new Server(httpServer, {
     cors: {
-      origin: config.corsOrigin,
+      origin: config.nodeEnv === 'production' ? config.corsOrigin : true,
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -148,6 +148,7 @@ export function createSocketServer(httpServer: HttpServer): Server {
           }
         }
       } catch (err) {
+        console.error('message:send error:', err);
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
@@ -288,16 +289,23 @@ export function createSocketServer(httpServer: HttpServer): Server {
         voiceChannels.set(channelId, new Set());
       }
 
+      // Get existing participants BEFORE adding new user
+      const existingParticipants = Array.from(voiceChannels.get(channelId)!);
+
       voiceChannels.get(channelId)!.add(userId);
       socket.join(`voice:${channelId}`);
 
-      const participants = Array.from(voiceChannels.get(channelId)!);
+      // Tell the NEW user about all existing participants
+      socket.emit('voice:participants', {
+        channelId,
+        participants: existingParticipants,
+      });
 
-      io.to(`voice:${channelId}`).emit('voice:user_joined', {
+      // Tell EXISTING users about the new user
+      socket.to(`voice:${channelId}`).emit('voice:user_joined', {
         channelId,
         userId,
         username,
-        participants,
       });
 
       // Update presence
@@ -338,6 +346,53 @@ export function createSocketServer(httpServer: HttpServer): Server {
       io.to(`voice:${data.channelId}`).emit('voice:deafen_changed', {
         userId,
         isDeafened: data.isDeafened,
+      });
+    });
+
+    // ==================== WEBRTC SIGNALING ====================
+
+    socket.on('webrtc:offer', (data: { targetUserId: string; offer: any }) => {
+      const targetSocketId = findSocketByUserId(data.targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('webrtc:offer', {
+          fromUserId: userId,
+          offer: data.offer,
+        });
+      }
+    });
+
+    socket.on('webrtc:answer', (data: { targetUserId: string; answer: any }) => {
+      const targetSocketId = findSocketByUserId(data.targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('webrtc:answer', {
+          fromUserId: userId,
+          answer: data.answer,
+        });
+      }
+    });
+
+    socket.on('webrtc:ice_candidate', (data: { targetUserId: string; candidate: any }) => {
+      const targetSocketId = findSocketByUserId(data.targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('webrtc:ice_candidate', {
+          fromUserId: userId,
+          candidate: data.candidate,
+        });
+      }
+    });
+
+    // ==================== SCREEN SHARING ====================
+
+    socket.on('screen:start', (data: { channelId: string }) => {
+      socket.to(`voice:${data.channelId}`).emit('screen:start', {
+        userId,
+        username,
+      });
+    });
+
+    socket.on('screen:stop', (data: { channelId: string }) => {
+      socket.to(`voice:${data.channelId}`).emit('screen:stop', {
+        userId,
       });
     });
 

@@ -10,7 +10,19 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const isPackaged = window.location.protocol === 'file:';
+  const [showAdvanced, setShowAdvanced] = useState(isPackaged);
+  const [serverUrl, setServerUrl] = useState(localStorage.getItem('rally-server-url') || '');
   const { register, isLoading, error, clearError } = useAuthStore();
+
+  const handleServerUrlChange = (url: string) => {
+    setServerUrl(url);
+    if (url.trim()) {
+      localStorage.setItem('rally-server-url', url.trim());
+    } else {
+      localStorage.removeItem('rally-server-url');
+    }
+  };
   const navigate = useNavigate();
 
   const passwordStrength = (() => {
@@ -43,7 +55,7 @@ export function RegisterPage() {
     <div className="min-h-screen bg-black bg-grid flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/icon.png" alt="Rally" className="w-16 h-16 mx-auto" />
+          <img src="./icon.png" alt="Rally" className="w-16 h-16 mx-auto" />
           <h1 className="mt-4 font-display text-3xl font-bold text-rally-blue tracking-wider">CREATE ACCOUNT</h1>
           <p className="mt-1 text-rally-text-muted text-sm">Join the next generation of gaming</p>
         </div>
@@ -98,6 +110,47 @@ export function RegisterPage() {
             <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="input-rally rounded" placeholder="Confirm password" />
             {confirmPassword && password !== confirmPassword && (
               <p className="text-xs text-rally-magenta mt-1">Passwords don't match</p>
+            )}
+          </div>
+
+          {/* Advanced / Server Settings */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((s) => !s)}
+              className="font-body text-xs text-rally-text-muted hover:text-rally-blue transition-colors flex items-center gap-1"
+            >
+              <svg
+                className={`w-3 h-3 transition-transform ${showAdvanced ? 'rotate-90' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              Server Settings
+            </button>
+            {showAdvanced && (
+              <div className="mt-2">
+                <label
+                  htmlFor="serverUrl"
+                  className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1"
+                >
+                  Server URL
+                </label>
+                <input
+                  id="serverUrl"
+                  type="text"
+                  value={serverUrl}
+                  onChange={(e) => handleServerUrlChange(e.target.value)}
+                  placeholder="http://localhost:3001"
+                  className="input-rally rounded"
+                />
+                <p className="text-xs text-rally-text-muted mt-1 font-body">
+                  Leave empty for local server. Enter the URL of your Rally server for LAN/internet play.
+                </p>
+              </div>
             )}
           </div>
 

@@ -41,7 +41,8 @@ export function ThreadView({
 
   // Derive replies from the store -- messages in the same channel that reply to parentMessage
   useEffect(() => {
-    const channelMessages = allMessages[parentMessage.channelId] ?? [];
+    const raw = allMessages[parentMessage.channelId];
+    const channelMessages = Array.isArray(raw) ? raw : [];
     const threadReplies = channelMessages.filter(
       (m) => m.replyToId === parentMessage.id,
     );
@@ -99,14 +100,14 @@ export function ThreadView({
       <div className="border-b border-white/10 px-4 py-3">
         <div className="flex items-start gap-2">
           <Avatar
-            src={parentMessage.author.avatarUrl}
-            name={parentMessage.author.displayName}
+            src={parentMessage.author?.avatarUrl}
+            name={parentMessage.author?.displayName ?? 'Unknown'}
             size="sm"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2">
               <span className="font-display text-xs font-semibold text-rally-blue">
-                {parentMessage.author.displayName}
+                {parentMessage.author?.displayName ?? 'Unknown'}
               </span>
               <span className="text-[10px] text-gray-600">
                 {formatTime(parentMessage.createdAt)}

@@ -6,7 +6,6 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import { errorHandler } from './utils/errors';
 import { createSocketServer } from './socket';
-import { setupWebRTCSignaling } from './webrtc/signaling';
 
 // Route imports
 import authRoutes from './routes/auth';
@@ -20,24 +19,30 @@ import streamRoutes from './routes/stream';
 import aiRoutes from './routes/ai';
 import commerceRoutes from './routes/commerce';
 import gamingRoutes from './routes/gaming';
+import inviteRoutes from './routes/invites';
 
 const app = express();
 const httpServer = createServer(app);
 
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: config.corsOrigin, credentials: true }));
+app.use(cors({
+  origin: config.nodeEnv === 'production' ? config.corsOrigin : true,
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
+// Rate limiting (disabled in dev to avoid blocking during development loops)
+if (config.nodeEnv === 'production') {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api/', limiter);
+}
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -56,16 +61,16 @@ app.use('/api/stream', streamRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/commerce', commerceRoutes);
 app.use('/api/gaming', gamingRoutes);
+app.use('/api', inviteRoutes);
 
 // Error handler
 app.use(errorHandler);
 
-// WebSocket server
+// WebSocket server (WebRTC signaling is handled inside the socket handler)
 const io = createSocketServer(httpServer);
-setupWebRTCSignaling(io);
 
 // Start server
-httpServer.listen(config.port, () => {
+httpServer.listen(config.port, '0.0.0.0', () => {
   console.log(`
   ╔═══════════════════════════════════════╗
   ║          RALLY SERVER v1.0.0          ║

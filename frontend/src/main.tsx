@@ -1,3 +1,14 @@
+// Polyfill Node.js globals for libraries like simple-peer that expect a Node environment
+if (typeof globalThis.global === 'undefined') {
+  (globalThis as any).global = globalThis;
+}
+if (typeof globalThis.process === 'undefined') {
+  (globalThis as any).process = { env: {} };
+}
+if (typeof globalThis.Buffer === 'undefined') {
+  (globalThis as any).Buffer = { isBuffer: () => false };
+}
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -15,7 +26,5 @@ window.addEventListener('load', () => {
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 );

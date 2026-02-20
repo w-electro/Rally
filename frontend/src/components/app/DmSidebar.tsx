@@ -5,46 +5,59 @@ import {
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
+import { useSocket } from '@/hooks/useSocket';
 import api from '@/lib/api';
 import { cn, getInitials, getStatusColor, formatDate } from '@/lib/utils';
 import type { DmConversation } from '@/lib/types';
 
 export function DmSidebar() {
   const user = useAuthStore((s) => s.user);
+  const activeConversationId = useUIStore((s) => s.activeDmConversationId);
+  const setActiveDmConversation = useUIStore((s) => s.setActiveDmConversation);
+  const { socket } = useSocket();
   const [conversations, setConversations] = useState<DmConversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   useEffect(() => {
-    api.getDmConversations().then(setConversations).catch(() => {});
+    api.getDmConversations()
+      .then((data: any) => {
+        const list = Array.isArray(data) ? data : data?.conversations ?? [];
+        setConversations(list);
+      })
+      .catch(() => {});
   }, []);
+
+  // Backend returns members as user objects directly (not wrapped in { user: ... })
+  const getMember = (m: any) => (m?.user ? m.user : m);
 
   const filteredConversations = conversations.filter((conv) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
-    // Search by conversation name or member names
     if (conv.name && conv.name.toLowerCase().includes(query)) return true;
-    return conv.members.some(
-      (m) =>
-        m.user.id !== user?.id &&
-        (m.user.displayName.toLowerCase().includes(query) ||
-          m.user.username.toLowerCase().includes(query))
-    );
+    return conv.members.some((m: any) => {
+      const member = getMember(m);
+      return (
+        member.id !== user?.id &&
+        (member.displayName?.toLowerCase().includes(query) ||
+          member.username?.toLowerCase().includes(query))
+      );
+    });
   });
 
   const getConversationName = (conv: DmConversation): string => {
     if (conv.name) return conv.name;
     const otherMembers = conv.members
-      .filter((m) => m.user.id !== user?.id)
-      .map((m) => m.user.displayName);
+      .filter((m: any) => getMember(m).id !== user?.id)
+      .map((m: any) => getMember(m).displayName);
     return otherMembers.join(', ') || 'Unknown';
   };
 
   const getConversationAvatar = (conv: DmConversation) => {
     if (conv.isGroup) return null;
-    const other = conv.members.find((m) => m.user.id !== user?.id);
-    return other?.user;
+    const other = conv.members.find((m: any) => getMember(m).id !== user?.id);
+    return other ? getMember(other) : null;
   };
 
   return (
@@ -114,7 +127,10 @@ export function DmSidebar() {
           return (
             <button
               key={conv.id}
-              onClick={() => setActiveConversationId(conv.id)}
+              onClick={() => {
+                setActiveDmConversation(conv.id);
+                socket?.emit('dm:join', conv.id);
+              }}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors group',
                 isActive

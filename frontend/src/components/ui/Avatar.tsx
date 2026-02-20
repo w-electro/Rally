@@ -33,7 +33,8 @@ export function Avatar({
   onClick,
   className,
 }: AvatarProps) {
-  const initials = getInitials(name);
+  const safeName = name || '?';
+  const initials = getInitials(safeName);
 
   return (
     <div
@@ -65,14 +66,14 @@ export function Avatar({
         {src ? (
           <img
             src={src}
-            alt={name}
+            alt={safeName}
             className="h-full w-full object-cover"
             draggable={false}
           />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center text-white"
-            style={{ background: generateAvatarGradient(name) }}
+            style={{ background: generateAvatarGradient(safeName) }}
           >
             {initials}
           </div>

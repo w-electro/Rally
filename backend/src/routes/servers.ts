@@ -26,6 +26,17 @@ function asyncHandler(fn: AsyncHandler) {
   };
 }
 
+/** Serialize a role object, converting BigInt permissions to a string. */
+function serializeRole<T extends { permissions: bigint }>(role: T): Omit<T, 'permissions'> & { permissions: string } {
+  return { ...role, permissions: role.permissions.toString() };
+}
+
+/** Serialize a server object that includes roles, converting BigInt permissions to strings. */
+function serializeServerWithRoles(server: any): any {
+  if (!server || !server.roles) return server;
+  return { ...server, roles: server.roles.map(serializeRole) };
+}
+
 /** Resolve the authenticated member's computed permissions for a server. */
 async function getMemberPermissions(userId: string, serverId: string): Promise<bigint> {
   const server = await prisma.server.findUnique({ where: { id: serverId } });
@@ -146,6 +157,16 @@ router.post(
         },
       });
 
+      // 3b. Create the Voice Chat voice channel
+      await tx.channel.create({
+        data: {
+          serverId: newServer.id,
+          name: 'Voice Chat',
+          type: 'VOICE',
+          position: 1,
+        },
+      });
+
       // 4. Add the owner as a member
       await tx.serverMember.create({
         data: {
@@ -166,7 +187,7 @@ router.post(
       },
     });
 
-    res.status(201).json(fullServer);
+    res.status(201).json(fullServer ? serializeServerWithRoles(fullServer) : fullServer);
   }),
 );
 
@@ -234,7 +255,7 @@ router.get(
 
     if (!server) throw new NotFoundError('Server not found');
 
-    res.json(server);
+    res.json(serializeServerWithRoles(server));
   }),
 );
 
@@ -578,6 +599,48 @@ router.delete(
     await prisma.channel.delete({ where: { id: channelId } });
 
     res.json({ message: 'Channel deleted' });
+  }),
+);
+
+// ===========================================================================
+// GET /channels/:channelId/messages - Get channel messages (paginated)
+// ===========================================================================
+
+router.get(
+  '/channels/:channelId/messages',
+  authenticate,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { channelId } = req.params;
+    const cursor = req.query.cursor as string | undefined;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+
+    const channel = await prisma.channel.findUnique({ where: { id: channelId } });
+    if (!channel) throw new NotFoundError('Channel not found');
+
+    const messages = await prisma.message.findMany({
+      where: { channelId },
+      take: limit,
+      ...(cursor && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: { id: true, username: true, displayName: true, avatarUrl: true },
+        },
+        replyTo: {
+          select: {
+            id: true,
+            content: true,
+            author: { select: { id: true, username: true, displayName: true } },
+          },
+        },
+      },
+    });
+
+    // Return in chronological order (oldest first)
+    res.json(messages.reverse());
   }),
 );
 
