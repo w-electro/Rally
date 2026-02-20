@@ -1,11 +1,22 @@
-import { Plus, UserPlus, Users, MessageSquare, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, UserPlus, Users, MessageSquare, Zap, Pin } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useUIStore } from '@/stores/uiStore';
 import { cn, getInitials } from '@/lib/utils';
+import { useServerPrefs } from '@/hooks/useServerPrefs';
+import { ServerContextMenu } from '@/components/app/ServerContextMenu';
 import type { Server } from '@/lib/types';
 
-function ServerCard({ server }: { server: Server }) {
+function ServerCard({
+  server,
+  isPinned,
+  onContextMenu,
+}: {
+  server: Server;
+  isPinned: boolean;
+  onContextMenu: (e: React.MouseEvent) => void;
+}) {
   const { setActiveServer } = useServerStore();
   const { setView } = useUIStore();
 
@@ -17,12 +28,20 @@ function ServerCard({ server }: { server: Server }) {
   return (
     <button
       onClick={handleClick}
+      onContextMenu={onContextMenu}
       className={cn(
-        'group flex flex-col items-center gap-3 rounded-xl border border-white/5 bg-[#0D1117] p-4',
+        'group relative flex flex-col items-center gap-3 rounded-xl border border-white/5 bg-[#0D1117] p-4',
         'transition-all duration-200 hover:border-rally-cyan/30 hover:shadow-[0_0_20px_rgba(0,217,255,0.08)]',
         'cursor-pointer text-left'
       )}
     >
+      {/* Pin Badge */}
+      {isPinned && (
+        <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#00D9FF]/20">
+          <Pin className="h-3 w-3 text-[#00D9FF]" />
+        </div>
+      )}
+
       {/* Server Icon */}
       {server.iconUrl ? (
         <img
@@ -61,6 +80,8 @@ export function Dashboard() {
   const { user } = useAuthStore();
   const { servers } = useServerStore();
   const { openModal } = useUIStore();
+  const { sortServers, togglePin, toggleHide, isPinned } = useServerPrefs();
+  const [contextMenu, setContextMenu] = useState<{ serverId: string; x: number; y: number } | null>(null);
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#080B18] p-6">
@@ -110,8 +131,16 @@ export function Dashboard() {
             Your Servers
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {servers.map((server) => (
-              <ServerCard key={server.id} server={server} />
+            {sortServers(servers).map((server) => (
+              <ServerCard
+                key={server.id}
+                server={server}
+                isPinned={isPinned(server.id)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ serverId: server.id, x: e.clientX, y: e.clientY });
+                }}
+              />
             ))}
           </div>
         </>
@@ -153,6 +182,17 @@ export function Dashboard() {
             </button>
           </div>
         </div>
+      )}
+
+      {contextMenu && (
+        <ServerContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          isPinned={isPinned(contextMenu.serverId)}
+          onPin={() => togglePin(contextMenu.serverId)}
+          onHide={() => toggleHide(contextMenu.serverId)}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );
