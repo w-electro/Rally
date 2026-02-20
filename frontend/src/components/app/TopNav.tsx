@@ -8,6 +8,9 @@ import {
   ChevronRight,
   MoreHorizontal,
   Eye,
+  Minus,
+  Square,
+  X,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
@@ -195,10 +198,16 @@ export function TopNav() {
   const isHomeActive = view === 'servers' && !activeServer;
   const isDmActive = view === 'dms';
 
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+
   return (
-    <div className="h-11 bg-[#0A0E27] border-b border-white/5 flex items-center select-none">
+    <div
+      className="h-11 bg-[#0A0E27] border-b border-white/5 flex items-center select-none shrink-0"
+      style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+    >
       {/* Left: Home button */}
       <button
+        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         onClick={handleHomeClick}
         className={cn(
           'flex items-center gap-2 px-4 h-full shrink-0 transition-colors duration-150',
@@ -215,7 +224,7 @@ export function TopNav() {
       <div className="w-px h-5 bg-white/10 shrink-0" />
 
       {/* Server tabs area */}
-      <div className="flex-1 flex items-center h-full min-w-0 relative">
+      <div className="flex-1 flex items-center h-full min-w-0 relative" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         {/* Left scroll arrow */}
         {canScrollLeft && (
           <button
@@ -294,7 +303,7 @@ export function TopNav() {
       )}
 
       {/* Right actions */}
-      <div className="flex items-center h-full shrink-0">
+      <div className="flex items-center h-full shrink-0" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         {/* Create Server */}
         <button
           onClick={() => openModal('createServer')}
@@ -338,6 +347,34 @@ export function TopNav() {
           <Compass className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Window Controls */}
+      {isElectron && (
+        <div className="flex items-center h-full shrink-0" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <div className="w-px h-5 bg-white/10 shrink-0" />
+          <button
+            onClick={() => window.electronAPI?.minimize()}
+            className="w-10 h-full flex items-center justify-center hover:bg-white/10 transition-colors"
+            aria-label="Minimize"
+          >
+            <Minus className="w-3.5 h-3.5 text-white/50" />
+          </button>
+          <button
+            onClick={() => window.electronAPI?.maximize()}
+            className="w-10 h-full flex items-center justify-center hover:bg-white/10 transition-colors"
+            aria-label="Maximize"
+          >
+            <Square className="w-3 h-3 text-white/50" />
+          </button>
+          <button
+            onClick={() => window.electronAPI?.close()}
+            className="w-10 h-full flex items-center justify-center hover:bg-red-500/80 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-3.5 h-3.5 text-white/50" />
+          </button>
+        </div>
+      )}
 
       {/* Context menu */}
       {contextMenu && (

@@ -95,12 +95,32 @@ export function VoiceChannel() {
     [startScreenShare],
   );
 
-  if (!channelId) {
+  const { joinVoice } = useSocket();
+
+  // Show join screen when viewing a voice channel but not connected
+  if (!channelId || channelId !== activeChannel?.id) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-rally-text-muted text-sm">
-          Not connected to a voice channel.
-        </p>
+      <div className="flex h-full flex-col items-center justify-center bg-rally-dark-bg gap-6">
+        <div className="w-20 h-20 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
+          <Headphones size={36} className="text-[#00D9FF]" />
+        </div>
+        <div className="text-center">
+          <h2 className="font-display text-xl font-bold text-white tracking-wider uppercase">
+            {channelName}
+          </h2>
+          <p className="text-rally-text-muted text-sm mt-1">
+            {participants.length > 0
+              ? `${participants.length} ${participants.length === 1 ? 'person' : 'people'} connected`
+              : 'No one is here yet'}
+          </p>
+        </div>
+        <button
+          onClick={() => activeChannel && joinVoice(activeChannel.id)}
+          className="flex items-center gap-2 rounded-lg bg-[#39FF14]/20 px-6 py-3 text-[#39FF14] font-semibold transition-colors hover:bg-[#39FF14]/30"
+        >
+          <Mic size={18} />
+          <span>Join Voice</span>
+        </button>
       </div>
     );
   }

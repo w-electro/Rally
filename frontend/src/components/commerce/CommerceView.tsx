@@ -9,7 +9,7 @@ import { Modal } from '../ui/Modal';
 const PRODUCT_TYPES = [
   { id: 'ALL', label: 'All', icon: Package },
   { id: 'DIGITAL_DOWNLOAD', label: 'Digital', icon: Package },
-  { id: 'ROLE', label: 'Roles', icon: Crown },
+  { id: 'ROLE', label: 'Ranks', icon: Crown },
   { id: 'CUSTOM_EMOJI', label: 'Emojis', icon: Smile },
   { id: 'SUBSCRIPTION', label: 'Subs', icon: Tag },
 ];

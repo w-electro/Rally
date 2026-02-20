@@ -69,13 +69,8 @@ export function ChannelBar() {
   }, []);
 
   const handleChannelClick = useCallback((channel: Channel) => {
-    if (channel.type === 'VOICE') {
-      if (voiceChannelId !== channel.id) {
-        joinVoice(channel.id);
-      }
-    }
     setActiveChannel(channel);
-  }, [voiceChannelId, joinVoice, setActiveChannel]);
+  }, [setActiveChannel]);
 
   const handleVoiceHoverEnter = useCallback((channelId: string) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);

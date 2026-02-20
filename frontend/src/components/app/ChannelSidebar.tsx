@@ -268,20 +268,8 @@ export function ChannelSidebar() {
   const [showServerMenu, setShowServerMenu] = useState(false);
 
   const handleChannelClick = useCallback((channel: Channel) => {
-    if (channel.type === 'VOICE') {
-      // If already in this voice channel, just set it as active view (no-op on voice)
-      if (voiceChannelId === channel.id) {
-        setActiveChannel(channel);
-        return;
-      }
-      // Join the voice channel (leaveVoice is handled internally by joinVoice)
-      joinVoice(channel.id);
-      // Also set as active channel so VoiceChannel UI renders in main area
-      setActiveChannel(channel);
-    } else {
-      setActiveChannel(channel);
-    }
-  }, [voiceChannelId, joinVoice, setActiveChannel]);
+    setActiveChannel(channel);
+  }, [setActiveChannel]);
 
   if (!activeServer) return null;
 

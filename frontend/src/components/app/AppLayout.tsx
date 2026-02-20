@@ -1,9 +1,4 @@
 import { useEffect } from 'react';
-import {
-  Minus,
-  Square,
-  X,
-} from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useVoiceStore } from '@/stores/voiceStore';
@@ -21,8 +16,10 @@ import { VoiceChannel } from '@/components/voice/VoiceChannel';
 import { AiAssistant } from '@/components/ai/AiAssistant';
 import { PointsPanel } from '@/components/stream/PointsPanel';
 import { CreateServerModal } from './CreateServerModal';
+import { CreateChannelModal } from './CreateChannelModal';
 import { InviteDialog } from './InviteDialog';
 import { JoinServerDialog } from './JoinServerDialog';
+import { ServerSettingsModal } from './ServerSettingsModal';
 import { UserProfilePopup } from './UserProfilePopup';
 
 // electronAPI type is declared in ScreenSharePicker.tsx
@@ -40,12 +37,6 @@ export function AppLayout() {
   useEffect(() => {
     loadServers();
   }, [loadServers]);
-
-  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
-
-  const handleMinimize = () => window.electronAPI?.minimize();
-  const handleMaximize = () => window.electronAPI?.maximize();
-  const handleClose = () => window.electronAPI?.close();
 
   const renderMainContent = () => {
     if (view === 'pulse') {
@@ -86,44 +77,7 @@ export function AppLayout() {
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#000000]">
-      {/* Custom Titlebar */}
-      <div
-        className="h-8 flex items-center justify-between px-3 bg-[#0A0E27] border-b border-white/5 select-none shrink-0"
-        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-      >
-        <div className="flex items-center gap-2">
-          <img src="./icon.png" alt="Rally" className="w-4 h-4" />
-          <span className="text-xs font-bold text-[#00D9FF] tracking-wider">RALLY</span>
-        </div>
-
-        {isElectron && (
-          <div className="flex items-center gap-0.5" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-            <button
-              onClick={handleMinimize}
-              className="w-8 h-7 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
-              aria-label="Minimize"
-            >
-              <Minus className="w-3.5 h-3.5 text-white/60" />
-            </button>
-            <button
-              onClick={handleMaximize}
-              className="w-8 h-7 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
-              aria-label="Maximize"
-            >
-              <Square className="w-3 h-3 text-white/60" />
-            </button>
-            <button
-              onClick={handleClose}
-              className="w-8 h-7 flex items-center justify-center hover:bg-red-500/80 rounded transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-3.5 h-3.5 text-white/60" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Top Nav */}
+      {/* Top Nav (includes window controls) */}
       <TopNav />
 
       {/* Channel Bar (horizontal, for server views) */}
@@ -163,8 +117,10 @@ export function AppLayout() {
 
       {/* Modals */}
       {activeModal === 'createServer' && <CreateServerModal />}
+      {activeModal === 'createChannel' && <CreateChannelModal />}
       {activeModal === 'invite' && <InviteDialog />}
       {activeModal === 'joinServer' && <JoinServerDialog />}
+      {activeModal === 'serverSettings' && <ServerSettingsModal />}
       <UserProfilePopup />
     </div>
   );

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
-import { X, User, Shield, Gamepad2, Bell, Volume2, Palette } from 'lucide-react';
+import { X, User, Shield, Gamepad2, Bell, Volume2, Palette, Camera, Check, Mic, Speaker } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
@@ -24,12 +24,73 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const [bio, setBio] = useState(user?.bio || '');
   const [customStatus, setCustomStatus] = useState(user?.customStatus || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Avatar upload state
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Voice & Audio state
+  const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedInputDevice, setSelectedInputDevice] = useState<string>('default');
+  const [selectedOutputDevice, setSelectedOutputDevice] = useState<string>('default');
+  const [inputVolume, setInputVolume] = useState(80);
+  const [outputVolume, setOutputVolume] = useState(100);
+
+  // Enumerate audio devices when Voice & Audio tab is active
+  useEffect(() => {
+    if (activeTab !== 'audio') return;
+
+    const enumerateDevices = async () => {
+      try {
+        // Request permission first (needed to get device labels)
+        await navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+          stream.getTracks().forEach((t) => t.stop());
+        });
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        setAudioInputDevices(devices.filter((d) => d.kind === 'audioinput'));
+        setAudioOutputDevices(devices.filter((d) => d.kind === 'audiooutput'));
+      } catch {
+        // Permission denied or no devices
+      }
+    };
+
+    enumerateDevices();
+  }, [activeTab]);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image must be under 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
+    setSaveSuccess(false);
     try {
-      await api.updateProfile({ displayName, bio, customStatus });
-      updateUser({ displayName, bio, customStatus });
+      const profileData: Record<string, any> = {
+        displayName,
+        bio,
+        customStatus,
+      };
+      // Include avatar if it changed
+      if (avatarPreview !== (user?.avatarUrl || null)) {
+        profileData.avatarUrl = avatarPreview;
+      }
+      await api.updateProfile(profileData);
+      updateUser({ displayName, bio, customStatus, avatarUrl: avatarPreview || undefined });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
     } catch {}
     setIsSaving(false);
   };
@@ -77,29 +138,64 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             <div className="card-rally rounded-lg overflow-hidden">
               <div className="h-28 bg-gradient-to-r from-rally-blue/30 to-rally-purple/30" />
               <div className="px-4 pb-4 -mt-10">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rally-blue to-rally-green border-4 border-[#0D1117] flex items-center justify-center text-black font-bold text-2xl">
-                  {user?.displayName?.[0]?.toUpperCase() || '?'}
-                </div>
+                {/* Clickable Avatar */}
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="relative group w-20 h-20 rounded-full border-4 border-[#0D1117] overflow-hidden flex-shrink-0"
+                  title="Click to upload avatar"
+                >
+                  {avatarPreview ? (
+                    <img
+                      src={avatarPreview}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-rally-blue to-rally-green flex items-center justify-center text-black font-bold text-2xl">
+                      {user?.displayName?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
                 <p className="mt-2 text-lg font-display font-bold text-rally-text">{user?.displayName}</p>
                 <p className="text-sm text-rally-text-muted">@{user?.username}</p>
+                {avatarPreview && avatarPreview !== (user?.avatarUrl || null) && (
+                  <p className="text-xs text-rally-green mt-1">New avatar selected - save to apply</p>
+                )}
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Display Name</label>
-              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input-rally rounded" />
+              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input-rally rounded w-full" />
             </div>
             <div>
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Custom Status</label>
-              <input value={customStatus} onChange={(e) => setCustomStatus(e.target.value)} className="input-rally rounded" placeholder="What are you up to?" />
+              <input value={customStatus} onChange={(e) => setCustomStatus(e.target.value)} className="input-rally rounded w-full" placeholder="What are you up to?" />
             </div>
             <div>
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Bio</label>
-              <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input-rally rounded h-24 resize-none" placeholder="Tell everyone about yourself..." />
+              <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input-rally rounded h-24 resize-none w-full" placeholder="Tell everyone about yourself..." />
             </div>
-            <button onClick={handleSaveProfile} disabled={isSaving} className="btn-rally-primary px-6 py-2">
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={handleSaveProfile} disabled={isSaving} className="btn-rally-primary px-6 py-2">
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+              {saveSuccess && (
+                <span className="text-sm text-rally-green flex items-center gap-1">
+                  <Check className="w-4 h-4" /> Saved!
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -125,17 +221,102 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
         {activeTab === 'audio' && (
           <div className="space-y-6">
+            {/* Input Device Selection */}
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">Input Volume</label>
-              <input type="range" min="0" max="100" defaultValue="80" className="w-full accent-rally-blue" />
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">
+                <span className="flex items-center gap-2">
+                  <Mic className="w-3.5 h-3.5" />
+                  Input Device
+                </span>
+              </label>
+              <select
+                value={selectedInputDevice}
+                onChange={(e) => setSelectedInputDevice(e.target.value)}
+                className="input-rally rounded w-full bg-[#0D1117] text-rally-text cursor-pointer"
+              >
+                <option value="default">System Default</option>
+                {audioInputDevices.map((device) => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label || `Microphone (${device.deviceId.slice(0, 8)})`}
+                  </option>
+                ))}
+              </select>
+              {audioInputDevices.length === 0 && (
+                <p className="text-xs text-rally-text-muted mt-1">
+                  No input devices detected. Microphone permission may be required.
+                </p>
+              )}
             </div>
+
+            {/* Input Volume */}
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">Output Volume</label>
-              <input type="range" min="0" max="100" defaultValue="100" className="w-full accent-rally-blue" />
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted">Input Volume</label>
+                <span className="text-xs text-rally-blue font-display">{inputVolume}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={inputVolume}
+                onChange={(e) => setInputVolume(Number(e.target.value))}
+                className="w-full accent-rally-blue"
+              />
             </div>
-            <ToggleSetting label="Push to talk" description="Hold a key to transmit your voice" />
-            <ToggleSetting label="Noise suppression" description="Filter out background noise" defaultChecked />
-            <ToggleSetting label="Echo cancellation" description="Prevent echo from speakers" defaultChecked />
+
+            {/* Output Device Selection */}
+            <div>
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">
+                <span className="flex items-center gap-2">
+                  <Speaker className="w-3.5 h-3.5" />
+                  Output Device
+                </span>
+              </label>
+              <select
+                value={selectedOutputDevice}
+                onChange={(e) => setSelectedOutputDevice(e.target.value)}
+                className="input-rally rounded w-full bg-[#0D1117] text-rally-text cursor-pointer"
+              >
+                <option value="default">System Default</option>
+                {audioOutputDevices.map((device) => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label || `Speaker (${device.deviceId.slice(0, 8)})`}
+                  </option>
+                ))}
+              </select>
+              {audioOutputDevices.length === 0 && (
+                <p className="text-xs text-rally-text-muted mt-1">
+                  No output devices detected.
+                </p>
+              )}
+            </div>
+
+            {/* Output Volume */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted">Output Volume</label>
+                <span className="text-xs text-rally-blue font-display">{outputVolume}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={outputVolume}
+                onChange={(e) => setOutputVolume(Number(e.target.value))}
+                className="w-full accent-rally-blue"
+              />
+            </div>
+
+            {/* Voice Settings Toggles */}
+            <div className="pt-2 border-t border-rally-border">
+              <h3 className="font-display text-sm font-semibold text-rally-text mb-3">Voice Processing</h3>
+              <div className="space-y-1">
+                <ToggleSetting label="Push to talk" description="Hold a key to transmit your voice" />
+                <ToggleSetting label="Noise suppression" description="Filter out background noise" defaultChecked />
+                <ToggleSetting label="Echo cancellation" description="Prevent echo from speakers" defaultChecked />
+                <ToggleSetting label="Automatic gain control" description="Automatically adjust microphone volume" defaultChecked />
+              </div>
+            </div>
           </div>
         )}
 
