@@ -24,15 +24,7 @@ import { CreateServerModal } from './CreateServerModal';
 import { InviteDialog } from './InviteDialog';
 import { JoinServerDialog } from './JoinServerDialog';
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      minimize: () => void;
-      maximize: () => void;
-      close: () => void;
-    };
-  }
-}
+// electronAPI type is declared in ScreenSharePicker.tsx
 
 export function AppLayout() {
   const view = useUIStore((s) => s.view);
