@@ -8,12 +8,14 @@ import {
   ChevronRight,
   MoreHorizontal,
   Eye,
+  Settings,
   Minus,
   Square,
   X,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
+import { useAuthStore } from '@/stores/authStore';
 import { cn, getInitials } from '@/lib/utils';
 import { useServerPrefs } from '@/hooks/useServerPrefs';
 import { ServerContextMenu } from '@/components/app/ServerContextMenu';
@@ -100,6 +102,7 @@ export function TopNav() {
   const servers = useServerStore((s) => s.servers);
   const activeServer = useServerStore((s) => s.activeServer);
   const setActiveServer = useServerStore((s) => s.setActiveServer);
+  const user = useAuthStore((s) => s.user);
 
   const { sortServers, getHiddenServers, togglePin, toggleHide, isPinned, reorder } =
     useServerPrefs();
@@ -345,6 +348,33 @@ export function TopNav() {
           title="Explore Servers"
         >
           <Compass className="w-4 h-4" />
+        </button>
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-white/10 shrink-0" />
+
+        {/* User Settings */}
+        <button
+          onClick={() => openModal('userSettings')}
+          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-150"
+          title="User Settings"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+
+        {/* User Avatar */}
+        <button
+          onClick={() => openModal('userSettings')}
+          className="h-full px-2 flex items-center justify-center hover:bg-white/5 transition-colors duration-150"
+          title={user?.displayName || 'Profile'}
+        >
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-rally-cyan/40 to-rally-purple/40 flex items-center justify-center text-[10px] font-bold text-white/70">
+              {user?.displayName?.[0]?.toUpperCase() || '?'}
+            </div>
+          )}
         </button>
       </div>
 

@@ -100,7 +100,7 @@ export function VoiceChannel() {
   // Show join screen when viewing a voice channel but not connected
   if (!channelId || channelId !== activeChannel?.id) {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-rally-dark-bg gap-6">
+      <div className="flex-1 w-full flex flex-col items-center justify-center bg-rally-dark-bg gap-6">
         <div className="w-20 h-20 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
           <Headphones size={36} className="text-[#00D9FF]" />
         </div>
@@ -126,7 +126,7 @@ export function VoiceChannel() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-rally-dark-bg">
+    <div className="flex-1 w-full flex flex-col bg-rally-dark-bg">
       {/* Hidden audio elements for remote streams */}
       {Object.entries(remoteStreams).map(([userId, stream]) => (
         <audio

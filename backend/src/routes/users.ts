@@ -25,8 +25,8 @@ const updateProfileSchema = z.object({
     .max(64, 'Display name must be 64 characters or fewer')
     .trim()
     .optional(),
-  avatarUrl: z.string().url('Invalid avatar URL').nullish(),
-  bannerUrl: z.string().url('Invalid banner URL').nullish(),
+  avatarUrl: z.string().nullish(),
+  bannerUrl: z.string().nullish(),
   bio: z.string().max(500, 'Bio must be 500 characters or fewer').nullish(),
   customStatus: z
     .string()
@@ -65,6 +65,44 @@ const paginationSchema = z.object({
   cursor: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
+
+// ---------------------------------------------------------------------------
+// GET /search?q=query — Search users by username or display name
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/search',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const q = String(req.query.q || '').trim();
+      if (!q || q.length < 2) {
+        return res.json({ users: [] });
+      }
+
+      const users = await prisma.user.findMany({
+        where: {
+          OR: [
+            { username: { contains: q, mode: 'insensitive' } },
+            { displayName: { contains: q, mode: 'insensitive' } },
+          ],
+          id: { not: req.user!.userId },
+        },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          status: true,
+        },
+        take: 20,
+      });
+
+      res.json({ users });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // ---------------------------------------------------------------------------
 // GET /profile/:userId — Get user public profile

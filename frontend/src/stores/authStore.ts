@@ -72,7 +72,9 @@ export const useAuthStore = create<AuthState>()(
         }
 
         api.setToken(token);
-        set({ isLoading: true });
+        const hasPersistedUser = !!get().user;
+        // Only show loading spinner if we don't have a persisted user
+        if (!hasPersistedUser) set({ isLoading: true });
         try {
           const data = await api.getMe();
           // Backend wraps the response as { user: {...} }
@@ -94,7 +96,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'rally-auth',
-      partialize: (state) => ({ isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        user: state.user,
+      }),
     }
   )
 );

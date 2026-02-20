@@ -14,7 +14,7 @@ const CHANNEL_TYPES = [
 export function CreateChannelModal() {
   const closeModal = useUIStore((s) => s.closeModal);
   const activeServer = useServerStore((s) => s.activeServer);
-  const loadServers = useServerStore((s) => s.loadServers);
+  const addChannel = useServerStore((s) => s.addChannel);
   const [name, setName] = useState('');
   const [type, setType] = useState('TEXT');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,11 +30,11 @@ export function CreateChannelModal() {
     setIsSubmitting(true);
     setError('');
     try {
-      await api.createChannel(activeServer.id, {
-        name: name.trim().toLowerCase().replace(/\s+/g, '-'),
+      const channel = await api.createChannel(activeServer.id, {
+        name: name.trim(),
         type,
       });
-      await loadServers();
+      addChannel(channel);
       closeModal();
     } catch (err: any) {
       setError(err.message || 'Failed to create channel');

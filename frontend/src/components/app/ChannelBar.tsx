@@ -231,6 +231,17 @@ export function ChannelBar() {
                 <Plus className="w-4 h-4" />
                 Create Channel
               </button>
+              <div className="h-px bg-white/10 mx-2 my-1" />
+              <button
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  openModal('serverSettings');
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Server Settings
+              </button>
             </div>
           </>
         )}

@@ -13,8 +13,8 @@ interface StageAvatarProps {
 }
 
 function StageAvatar({ participant, size }: StageAvatarProps) {
-  const px = size === 'lg' ? 80 : 56;
-  const textSize = size === 'lg' ? 'text-xl' : 'text-sm';
+  const px = size === 'lg' ? 96 : 64;
+  const textSize = size === 'lg' ? 'text-2xl' : 'text-base';
   const badgeIconSize = 12;
 
   return (
@@ -103,9 +103,9 @@ export function VoiceParticipantStage({ participants }: VoiceParticipantStagePro
   // Arc math: distribute others in a semi-circle arc above center
   // Arc spans from -60 degrees to +60 degrees (where 0 = straight up / north)
   // We work in math angles: 0 deg = right, so "straight up" = 90 deg
-  const ARC_START_DEG = -60;
-  const ARC_END_DEG = 60;
-  const RADIUS = 130;
+  const ARC_START_DEG = -70;
+  const ARC_END_DEG = 70;
+  const RADIUS = 180;
 
   function getArcPosition(index: number, total: number): { x: number; y: number } {
     let angleDeg: number;
@@ -130,8 +130,7 @@ export function VoiceParticipantStage({ participants }: VoiceParticipantStagePro
 
   return (
     <div
-      className="relative flex min-h-[280px] items-center justify-center"
-      style={{ minHeight: 280 }}
+      className="relative flex w-full h-full items-center justify-center"
     >
       {/* Center: current user avatar */}
       {currentParticipant && (
@@ -159,8 +158,8 @@ export function VoiceParticipantStage({ participants }: VoiceParticipantStagePro
               // Position relative to the center of the container
               left: '50%',
               top: '50%',
-              marginLeft: -28, // half of sm avatar (56/2)
-              marginTop: -28,
+              marginLeft: -32, // half of sm avatar (64/2)
+              marginTop: -32,
             }}
           >
             <StageAvatar participant={participant} size="sm" />

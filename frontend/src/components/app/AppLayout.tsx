@@ -20,6 +20,7 @@ import { CreateChannelModal } from './CreateChannelModal';
 import { InviteDialog } from './InviteDialog';
 import { JoinServerDialog } from './JoinServerDialog';
 import { ServerSettingsModal } from './ServerSettingsModal';
+import { UserSettings } from '@/components/settings/UserSettings';
 import { UserProfilePopup } from './UserProfilePopup';
 
 // electronAPI type is declared in ScreenSharePicker.tsx
@@ -121,6 +122,7 @@ export function AppLayout() {
       {activeModal === 'invite' && <InviteDialog />}
       {activeModal === 'joinServer' && <JoinServerDialog />}
       {activeModal === 'serverSettings' && <ServerSettingsModal />}
+      {activeModal === 'userSettings' && <UserSettings onClose={() => useUIStore.getState().closeModal()} />}
       <UserProfilePopup />
     </div>
   );

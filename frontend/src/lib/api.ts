@@ -246,7 +246,22 @@ class ApiClient {
     return this.request<any>(`/users/friends/request/${targetId}`, { method: 'POST' });
   }
   getFriends() {
-    return this.request<any[]>('/users/friends');
+    return this.request<any>('/users/friends');
+  }
+  getFriendRequests() {
+    return this.request<any>('/users/friends/requests');
+  }
+  acceptFriendRequest(requestId: string) {
+    return this.request<any>(`/users/friends/accept/${requestId}`, { method: 'POST' });
+  }
+  declineFriendRequest(requestId: string) {
+    return this.request<any>(`/users/friends/decline/${requestId}`, { method: 'POST' });
+  }
+  removeFriend(friendshipId: string) {
+    return this.request<any>(`/users/friends/${friendshipId}`, { method: 'DELETE' });
+  }
+  searchUsers(query: string) {
+    return this.request<any>(`/users/search?q=${encodeURIComponent(query)}`);
   }
   getDmConversations() {
     return this.request<any[]>('/users/dms');
