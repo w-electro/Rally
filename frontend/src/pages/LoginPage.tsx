@@ -14,19 +14,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  // In packaged Electron (file: protocol), the server URL is required — always show it
-  const isPackaged = window.location.protocol === 'file:';
-  const [showAdvanced, setShowAdvanced] = useState(isPackaged);
-  const [serverUrl, setServerUrl] = useState(localStorage.getItem('rally-server-url') || '');
-
-  const handleServerUrlChange = (url: string) => {
-    setServerUrl(url);
-    if (url.trim()) {
-      localStorage.setItem('rally-server-url', url.trim());
-    } else {
-      localStorage.removeItem('rally-server-url');
-    }
-  };
 
   // Redirect when authenticated
   useEffect(() => {
@@ -211,48 +198,6 @@ export function LoginPage() {
               )}
             </button>
 
-            {/* Advanced / Server Settings */}
-            <div className="mt-1">
-              <button
-                type="button"
-                onClick={() => setShowAdvanced((s) => !s)}
-                className="font-body text-xs text-rally-text-muted hover:text-rally-blue transition-colors flex items-center gap-1"
-              >
-                <svg
-                  className={`w-3 h-3 transition-transform ${showAdvanced ? 'rotate-90' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-                Server Settings
-              </button>
-              {showAdvanced && (
-                <div className="mt-2">
-                  <label
-                    htmlFor="serverUrl"
-                    className="block font-display text-xs font-semibold uppercase tracking-widest text-rally-text-muted mb-1.5"
-                  >
-                    Server URL
-                  </label>
-                  <input
-                    id="serverUrl"
-                    type="text"
-                    value={serverUrl}
-                    onChange={(e) => handleServerUrlChange(e.target.value)}
-                    placeholder="http://192.168.x.x:3001"
-                    className="input-rally rounded-sm"
-                  />
-                  <p className="text-xs text-rally-text-muted mt-1 font-body">
-                    {isPackaged
-                      ? 'Enter the IP address of the person hosting the Rally server (e.g. http://192.168.1.100:3001)'
-                      : 'Leave empty for local server. Enter the URL of your Rally server for LAN/internet play.'}
-                  </p>
-                </div>
-              )}
-            </div>
           </form>
 
           {/* Divider */}

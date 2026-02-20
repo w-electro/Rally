@@ -27,7 +27,7 @@ const httpServer = createServer(app);
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
-  origin: config.nodeEnv === 'production' ? config.corsOrigin : true,
+  origin: true,
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
