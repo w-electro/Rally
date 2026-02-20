@@ -380,6 +380,21 @@ export function createSocketServer(httpServer: HttpServer): Server {
       }
     });
 
+    // ==================== SCREEN SHARING ====================
+
+    socket.on('screen:start', (data: { channelId: string }) => {
+      socket.to(`voice:${data.channelId}`).emit('screen:start', {
+        userId,
+        username,
+      });
+    });
+
+    socket.on('screen:stop', (data: { channelId: string }) => {
+      socket.to(`voice:${data.channelId}`).emit('screen:stop', {
+        userId,
+      });
+    });
+
     // ==================== STREAMING ====================
 
     socket.on('stream:start', async (data: { channelId: string; title: string }) => {
