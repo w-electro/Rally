@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Monitor, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +38,7 @@ interface ScreenSharePickerProps {
 type TabId = 'screens' | 'windows';
 
 export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps) {
+  const { t } = useTranslation();
   const [sources, setSources] = useState<ScreenSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
           <div className="flex items-center gap-3">
             <Monitor size={20} className="text-[#00D9FF]" />
             <h2 className="font-display text-lg font-bold uppercase tracking-wider text-white">
-              Share Your Screen
+              {t('voice.shareYourScreen')}
             </h2>
           </div>
           <button
@@ -135,23 +137,23 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
           <div className="px-6 py-12 text-center">
             <Monitor size={48} className="mx-auto mb-4 text-[#00D9FF]" />
             <p className="text-gray-300 text-sm mb-2 font-medium">
-              Share Your Screen
+              {t('voice.shareYourScreen')}
             </p>
             <p className="text-gray-500 text-xs mb-6">
-              Your browser will ask which screen or window to share
+              {t('voice.browserSharePrompt')}
             </p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={onCancel}
                 className="px-4 py-2 rounded-lg border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => onSelect('browser', false)}
                 className="px-6 py-2 rounded-lg bg-[#00D9FF] text-black text-sm font-medium hover:bg-[#00D9FF]/90 transition-colors"
               >
-                Share Screen
+                {t('voice.shareScreen')}
               </button>
             </div>
           </div>
@@ -171,7 +173,7 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
                     : 'text-gray-400 hover:text-gray-200',
                 )}
               >
-                Screens
+                {t('voice.screens')}
                 {activeTab === 'screens' && (
                   <span
                     className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00D9FF]"
@@ -193,7 +195,7 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
                     : 'text-gray-400 hover:text-gray-200',
                 )}
               >
-                Windows
+                {t('voice.windows')}
                 {activeTab === 'windows' && (
                   <span
                     className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00D9FF]"
@@ -216,8 +218,8 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
                   <Monitor size={36} className="mx-auto mb-3 text-gray-600" />
                   <p className="text-gray-500 text-sm">
                     {activeTab === 'screens'
-                      ? 'No screens found'
-                      : 'No windows found'}
+                      ? t('voice.noScreens')
+                      : t('voice.noWindows')}
                   </p>
                 </div>
               ) : (
@@ -290,7 +292,7 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
                   onChange={(e) => setWithAudio(e.target.checked)}
                   className="sr-only"
                 />
-                <span className="text-sm text-gray-300">Include System Audio</span>
+                <span className="text-sm text-gray-300">{t('voice.includeAudio')}</span>
               </label>
 
               {/* Action buttons */}
@@ -299,7 +301,7 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
                   onClick={onCancel}
                   className="px-4 py-2 rounded-lg border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleShare}
@@ -311,7 +313,7 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
                       : 'bg-[#00D9FF]/30 text-black/50 cursor-not-allowed',
                   )}
                 >
-                  Share
+                  {t('voice.share')}
                 </button>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn, getInitials, generateAvatarGradient } from '@/lib/utils';
 import { useVoiceStore } from '@/stores/voiceStore';
 
@@ -6,6 +7,7 @@ interface VoiceChannelPreviewProps {
 }
 
 export function VoiceChannelPreview({ channelId }: VoiceChannelPreviewProps) {
+  const { t } = useTranslation();
   const participants = useVoiceStore((s) => s.participants);
   const voiceChannelId = useVoiceStore((s) => s.channelId);
 
@@ -16,7 +18,7 @@ export function VoiceChannelPreview({ channelId }: VoiceChannelPreviewProps) {
   return (
     <div className="absolute top-full left-0 mt-1 z-50 min-w-[160px] rounded-lg border border-white/10 bg-[#0A0E27] p-2 shadow-xl">
       {!isActive || participants.length === 0 ? (
-        <span className="text-xs text-white/40">Empty</span>
+        <span className="text-xs text-white/40">{t('voice.empty')}</span>
       ) : (
         <div className="flex flex-col gap-1.5">
           {visibleParticipants.map((participant) => (
@@ -36,7 +38,7 @@ export function VoiceChannelPreview({ channelId }: VoiceChannelPreviewProps) {
             </div>
           ))}
           {extraCount > 0 && (
-            <span className="text-xs text-white/40 pl-7">+{extraCount} more</span>
+            <span className="text-xs text-white/40 pl-7">{t('voice.moreCount', { count: extraCount })}</span>
           )}
         </div>
       )}

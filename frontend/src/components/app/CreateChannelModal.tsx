@@ -1,17 +1,19 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Hash, Volume2, Camera, Megaphone } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
 import api from '@/lib/api';
 
 const CHANNEL_TYPES = [
-  { value: 'TEXT', label: 'Text', icon: Hash, description: 'Send messages and media' },
-  { value: 'VOICE', label: 'Voice', icon: Volume2, description: 'Talk with your crew' },
-  { value: 'FEED', label: 'Feed', icon: Camera, description: 'Share photos and videos' },
-  { value: 'ANNOUNCEMENT', label: 'Announcement', icon: Megaphone, description: 'Important updates' },
+  { value: 'TEXT', labelKey: 'channel.text', icon: Hash, descKey: 'channel.textDesc' },
+  { value: 'VOICE', labelKey: 'channel.voice', icon: Volume2, descKey: 'channel.voiceDesc' },
+  { value: 'FEED', labelKey: 'channel.feed', icon: Camera, descKey: 'channel.feedDesc' },
+  { value: 'ANNOUNCEMENT', labelKey: 'channel.announcement', icon: Megaphone, descKey: 'channel.announcementDesc' },
 ];
 
 export function CreateChannelModal() {
+  const { t } = useTranslation();
   const closeModal = useUIStore((s) => s.closeModal);
   const activeServer = useServerStore((s) => s.activeServer);
   const addChannel = useServerStore((s) => s.addChannel);
@@ -22,7 +24,7 @@ export function CreateChannelModal() {
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError('Channel name is required');
+      setError(t('channel.nameRequired'));
       return;
     }
     if (!activeServer) return;
@@ -58,7 +60,7 @@ export function CreateChannelModal() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <h2 className="font-display text-lg font-bold uppercase tracking-wider text-white">
-            Create Channel
+            {t('channel.createChannel')}
           </h2>
           <button
             onClick={closeModal}
@@ -79,7 +81,7 @@ export function CreateChannelModal() {
           {/* Channel Type */}
           <div>
             <label className="block text-xs font-display uppercase tracking-wider text-white/60 mb-2">
-              Channel Type
+              {t('channel.channelType')}
             </label>
             <div className="grid grid-cols-2 gap-2">
               {CHANNEL_TYPES.map((ct) => {
@@ -97,8 +99,8 @@ export function CreateChannelModal() {
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <div>
-                      <div className="text-sm font-semibold">{ct.label}</div>
-                      <div className="text-[10px] opacity-60">{ct.description}</div>
+                      <div className="text-sm font-semibold">{t(ct.labelKey)}</div>
+                      <div className="text-[10px] opacity-60">{t(ct.descKey)}</div>
                     </div>
                   </button>
                 );
@@ -109,7 +111,7 @@ export function CreateChannelModal() {
           {/* Channel Name */}
           <div>
             <label className="block text-xs font-display uppercase tracking-wider text-white/60 mb-1.5">
-              Channel Name <span className="text-rally-magenta">*</span>
+              {t('channel.channelName')} <span className="text-rally-magenta">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">#</span>
@@ -133,14 +135,14 @@ export function CreateChannelModal() {
             className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors font-body"
             disabled={isSubmitting}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSubmit}
             className="btn-rally-primary px-5 py-2 text-sm"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Create Channel'}
+            {isSubmitting ? t('server.creating') : t('channel.createChannel')}
           </button>
         </div>
 

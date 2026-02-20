@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Hash, Volume2, Camera, Megaphone, Theater, Settings, ChevronLeft, ChevronRight, UserPlus, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useServerStore } from '@/stores/serverStore';
 import { useVoiceStore } from '@/stores/voiceStore';
@@ -27,6 +28,7 @@ function getChannelIcon(type: string) {
 }
 
 export function ChannelBar() {
+  const { t } = useTranslation();
   const activeServer = useServerStore((s) => s.activeServer);
   const activeChannel = useServerStore((s) => s.activeChannel);
   const setActiveChannel = useServerStore((s) => s.setActiveChannel);
@@ -127,7 +129,7 @@ export function ChannelBar() {
 
   const handleDeleteChannel = useCallback(async (channel: Channel) => {
     if (!activeServer) return;
-    if (!confirm(`Delete channel "${channel.name}"? This cannot be undone.`)) return;
+    if (!confirm(t('channel.deleteConfirm', { name: channel.name }))) return;
     try {
       await api.deleteChannel(activeServer.id, channel.id);
       useServerStore.getState().removeChannel(channel.id);
@@ -279,7 +281,7 @@ export function ChannelBar() {
                 className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" />
-                Invite People
+                {t('server.invitePeople')}
               </button>
               <button
                 onClick={() => {
@@ -289,7 +291,7 @@ export function ChannelBar() {
                 className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Create Channel
+                {t('channel.createChannel')}
               </button>
               <div className="h-px bg-white/10 mx-2 my-1" />
               <button
@@ -300,7 +302,7 @@ export function ChannelBar() {
                 className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
               >
                 <Settings className="w-4 h-4" />
-                Server Settings
+                {t('server.serverSettings')}
               </button>
             </div>
           </>
@@ -323,7 +325,7 @@ export function ChannelBar() {
               className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
             >
               <Pencil className="w-4 h-4" />
-              Edit Channel
+              {t('channel.editChannel')}
             </button>
             <button
               onClick={() => {
@@ -333,7 +335,7 @@ export function ChannelBar() {
               className="w-full text-left px-3 py-2 text-sm text-[#FF006E] hover:bg-[#FF006E]/10 flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Delete Channel
+              {t('channel.deleteChannel')}
             </button>
           </div>
         </>

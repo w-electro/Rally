@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search, Users, Shield, Loader2, ArrowRight } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
@@ -6,6 +7,7 @@ import api from '@/lib/api';
 import { getInitials } from '@/lib/utils';
 
 export function JoinServerDialog() {
+  const { t } = useTranslation();
   const closeModal = useUIStore((s) => s.closeModal);
   const loadServers = useServerStore((s) => s.loadServers);
   const setActiveServer = useServerStore((s) => s.setActiveServer);
@@ -25,7 +27,7 @@ export function JoinServerDialog() {
       const info = await api.resolveInvite(trimmed);
       setServerInfo(info);
     } catch (err: any) {
-      setError(err.message || 'Invalid or expired invite code');
+      setError(err.message || t('server.invalidInvite'));
     } finally {
       setIsResolving(false);
     }
@@ -43,7 +45,7 @@ export function JoinServerDialog() {
       }
       closeModal();
     } catch (err: any) {
-      setError(err.message || 'Failed to join server');
+      setError(err.message || t('server.failedJoin'));
     } finally {
       setIsJoining(false);
     }
@@ -77,7 +79,7 @@ export function JoinServerDialog() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <h2 className="font-display text-lg font-bold uppercase tracking-wider text-white">
-            Join a Server
+            {t('server.joinServer')}
           </h2>
           <button
             onClick={closeModal}
@@ -92,7 +94,7 @@ export function JoinServerDialog() {
         <div className="px-6 py-5 space-y-5">
           {/* Description */}
           <p className="text-sm text-white/50 font-body">
-            Enter an invite code to preview and join a server.
+            {t('server.enterInviteCode')}
           </p>
 
           {/* Error display */}
@@ -105,7 +107,7 @@ export function JoinServerDialog() {
           {/* Code input */}
           <div>
             <label className="block text-xs font-display uppercase tracking-wider text-white/60 mb-1.5">
-              Invite Code <span className="text-rally-magenta">*</span>
+              {t('server.inviteCode')} <span className="text-rally-magenta">*</span>
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -178,7 +180,7 @@ export function JoinServerDialog() {
                   <div className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5" />
                     <span>
-                      {serverInfo.memberCount ?? serverInfo.server?.memberCount ?? 0} members
+                      {t('common.members', { count: serverInfo.memberCount ?? serverInfo.server?.memberCount ?? 0 })}
                     </span>
                   </div>
                 )}
@@ -203,7 +205,7 @@ export function JoinServerDialog() {
             className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors font-body"
             disabled={isJoining}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           {serverInfo ? (
             <button
@@ -215,11 +217,11 @@ export function JoinServerDialog() {
               {isJoining ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Joining...
+                  {t('server.joining')}
                 </>
               ) : (
                 <>
-                  Join Server
+                  {t('server.joinServer')}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -231,7 +233,7 @@ export function JoinServerDialog() {
               className="btn-rally-primary px-5 py-2 text-sm"
               disabled={!code.trim() || isResolving}
             >
-              {isResolving ? 'Looking up...' : 'Look Up'}
+              {isResolving ? t('server.lookingUp') : t('server.lookUp')}
             </button>
           )}
         </div>

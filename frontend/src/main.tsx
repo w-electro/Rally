@@ -12,6 +12,7 @@ if (typeof globalThis.Buffer === 'undefined') {
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './i18n/i18n';
 import './styles/globals.css';
 
 // Hide splash screen after app loads

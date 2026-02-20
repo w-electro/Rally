@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useVoiceStore } from '@/stores/voiceStore';
@@ -26,6 +27,7 @@ import { UserProfilePopup } from './UserProfilePopup';
 // electronAPI type is declared in ScreenSharePicker.tsx
 
 export function AppLayout() {
+  const { t } = useTranslation();
   const view = useUIStore((s) => s.view);
   const rightPanel = useUIStore((s) => s.rightPanel);
   const activeModal = useUIStore((s) => s.activeModal);
@@ -52,7 +54,7 @@ export function AppLayout() {
         <div className="flex-1 flex items-center justify-center bg-[#0D1117]">
           <div className="text-center">
             <img src="./icon.png" alt="Rally" className="w-16 h-16 mx-auto mb-4 opacity-30" />
-            <p className="text-white/30 text-sm">Select a conversation to start chatting</p>
+            <p className="text-white/30 text-sm">{t('chat.selectConversation')}</p>
           </div>
         </div>
       );
@@ -105,7 +107,7 @@ export function AppLayout() {
             {rightPanel === 'ai' && <AiAssistant />}
             {rightPanel === 'trending' && (
               <div className="h-full bg-[#0D1117] flex items-center justify-center text-white/30 text-sm">
-                Trending Panel coming soon
+                {t('settings.trendingComingSoon')}
               </div>
             )}
             {rightPanel === 'points' && <PointsPanel />}

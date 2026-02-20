@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useServerStore } from '@/stores/serverStore';
 import { useUIStore } from '@/stores/uiStore';
 import { cn, getInitials, getStatusColor } from '@/lib/utils';
 import type { ServerMember } from '@/lib/types';
 
 export function MemberList() {
+  const { t } = useTranslation();
   const { members } = useServerStore();
   const { openModal } = useUIStore();
 
@@ -24,7 +26,7 @@ export function MemberList() {
     <div className="w-60 bg-[#0D1117] border-l border-white/5 flex flex-col h-full">
       <div className="p-3 border-b border-white/5">
         <h3 className="text-xs font-display font-semibold uppercase tracking-wider text-white/40">
-          Members — {onlineCount} online
+          {t('members.membersOnline', { count: onlineCount })}
         </h3>
       </div>
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
@@ -42,6 +44,7 @@ export function MemberList() {
 }
 
 function MemberCard({ member, dimmed, onClick }: { member: ServerMember; dimmed?: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onClick}
@@ -69,7 +72,7 @@ function MemberCard({ member, dimmed, onClick }: { member: ServerMember; dimmed?
         </p>
         {member.user.currentGame && (
           <p className="text-[11px] text-[#00D9FF] truncate leading-tight">
-            Playing {member.user.currentGame}
+            {t('members.playing', { game: member.user.currentGame })}
           </p>
         )}
         {!member.user.currentGame && member.user.customStatus && (

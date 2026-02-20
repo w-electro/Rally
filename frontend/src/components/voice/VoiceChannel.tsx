@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Mic,
   MicOff,
@@ -20,6 +21,7 @@ import { VoiceParticipantStage } from '@/components/voice/VoiceParticipantStage'
 import { VoiceActivityStrip } from '@/components/voice/VoiceActivityStrip';
 
 export function VoiceChannel() {
+  const { t } = useTranslation();
   const {
     channelId,
     isMuted,
@@ -41,7 +43,7 @@ export function VoiceChannel() {
   const [showScreenPicker, setShowScreenPicker] = useState(false);
   const [localMicStream, setLocalMicStream] = useState<MediaStream | null>(null);
 
-  const channelName = activeChannel?.name ?? 'Voice Chat';
+  const channelName = activeChannel?.name ?? t('voice.voiceChat');
 
   // Acquire microphone stream for the AudioVisualizer
   useEffect(() => {
@@ -110,8 +112,10 @@ export function VoiceChannel() {
           </h2>
           <p className="text-rally-text-muted text-sm mt-1">
             {participants.length > 0
-              ? `${participants.length} ${participants.length === 1 ? 'person' : 'people'} connected`
-              : 'No one is here yet'}
+              ? participants.length === 1
+                ? t('voice.peopleConnected', { count: participants.length })
+                : t('voice.peopleConnectedPlural', { count: participants.length })
+              : t('voice.noOneHere')}
           </p>
         </div>
         <button
@@ -119,7 +123,7 @@ export function VoiceChannel() {
           className="flex items-center gap-2 rounded-lg bg-[#39FF14]/20 px-6 py-3 text-[#39FF14] font-semibold transition-colors hover:bg-[#39FF14]/30"
         >
           <Mic size={18} />
-          <span>Join Voice</span>
+          <span>{t('voice.joinVoice')}</span>
         </button>
       </div>
     );
@@ -144,7 +148,7 @@ export function VoiceChannel() {
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-[#39FF14] animate-pulse" />
           <span className="font-display text-sm font-bold uppercase tracking-wider text-white">
-            Voice Connected
+            {t('voice.voiceConnected')}
           </span>
         </div>
       </div>
@@ -165,8 +169,8 @@ export function VoiceChannel() {
             <Monitor size={14} className="text-[#39FF14]" />
             <span className="text-xs font-medium text-rally-text">
               {isScreenSharing
-                ? 'You are sharing your screen'
-                : `${participants.find((p) => p.userId === screenShareUserId)?.displayName ?? 'Someone'} is sharing`}
+                ? t('voice.sharingScreen')
+                : t('voice.someoneSharing', { name: participants.find((p) => p.userId === screenShareUserId)?.displayName ?? 'Someone' })}
             </span>
           </div>
           <video
@@ -192,37 +196,37 @@ export function VoiceChannel() {
           active={isMuted}
           activeColor="text-[#FF006E]"
           icon={isMuted ? MicOff : Mic}
-          label={isMuted ? 'Unmute' : 'Mute'}
+          label={isMuted ? t('voice.unmute') : t('voice.mute')}
           onClick={toggleMute}
         />
         <ControlButton
           active={isDeafened}
           activeColor="text-[#FF006E]"
           icon={isDeafened ? HeadphoneOff : Headphones}
-          label={isDeafened ? 'Undeafen' : 'Deafen'}
+          label={isDeafened ? t('voice.undeafen') : t('voice.deafen')}
           onClick={toggleDeafen}
         />
         <ControlButton
           active={isScreenSharing}
           activeColor="text-[#39FF14]"
           icon={Monitor}
-          label="Screen Share"
+          label={t('voice.screenShare')}
           onClick={handleToggleScreenShare}
         />
         <ControlButton
           active={isCameraOn}
           activeColor="text-[#39FF14]"
           icon={isCameraOn ? Camera : CameraOff}
-          label={isCameraOn ? 'Camera Off' : 'Camera On'}
+          label={isCameraOn ? t('voice.cameraOff') : t('voice.cameraOn')}
           onClick={handleToggleCamera}
         />
         <button
           onClick={handleDisconnect}
           className="flex items-center gap-2 rounded-lg bg-[#FF006E]/20 px-4 py-2 text-[#FF006E] transition-colors hover:bg-[#FF006E]/30"
-          title="Disconnect"
+          title={t('voice.disconnect')}
         >
           <PhoneOff size={18} />
-          <span className="text-sm font-medium">Disconnect</span>
+          <span className="text-sm font-medium">{t('voice.disconnect')}</span>
         </button>
       </div>
 

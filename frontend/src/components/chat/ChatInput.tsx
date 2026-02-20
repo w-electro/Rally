@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Smile, Send, X } from 'lucide-react';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,7 @@ export function ChatInput({
   disabled = false,
   className,
 }: ChatInputProps) {
+  const { t } = useTranslation();
   const [content, setContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,10 +126,7 @@ export function ChatInput({
       {replyingTo && (
         <div className="mb-1 flex items-center gap-2 rounded-t border border-b-0 border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-gray-400">
           <span className="flex-1 truncate">
-            Replying to{' '}
-            <span className="font-semibold text-rally-blue">
-              @{replyingTo.author?.displayName ?? 'Unknown'}
-            </span>
+            {t('chat.replyingTo', { name: replyingTo.author?.displayName ?? 'Unknown' })}
           </span>
           <button
             onClick={onCancelReply}
@@ -152,7 +151,7 @@ export function ChatInput({
         {/* Attachment button */}
         <button
           className="mb-0.5 shrink-0 rounded p-1 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-          title="Add attachment"
+          title={t('chat.addAttachment')}
         >
           <Plus className="h-5 w-5" />
         </button>
@@ -165,7 +164,7 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder={`Message #${channelName}`}
+          placeholder={t('chat.messagePlaceholder', { channel: channelName })}
           disabled={disabled}
           rows={1}
           className="flex-1 resize-none bg-transparent text-sm text-gray-200 placeholder-gray-600 outline-none scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
@@ -191,7 +190,7 @@ export function ChatInput({
           {/* Emoji button */}
           <button
             className="rounded p-1 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-            title="Emoji"
+            title={t('chat.emoji')}
           >
             <Smile className="h-5 w-5" />
           </button>
@@ -206,7 +205,7 @@ export function ChatInput({
                 ? 'text-rally-blue hover:bg-rally-blue/10'
                 : 'text-gray-700 cursor-default',
             )}
-            title="Send message"
+            title={t('chat.sendMessage')}
           >
             <Send className="h-5 w-5" />
           </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   Users,
@@ -44,6 +45,7 @@ interface FriendRequest {
 }
 
 export function DmSidebar() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const activeConversationId = useUIStore((s) => s.activeDmConversationId);
   const setActiveDmConversation = useUIStore((s) => s.setActiveDmConversation);
@@ -101,11 +103,11 @@ export function DmSidebar() {
     setFriendMessage(null);
     try {
       await api.sendFriendRequest(targetId);
-      setFriendMessage({ type: 'success', text: 'Friend request sent!' });
+      setFriendMessage({ type: 'success', text: t('dm.friendRequestSent') });
       setSearchResults((prev) => prev.filter((u) => u.id !== targetId));
       loadFriendRequests();
     } catch (err: any) {
-      setFriendMessage({ type: 'error', text: err.message || 'Failed to send request' });
+      setFriendMessage({ type: 'error', text: err.message || t('dm.failedSendRequest') });
     }
     setFriendActionLoading(null);
   };
@@ -146,10 +148,10 @@ export function DmSidebar() {
       const data = await api.searchUsers(addFriendQuery.trim());
       setSearchResults(data?.users ?? []);
       if ((data?.users ?? []).length === 0) {
-        setFriendMessage({ type: 'error', text: 'No users found' });
+        setFriendMessage({ type: 'error', text: t('dm.noUsersFound') });
       }
     } catch {
-      setFriendMessage({ type: 'error', text: 'Search failed' });
+      setFriendMessage({ type: 'error', text: t('dm.searchFailed') });
     }
     setIsSearching(false);
   };
@@ -201,12 +203,12 @@ export function DmSidebar() {
 
   const getStatusLabel = (status: string): string => {
     switch (status) {
-      case 'ONLINE': return 'Online';
-      case 'IDLE': return 'Idle';
-      case 'DND': return 'Do Not Disturb';
-      case 'IN_GAME': return 'In Game';
-      case 'STREAMING': return 'Streaming';
-      default: return 'Offline';
+      case 'ONLINE': return t('common.online');
+      case 'IDLE': return t('common.idle');
+      case 'DND': return t('common.dnd');
+      case 'IN_GAME': return t('common.inGame');
+      case 'STREAMING': return t('common.streaming');
+      default: return t('common.offline');
     }
   };
 
@@ -225,16 +227,16 @@ export function DmSidebar() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <h2 className="font-display text-sm font-bold uppercase tracking-wider text-white/70">
-            Friends
+            {t('dm.friends')}
           </h2>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-white/5">
           {([
-            { id: 'all' as FriendsTab, label: 'All' },
-            { id: 'pending' as FriendsTab, label: 'Pending', badge: pendingCount },
-            { id: 'add' as FriendsTab, label: 'Add' },
+            { id: 'all' as FriendsTab, label: t('dm.all') },
+            { id: 'pending' as FriendsTab, label: t('dm.pending'), badge: pendingCount },
+            { id: 'add' as FriendsTab, label: t('dm.add') },
           ]).map((tab) => (
             <button
               key={tab.id}
@@ -275,8 +277,8 @@ export function DmSidebar() {
             friends.length === 0 ? (
               <div className="text-center py-12 px-4">
                 <Users className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                <p className="text-white/30 text-sm">No friends yet</p>
-                <p className="text-white/15 text-xs mt-1">Add friends to start chatting</p>
+                <p className="text-white/30 text-sm">{t('dm.noFriends')}</p>
+                <p className="text-white/15 text-xs mt-1">{t('dm.addFriends')}</p>
               </div>
             ) : (
               <div className="space-y-0.5">
@@ -338,7 +340,7 @@ export function DmSidebar() {
               {pendingRequests.received.length > 0 && (
                 <>
                   <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
-                    Received — {pendingRequests.received.length}
+                    {t('dm.received')} — {pendingRequests.received.length}
                   </p>
                   {pendingRequests.received.map((req) => (
                     <div key={req.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.04]">
@@ -379,7 +381,7 @@ export function DmSidebar() {
               {pendingRequests.sent.length > 0 && (
                 <>
                   <p className="px-3 py-1 mt-2 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
-                    Sent — {pendingRequests.sent.length}
+                    {t('dm.sent')} — {pendingRequests.sent.length}
                   </p>
                   {pendingRequests.sent.map((req) => (
                     <div key={req.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
@@ -392,7 +394,7 @@ export function DmSidebar() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white/80 truncate">{req.receiver.displayName}</p>
-                        <p className="text-[10px] text-white/30">Pending...</p>
+                        <p className="text-[10px] text-white/30">{t('dm.pendingStatus')}</p>
                       </div>
                     </div>
                   ))}
@@ -402,7 +404,7 @@ export function DmSidebar() {
               {pendingRequests.received.length === 0 && pendingRequests.sent.length === 0 && (
                 <div className="text-center py-12 px-4">
                   <Inbox className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                  <p className="text-white/30 text-sm">No pending requests</p>
+                  <p className="text-white/30 text-sm">{t('dm.noPendingRequests')}</p>
                 </div>
               )}
             </>
@@ -417,7 +419,7 @@ export function DmSidebar() {
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
-                  placeholder="Enter a username..."
+                  placeholder={t('dm.enterUsername')}
                   value={addFriendQuery}
                   onChange={(e) => setAddFriendQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()}
@@ -477,11 +479,11 @@ export function DmSidebar() {
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
         <h2 className="font-display text-sm font-bold uppercase tracking-wider text-white/70">
-          Messages
+          {t('dm.messages')}
         </h2>
         <button
           className="p-1.5 rounded-md text-white/40 hover:text-rally-blue hover:bg-rally-blue/10 transition-colors"
-          title="New Message"
+          title={t('dm.newMessage')}
         >
           <PenSquare className="w-4 h-4" />
         </button>
@@ -500,7 +502,7 @@ export function DmSidebar() {
           <Search className="w-4 h-4 text-white/30 shrink-0" />
           <input
             type="text"
-            placeholder="Search conversations..."
+            placeholder={t('dm.searchConversations')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
@@ -525,7 +527,7 @@ export function DmSidebar() {
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors"
         >
           <Users className="w-5 h-5" />
-          <span className="text-sm font-body font-medium">Friends</span>
+          <span className="text-sm font-body font-medium">{t('dm.friends')}</span>
           {pendingCount > 0 && (
             <span className="ml-auto px-1.5 py-0.5 rounded-full bg-rally-magenta/20 text-rally-magenta text-[10px] font-bold">
               {pendingCount}
@@ -537,7 +539,7 @@ export function DmSidebar() {
       {/* Section Header */}
       <div className="px-4 pt-3 pb-1.5 flex items-center justify-between">
         <span className="text-[11px] font-display font-semibold uppercase tracking-wider text-white/30">
-          Direct Messages
+          {t('dm.directMessages')}
         </span>
         <span className="text-[10px] text-white/20 font-body">
           {filteredConversations.length}
@@ -552,20 +554,19 @@ export function DmSidebar() {
             {searchQuery ? (
               <>
                 <Search className="w-8 h-8 text-white/10 mx-auto mb-3" />
-                <p className="text-white/30 text-sm font-body">No conversations found</p>
+                <p className="text-white/30 text-sm font-body">{t('dm.noConversations')}</p>
                 <p className="text-white/15 text-xs mt-1 font-body">
-                  Try a different search term
+                  {t('dm.tryDifferent')}
                 </p>
               </>
             ) : (
               <>
                 <Inbox className="w-10 h-10 text-white/10 mx-auto mb-3" />
                 <p className="text-white/30 text-sm font-body font-medium">
-                  No conversations yet
+                  {t('dm.noConversationsYet')}
                 </p>
                 <p className="text-white/15 text-xs mt-1.5 font-body leading-relaxed">
-                  Start a conversation by clicking the pen icon above
-                  or messaging someone from a server.
+                  {t('dm.startConversation')}
                 </p>
               </>
             )}
@@ -666,13 +667,13 @@ export function DmSidebar() {
                     hasUnread ? 'text-white/50' : 'text-white/25'
                   )}>
                     {lastMsg.senderId === user?.id && (
-                      <span className="text-white/15">You: </span>
+                      <span className="text-white/15">{t('dm.you')}</span>
                     )}
                     {lastMsg.content}
                   </p>
                 ) : (
                   <p className="text-xs text-white/15 mt-0.5 italic">
-                    No messages yet
+                    {t('dm.noMessages')}
                   </p>
                 )}
               </div>

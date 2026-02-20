@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useServerStore } from '@/stores/serverStore';
 import api from '@/lib/api';
 import type { GameSession } from '@/lib/types';
@@ -7,6 +8,7 @@ import { cn, formatDate } from '@/lib/utils';
 import { Modal } from '../ui/Modal';
 
 export function GameSessionPanel() {
+  const { t } = useTranslation();
   const { activeServer } = useServerStore();
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -50,13 +52,13 @@ export function GameSessionPanel() {
     <div className="flex-1 flex flex-col bg-black min-h-0">
       <div className="px-4 py-3 border-b border-rally-border bg-[#0D1117]/80 flex items-center gap-3">
         <Gamepad2 className="w-5 h-5 text-rally-cyan" />
-        <h2 className="font-display font-bold text-rally-text">Gaming Sessions</h2>
+        <h2 className="font-display font-bold text-rally-text">{t('gaming.gamingSessions')}</h2>
         <div className="flex-1" />
         <button onClick={handleRally} className="btn-rally-primary text-xs flex items-center gap-1 mr-2">
-          <Megaphone className="w-3.5 h-3.5" />Rally!
+          <Megaphone className="w-3.5 h-3.5" />{t('gaming.rally')}
         </button>
         <button onClick={() => setShowCreate(true)} className="btn-rally text-xs flex items-center gap-1">
-          <Plus className="w-3.5 h-3.5" />New Session
+          <Plus className="w-3.5 h-3.5" />{t('gaming.newSession')}
         </button>
       </div>
 
@@ -66,7 +68,7 @@ export function GameSessionPanel() {
         ) : sessions.length === 0 ? (
           <div className="text-center py-12">
             <Gamepad2 className="w-12 h-12 text-rally-text-muted mx-auto mb-3" />
-            <p className="text-rally-text-muted">No upcoming sessions. Create one!</p>
+            <p className="text-rally-text-muted">{t('gaming.noSessions')}</p>
           </div>
         ) : (
           sessions.map((session) => (
@@ -87,11 +89,11 @@ export function GameSessionPanel() {
               <div className="flex items-center gap-4 mt-3">
                 <span className="text-xs text-rally-text-muted flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  {session.members?.length || 0}{session.maxPlayers ? `/${session.maxPlayers}` : ''} players
+                  {t('gaming.playersCount', { count: `${session.members?.length || 0}${session.maxPlayers ? '/' + session.maxPlayers : ''}` as any })}
                 </span>
                 <div className="flex-1" />
                 <button className="text-xs px-3 py-1 rounded bg-rally-green/10 text-rally-green border border-rally-green/30 hover:bg-rally-green/20 transition-colors">
-                  <Check className="w-3 h-3 inline mr-1" />Join
+                  <Check className="w-3 h-3 inline mr-1" />{t('gaming.join')}
                 </button>
               </div>
               {session.members && session.members.length > 0 && (
@@ -113,29 +115,29 @@ export function GameSessionPanel() {
 
       {/* Create Session Modal */}
       {showCreate && (
-        <Modal isOpen onClose={() => setShowCreate(false)} title="Create Game Session" size="md">
+        <Modal isOpen onClose={() => setShowCreate(false)} title={t('gaming.createSession')} size="md">
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Game</label>
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('gaming.game')}</label>
               <input value={form.game} onChange={(e) => setForm({ ...form, game: e.target.value })} className="input-rally rounded" placeholder="e.g. Valorant, Apex Legends" />
             </div>
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Session Title</label>
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('gaming.sessionTitle')}</label>
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-rally rounded" placeholder="e.g. Ranked grind tonight" />
             </div>
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">When</label>
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('gaming.when')}</label>
               <input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })} className="input-rally rounded" />
             </div>
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Max Players (optional)</label>
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('gaming.maxPlayers')}</label>
               <input type="number" value={form.maxPlayers} onChange={(e) => setForm({ ...form, maxPlayers: e.target.value })} className="input-rally rounded" placeholder="Leave empty for unlimited" />
             </div>
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Description</label>
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('gaming.sessionDescription')}</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-rally rounded h-20 resize-none" placeholder="Details about the session..." />
             </div>
-            <button onClick={handleCreate} className="btn-rally-primary w-full py-2.5">Create Session</button>
+            <button onClick={handleCreate} className="btn-rally-primary w-full py-2.5">{t('gaming.createSession')}</button>
           </div>
         </Modal>
       )}

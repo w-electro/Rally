@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useServerStore } from '@/stores/serverStore';
 import api from '@/lib/api';
 import type { PointBalance, PointReward } from '@/lib/types';
@@ -7,6 +8,7 @@ import { cn, formatNumber } from '@/lib/utils';
 import { Tabs } from '../ui/Tabs';
 
 export function PointsPanel() {
+  const { t } = useTranslation();
   const { activeServer } = useServerStore();
   const [balance, setBalance] = useState<PointBalance | null>(null);
   const [rewards, setRewards] = useState<PointReward[]>([]);
@@ -47,17 +49,17 @@ export function PointsPanel() {
       <div className="p-4 border-b border-rally-border text-center">
         <Coins className="w-8 h-8 text-rally-green mx-auto mb-1" />
         <p className="text-3xl font-display font-bold neon-text-green">{balance ? formatNumber(balance.balance) : '...'}</p>
-        <p className="text-xs text-rally-text-muted">Channel Points</p>
+        <p className="text-xs text-rally-text-muted">{t('streamPoints.channelPoints')}</p>
         {balance && (
-          <p className="text-[10px] text-rally-text-muted mt-1">Total earned: {formatNumber(balance.totalEarned)}</p>
+          <p className="text-[10px] text-rally-text-muted mt-1">{t('streamPoints.totalEarned')} {formatNumber(balance.totalEarned)}</p>
         )}
       </div>
 
       {/* Tabs */}
       <Tabs
         tabs={[
-          { id: 'rewards', label: 'Rewards' },
-          { id: 'leaderboard', label: 'Top 10' },
+          { id: 'rewards', label: t('streamPoints.rewards') },
+          { id: 'leaderboard', label: t('streamPoints.top10') },
         ]}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -71,7 +73,7 @@ export function PointsPanel() {
           rewards.length === 0 ? (
             <div className="text-center py-8">
               <Gift className="w-8 h-8 text-rally-text-muted mx-auto mb-2" />
-              <p className="text-xs text-rally-text-muted">No rewards available</p>
+              <p className="text-xs text-rally-text-muted">{t('streamPoints.noRewards')}</p>
             </div>
           ) : (
             rewards.filter((r) => r.isEnabled).map((reward) => (
@@ -110,7 +112,7 @@ export function PointsPanel() {
           leaderboard.length === 0 ? (
             <div className="text-center py-8">
               <Trophy className="w-8 h-8 text-rally-text-muted mx-auto mb-2" />
-              <p className="text-xs text-rally-text-muted">No leaderboard data</p>
+              <p className="text-xs text-rally-text-muted">{t('streamPoints.noLeaderboard')}</p>
             </div>
           ) : (
             leaderboard.map((entry, i) => (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, UserPlus, Users, MessageSquare, Zap, Pin } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useServerStore } from '@/stores/serverStore';
@@ -17,6 +18,7 @@ function ServerCard({
   isPinned: boolean;
   onContextMenu: (e: React.MouseEvent) => void;
 }) {
+  const { t } = useTranslation();
   const { setActiveServer } = useServerStore();
   const { setView } = useUIStore();
 
@@ -70,13 +72,14 @@ function ServerCard({
       {/* Member Count */}
       <div className="flex items-center gap-1 text-xs text-white/40">
         <Users className="h-3 w-3" />
-        <span>{server.memberCount ?? 0} members</span>
+        <span>{t('common.members', { count: server.memberCount ?? 0 })}</span>
       </div>
     </button>
   );
 }
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { servers } = useServerStore();
   const { openModal } = useUIStore();
@@ -88,10 +91,10 @@ export function Dashboard() {
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-rally-cyan">
-          Welcome back, {user?.displayName ?? 'Rallier'}
+          {t('dashboard.welcomeBack', { name: user?.displayName ?? 'Rallier' })}
         </h1>
         <p className="mt-1 font-body text-sm text-white/50">
-          Here's your Rally hub
+          {t('dashboard.subtitle')}
         </p>
       </div>
 
@@ -107,7 +110,7 @@ export function Dashboard() {
           )}
         >
           <Plus className="h-4 w-4" />
-          Create Server
+          {t('dashboard.createServer')}
         </button>
 
         <button
@@ -120,7 +123,7 @@ export function Dashboard() {
           )}
         >
           <UserPlus className="h-4 w-4" />
-          Join Server
+          {t('dashboard.joinServer')}
         </button>
       </div>
 
@@ -128,7 +131,7 @@ export function Dashboard() {
       {servers.length > 0 ? (
         <>
           <h2 className="mb-4 font-display text-lg font-semibold text-white/80">
-            Your Servers
+            {t('dashboard.yourServers')}
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {sortServers(servers).map((server) => (
@@ -150,10 +153,10 @@ export function Dashboard() {
             <MessageSquare className="h-10 w-10 text-white/20" />
           </div>
           <h3 className="font-display text-xl font-semibold text-white/60">
-            No servers yet
+            {t('dashboard.noServers')}
           </h3>
           <p className="mt-2 max-w-sm font-body text-sm text-white/30">
-            Create your own server or join an existing one to start chatting with your community.
+            {t('dashboard.createOwn')}
           </p>
           <div className="mt-6 flex items-center gap-3">
             <button
@@ -166,7 +169,7 @@ export function Dashboard() {
               )}
             >
               <Plus className="h-4 w-4" />
-              Create Server
+              {t('dashboard.createServer')}
             </button>
             <button
               onClick={() => openModal('joinServer')}
@@ -178,7 +181,7 @@ export function Dashboard() {
               )}
             >
               <UserPlus className="h-4 w-4" />
-              Join Server
+              {t('dashboard.joinServer')}
             </button>
           </div>
         </div>

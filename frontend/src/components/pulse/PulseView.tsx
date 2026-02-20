@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import type { PulsePost, TrendingHashtag } from '@/lib/types';
@@ -7,6 +8,7 @@ import { cn, formatNumber } from '@/lib/utils';
 import { Flame, TrendingUp, Users, Sparkles, Send, Image, Hash } from 'lucide-react';
 
 export function PulseView() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<PulsePost[]>([]);
   const [trending, setTrending] = useState<TrendingHashtag[]>([]);
@@ -71,14 +73,14 @@ export function PulseView() {
           <div className="px-4 pt-3 pb-0">
             <h1 className="font-display text-xl font-bold text-rally-text flex items-center gap-2">
               <Flame className="w-5 h-5 text-rally-blue" />
-              The Pulse
+              {t('pulse.thePulse')}
             </h1>
           </div>
           <div className="flex mt-3">
             {[
-              { id: 'foryou', label: 'For You', icon: Sparkles },
-              { id: 'following', label: 'Following', icon: Users },
-              { id: 'trending', label: 'Trending', icon: TrendingUp },
+              { id: 'foryou', label: t('pulse.forYou'), icon: Sparkles },
+              { id: 'following', label: t('pulse.following'), icon: Users },
+              { id: 'trending', label: t('pulse.trending'), icon: TrendingUp },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -107,7 +109,7 @@ export function PulseView() {
               <textarea
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                placeholder="What's happening in your world?"
+                placeholder={t('pulse.whatsHappening')}
                 className="w-full bg-transparent text-rally-text placeholder-rally-text-muted text-sm resize-none outline-none min-h-[60px]"
                 maxLength={280}
               />
@@ -128,7 +130,7 @@ export function PulseView() {
                   )}
                   <button onClick={handlePost} disabled={!newPost.trim() || isPosting} className="btn-rally-primary px-4 py-1.5 text-xs disabled:opacity-50">
                     <Send className="w-3.5 h-3.5 inline mr-1" />
-                    Post
+                    {t('pulse.post')}
                   </button>
                 </div>
               </div>
@@ -145,7 +147,7 @@ export function PulseView() {
           ) : posts.length === 0 ? (
             <div className="text-center py-12">
               <Flame className="w-12 h-12 text-rally-text-muted mx-auto mb-3" />
-              <p className="text-rally-text-muted">No posts yet. Be the first!</p>
+              <p className="text-rally-text-muted">{t('pulse.noPosts')}</p>
             </div>
           ) : (
             posts.map((post) => (
@@ -160,20 +162,20 @@ export function PulseView() {
         <div className="card-rally rounded-lg p-4 mb-4">
           <h3 className="font-display font-bold text-rally-text mb-3 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-rally-blue" />
-            Trending Now
+            {t('pulse.trendingNow')}
           </h3>
           {trending.map((tag, i) => (
             <button key={tag.id} className="w-full text-left py-2.5 hover:bg-white/5 rounded px-2 transition-colors">
-              <p className="text-xs text-rally-text-muted">{i + 1} · Trending</p>
+              <p className="text-xs text-rally-text-muted">{t('pulse.trendingRank', { rank: i + 1 })}</p>
               <p className="font-semibold text-rally-text text-sm">#{tag.tag}</p>
-              <p className="text-xs text-rally-text-muted">{formatNumber(tag.postCount)} posts</p>
+              <p className="text-xs text-rally-text-muted">{t('pulse.postsCount', { count: tag.postCount })}</p>
             </button>
           ))}
         </div>
 
         <div className="card-rally rounded-lg p-4">
-          <h3 className="font-display font-bold text-rally-text mb-3">Who to follow</h3>
-          <p className="text-sm text-rally-text-muted">Suggestions based on your interests will appear here.</p>
+          <h3 className="font-display font-bold text-rally-text mb-3">{t('pulse.whoToFollow')}</h3>
+          <p className="text-sm text-rally-text-muted">{t('pulse.suggestions')}</p>
         </div>
       </div>
     </div>

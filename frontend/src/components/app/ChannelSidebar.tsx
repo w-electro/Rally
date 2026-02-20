@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronRight,
@@ -111,6 +112,7 @@ function ChannelItem({
   onClick: () => void;
   voiceParticipants?: { displayName: string; avatarUrl?: string }[];
 }) {
+  const { t } = useTranslation();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const Icon = getChannelIconComponent(channel.type);
 
@@ -174,17 +176,17 @@ function ChannelItem({
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           <button className="w-full text-left px-3 py-1.5 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-            Edit Channel
+            {t('channel.editChannel')}
           </button>
           <button className="w-full text-left px-3 py-1.5 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-            Mute Channel
+            {t('channel.muteChannel')}
           </button>
           <button className="w-full text-left px-3 py-1.5 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-            Notification Settings
+            {t('channel.notificationSettings')}
           </button>
           <div className="h-px bg-white/10 my-1" />
           <button className="w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10">
-            Delete Channel
+            {t('channel.deleteChannel')}
           </button>
         </div>
       )}
@@ -254,6 +256,7 @@ function CategoryGroup({
 }
 
 export function ChannelSidebar() {
+  const { t } = useTranslation();
   const activeServer = useServerStore((s) => s.activeServer);
   const activeChannel = useServerStore((s) => s.activeChannel);
   const setActiveChannel = useServerStore((s) => s.setActiveChannel);
@@ -324,7 +327,7 @@ export function ChannelSidebar() {
                 className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" />
-                Invite People
+                {t('server.invitePeople')}
               </button>
               <button
                 onClick={() => {
@@ -334,7 +337,7 @@ export function ChannelSidebar() {
                 className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
               >
                 <Settings className="w-4 h-4" />
-                Server Settings
+                {t('server.serverSettings')}
               </button>
               <button
                 onClick={() => {
@@ -344,7 +347,7 @@ export function ChannelSidebar() {
                 className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Create Channel
+                {t('channel.createChannel')}
               </button>
             </div>
           </>
@@ -426,7 +429,7 @@ export function ChannelSidebar() {
               ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
               : 'text-white/40 hover:text-white/70 hover:bg-white/5'
           )}
-          aria-label={isMuted ? 'Unmute' : 'Mute'}
+          aria-label={isMuted ? t('voice.unmute') : t('voice.mute')}
         >
           {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
@@ -439,7 +442,7 @@ export function ChannelSidebar() {
               ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
               : 'text-white/40 hover:text-white/70 hover:bg-white/5'
           )}
-          aria-label={isDeafened ? 'Undeafen' : 'Deafen'}
+          aria-label={isDeafened ? t('voice.undeafen') : t('voice.deafen')}
         >
           {isDeafened ? (
             <HeadphoneOff className="w-4 h-4" />

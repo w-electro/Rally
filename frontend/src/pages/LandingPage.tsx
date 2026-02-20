@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 
 /* ------------------------------------------------------------------ */
@@ -96,12 +97,8 @@ interface Feature {
   shadowColor: string;
 }
 
-const FEATURES: Feature[] = [
+const FEATURE_VISUALS = [
   {
-    title: 'Squad Up',
-    subtitle: 'Discord-like',
-    description:
-      'Team management, voice and text chat, role-based permissions and channels. Build your gaming community from the ground up.',
     gradient: 'from-[#00D9FF] to-[#8B00FF]',
     shadowColor: 'rgba(0, 217, 255, 0.35)',
     icon: (
@@ -123,10 +120,6 @@ const FEATURES: Feature[] = [
     ),
   },
   {
-    title: 'Share & Discover',
-    subtitle: 'Instagram-like',
-    description:
-      'Visual feeds, stories, clips and highlights. Showcase your best plays and discover content from the community.',
     gradient: 'from-[#FF006E] to-[#8B00FF]',
     shadowColor: 'rgba(255, 0, 110, 0.35)',
     icon: (
@@ -146,10 +139,6 @@ const FEATURES: Feature[] = [
     ),
   },
   {
-    title: 'The Pulse',
-    subtitle: 'Twitter-like',
-    description:
-      'Global discovery feed, trending topics, and real-time gaming discourse. Stay on the pulse of the gaming world.',
     gradient: 'from-[#39FF14] to-[#00D9FF]',
     shadowColor: 'rgba(57, 255, 20, 0.35)',
     icon: (
@@ -165,10 +154,6 @@ const FEATURES: Feature[] = [
     ),
   },
   {
-    title: 'Go Live',
-    subtitle: 'Twitch-like',
-    description:
-      'Live streaming with channel points, chat overlays and raid mechanics. Turn every session into a show.',
     gradient: 'from-[#8B00FF] to-[#FF006E]',
     shadowColor: 'rgba(139, 0, 255, 0.35)',
     icon: (
@@ -273,6 +258,7 @@ function StatBlock({
 /*  LandingPage                                                        */
 /* ================================================================== */
 export function LandingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -300,6 +286,13 @@ export function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
+  const FEATURES: Feature[] = FEATURE_VISUALS.map((v, i) => ({
+    ...v,
+    title: [t('landing.squadUp'), t('landing.shareDiscover'), t('landing.thePulse'), t('landing.goLive')][i],
+    subtitle: [t('landing.squadUpDesc'), t('landing.shareDiscoverDesc'), t('landing.thePulseDesc'), t('landing.goLiveDesc')][i],
+    description: [t('landing.squadUpDesc'), t('landing.shareDiscoverDesc'), t('landing.thePulseDesc'), t('landing.goLiveDesc')][i],
+  }));
+
   const scrollToFeatures = () => {
     document
       .getElementById('features')
@@ -323,7 +316,7 @@ export function LandingPage() {
               className="w-8 h-8 group-hover:drop-shadow-[0_0_8px_rgba(0,217,255,0.5)] transition"
             />
             <span className="font-display text-xl font-bold tracking-widest uppercase text-rally-text group-hover:text-rally-blue transition-colors">
-              Rally
+              {t('landing.rally')}
             </span>
           </Link>
 
@@ -333,22 +326,22 @@ export function LandingPage() {
               onClick={scrollToFeatures}
               className="font-body text-sm text-rally-text-muted hover:text-rally-blue transition-colors"
             >
-              Features
+              {t('landing.features')}
             </button>
             <a
               href="#stats"
               className="font-body text-sm text-rally-text-muted hover:text-rally-blue transition-colors"
             >
-              Community
+              {t('landing.community')}
             </a>
             <Link
               to="/login"
               className="font-display text-sm font-semibold uppercase tracking-wider text-rally-text hover:text-rally-blue transition-colors"
             >
-              Login
+              {t('auth.login')}
             </Link>
             <Link to="/register" className="btn-rally-primary px-5 py-2 text-xs">
-              Register
+              {t('auth.register')}
             </Link>
           </div>
 
@@ -379,23 +372,23 @@ export function LandingPage() {
                 }}
                 className="font-body text-sm text-rally-text-muted hover:text-rally-blue transition-colors text-left"
               >
-                Features
+                {t('landing.features')}
               </button>
               <a
                 href="#stats"
                 className="font-body text-sm text-rally-text-muted hover:text-rally-blue transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Community
+                {t('landing.community')}
               </a>
               <Link
                 to="/login"
                 className="font-display text-sm font-semibold uppercase tracking-wider text-rally-text hover:text-rally-blue transition-colors"
               >
-                Login
+                {t('auth.login')}
               </Link>
               <Link to="/register" className="btn-rally-primary text-center px-5 py-2 text-xs">
-                Register
+                {t('auth.register')}
               </Link>
             </div>
           </div>
@@ -425,12 +418,12 @@ export function LandingPage() {
 
           {/* Title */}
           <h1 className="font-display text-6xl sm:text-7xl md:text-8xl font-bold tracking-[0.2em] uppercase neon-text select-none">
-            Rally
+            {t('landing.rally')}
           </h1>
 
           {/* Tagline */}
           <p className="mt-4 font-body text-lg sm:text-xl text-rally-text-muted max-w-xl leading-relaxed">
-            The Next Generation Gaming &amp; Social Platform
+            {t('landing.heroTitle')}
           </p>
 
           {/* CTA Buttons */}
@@ -439,13 +432,13 @@ export function LandingPage() {
               to="/register"
               className="btn-rally-primary px-8 py-3 text-sm min-w-[180px] text-center"
             >
-              Get Started
+              {t('landing.getStarted')}
             </Link>
             <button
               onClick={scrollToFeatures}
               className="btn-rally px-8 py-3 text-sm min-w-[180px]"
             >
-              Learn More
+              {t('landing.learnMore')}
             </button>
           </div>
         </div>
@@ -472,12 +465,10 @@ export function LandingPage() {
           {/* Section heading */}
           <div className="text-center mb-16">
             <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-widest text-rally-text">
-              One Platform.{' '}
-              <span className="neon-text">Infinite Possibilities.</span>
+              {t('landing.tagline')}
             </h2>
             <p className="mt-4 font-body text-rally-text-muted max-w-xl mx-auto">
-              Everything you need to game, connect, create and compete &mdash;
-              unified in one place.
+              {t('landing.description')}
             </p>
             {/* Geometric divider */}
             <div className="divider-geo mt-8 max-w-xs mx-auto" />
@@ -501,17 +492,17 @@ export function LandingPage() {
 
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-widest text-rally-text mb-4">
-            Built for <span className="neon-text-green">Gamers</span>
+            {t('landing.builtForGamers')}
           </h2>
           <p className="font-body text-rally-text-muted max-w-md mx-auto mb-16">
-            Join a growing community of players, creators and competitors.
+            {t('landing.joinGrowing')}
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatBlock label="Gamers" target={125000} suffix="+" started={statsVisible} />
-            <StatBlock label="Squads" target={8400} suffix="+" started={statsVisible} />
-            <StatBlock label="Hours Streamed" target={320000} suffix="+" started={statsVisible} />
-            <StatBlock label="Pulse Posts" target={1800000} suffix="+" started={statsVisible} />
+            <StatBlock label={t('landing.statGamers')} target={125000} suffix="+" started={statsVisible} />
+            <StatBlock label={t('landing.statSquads')} target={8400} suffix="+" started={statsVisible} />
+            <StatBlock label={t('landing.statHoursStreamed')} target={320000} suffix="+" started={statsVisible} />
+            <StatBlock label={t('landing.statPulsePosts')} target={1800000} suffix="+" started={statsVisible} />
           </div>
         </div>
       </section>
@@ -522,16 +513,16 @@ export function LandingPage() {
       <section className="relative py-24 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-widest text-rally-text mb-4">
-            Ready to <span className="neon-text-magenta">Rally?</span>
+            {t('landing.readyToRally')}
           </h2>
           <p className="font-body text-rally-text-muted mb-10">
-            Create your account in seconds and dive into the action.
+            {t('landing.createInSeconds')}
           </p>
           <Link
             to="/register"
             className="btn-rally-primary px-10 py-3 text-sm inline-block"
           >
-            Join Now
+            {t('landing.joinNow')}
           </Link>
         </div>
       </section>
@@ -544,11 +535,11 @@ export function LandingPage() {
           <div className="flex items-center gap-2">
             <img src="./icon.png" alt="Rally" className="w-5 h-5 opacity-60" />
             <span className="font-display text-xs text-rally-text-muted tracking-widest uppercase">
-              Rally
+              {t('landing.rally')}
             </span>
           </div>
           <p className="font-body text-xs text-rally-text-muted">
-            &copy; {new Date().getFullYear()} Rally. All rights reserved.
+            &copy; {new Date().getFullYear()} {t('landing.rally')}. {t('landing.allRightsReserved')}
           </p>
         </div>
       </footer>

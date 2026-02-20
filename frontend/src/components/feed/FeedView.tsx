@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { api } from '@/lib/api';
 import type { FeedPost, MediaItem } from '@/lib/types';
@@ -21,6 +22,7 @@ interface FeedViewProps {
 }
 
 export function FeedView({ channelId, channelName = 'Feed' }: FeedViewProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,7 +148,7 @@ export function FeedView({ channelId, channelName = 'Feed' }: FeedViewProps) {
           }}
         >
           <Plus className="h-4 w-4" />
-          New Post
+          {t('feed.newPost')}
         </button>
       </div>
 
@@ -160,10 +162,10 @@ export function FeedView({ channelId, channelName = 'Feed' }: FeedViewProps) {
           <div className="flex flex-col items-center justify-center py-20 text-rally-text-muted">
             <Image className="mb-4 h-16 w-16 opacity-30" />
             <p className="font-display text-lg uppercase tracking-wider">
-              No posts yet
+              {t('feed.noPosts')}
             </p>
             <p className="mt-1 text-sm">
-              Be the first to share something!
+              {t('feed.beFirst')}
             </p>
           </div>
         ) : (
@@ -316,6 +318,7 @@ function CreatePostDialog({
   onClose,
   onCreated,
 }: CreatePostDialogProps) {
+  const { t } = useTranslation();
   const [caption, setCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
@@ -373,7 +376,7 @@ function CreatePostDialog({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-rally-border/50 px-6 py-4">
             <h2 className="font-display text-lg font-bold uppercase tracking-wider text-rally-text">
-              Create Post
+              {t('feed.createPost')}
             </h2>
             <button
               onClick={onClose}
@@ -406,7 +409,7 @@ function CreatePostDialog({
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <p className="font-display text-sm uppercase tracking-wider text-white">
-                      Click to change
+                      {t('feed.clickToChange')}
                     </p>
                   </div>
                 </div>
@@ -416,10 +419,10 @@ function CreatePostDialog({
                     <Image className="h-6 w-6 text-rally-blue" />
                   </div>
                   <p className="font-display text-sm uppercase tracking-wider text-rally-text-muted">
-                    Add photos or videos
+                    {t('feed.addMedia')}
                   </p>
                   <p className="text-xs text-rally-text-muted/60">
-                    Click to upload media
+                    {t('feed.clickUpload')}
                   </p>
                 </>
               )}
@@ -429,7 +432,7 @@ function CreatePostDialog({
             <textarea
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Write a caption..."
+              placeholder={t('feed.captionPlaceholder')}
               rows={3}
               className="w-full resize-none border border-rally-border/50 bg-rally-surface px-4 py-3 font-body text-sm text-rally-text placeholder:text-rally-text-muted/50 focus:border-rally-blue/50 focus:outline-none"
             />
@@ -456,7 +459,7 @@ function CreatePostDialog({
               onClick={onClose}
               className="mr-3 px-4 py-2 font-display text-sm uppercase tracking-wider text-rally-text-muted transition-colors hover:text-rally-text"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -470,7 +473,7 @@ function CreatePostDialog({
               {isSubmitting && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
-              Post
+              {t('feed.post')}
             </button>
           </div>
 

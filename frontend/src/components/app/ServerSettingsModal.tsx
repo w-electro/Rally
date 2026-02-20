@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   X,
   Settings,
@@ -22,13 +23,14 @@ import { cn, getInitials, getStatusColor } from '@/lib/utils';
 import type { ServerMember, Role } from '@/lib/types';
 
 const TABS = [
-  { id: 'overview', label: 'Overview', icon: Settings },
-  { id: 'ranks', label: 'Ranks', icon: Shield },
-  { id: 'members', label: 'Members', icon: Users },
-  { id: 'invites', label: 'Invites', icon: Link },
+  { id: 'overview', labelKey: 'server.overview', icon: Settings },
+  { id: 'ranks', labelKey: 'server.ranks', icon: Shield },
+  { id: 'members', labelKey: 'chat.members', icon: Users },
+  { id: 'invites', labelKey: 'server.invites', icon: Link },
 ];
 
 export function ServerSettingsModal() {
+  const { t } = useTranslation();
   const closeModal = useUIStore((s) => s.closeModal);
   const activeServer = useServerStore((s) => s.activeServer);
   const members = useServerStore((s) => s.members);
@@ -154,7 +156,7 @@ export function ServerSettingsModal() {
       <div className="w-56 bg-[#0D1117] border-r border-rally-border flex flex-col">
         <div className="p-4">
           <h2 className="font-display text-sm font-bold uppercase tracking-wider text-rally-text-muted">
-            Server Settings
+            {t('server.serverSettings')}
           </h2>
           {activeServer && (
             <p className="text-xs text-rally-blue mt-1 truncate">{activeServer.name}</p>
@@ -173,7 +175,7 @@ export function ServerSettingsModal() {
               )}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           ))}
         </nav>
@@ -183,7 +185,7 @@ export function ServerSettingsModal() {
       <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-2xl font-bold text-rally-text">
-            {TABS.find((t) => t.id === activeTab)?.label}
+            {t(TABS.find((tab) => tab.id === activeTab)?.labelKey ?? '')}
           </h1>
           <button
             onClick={closeModal}
@@ -199,7 +201,7 @@ export function ServerSettingsModal() {
             {/* Server Icon Upload */}
             <div>
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-3">
-                Server Icon
+                {t('server.serverIcon')}
               </label>
               <div className="flex items-center gap-4">
                 <button
@@ -224,14 +226,14 @@ export function ServerSettingsModal() {
                 </button>
                 <div>
                   <p className="text-sm text-rally-text-muted">
-                    Click to upload. PNG or JPG, max 2MB.
+                    {t('server.clickUpload')}
                   </p>
                   {serverIconPreview && serverIconPreview !== activeServer?.iconUrl && (
                     <button
                       onClick={() => setServerIconPreview(activeServer?.iconUrl || null)}
                       className="text-xs text-rally-magenta hover:underline mt-1"
                     >
-                      Reset
+                      {t('server.reset')}
                     </button>
                   )}
                 </div>
@@ -248,7 +250,7 @@ export function ServerSettingsModal() {
             {/* Server Name */}
             <div>
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">
-                Server Name <span className="text-rally-magenta">*</span>
+                {t('server.serverName')} <span className="text-rally-magenta">*</span>
               </label>
               <input
                 value={serverName}
@@ -262,13 +264,13 @@ export function ServerSettingsModal() {
             {/* Description */}
             <div>
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">
-                Description
+                {t('server.description')}
               </label>
               <textarea
                 value={serverDescription}
                 onChange={(e) => setServerDescription(e.target.value)}
                 className="input-rally rounded h-24 resize-none w-full"
-                placeholder="What's your server about?"
+                placeholder={t('server.descriptionPlaceholder')}
                 maxLength={1024}
                 disabled={!isOwner}
               />
@@ -277,7 +279,7 @@ export function ServerSettingsModal() {
             {/* Visibility toggle */}
             <div>
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">
-                Visibility
+                {t('server.visibility')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -292,7 +294,7 @@ export function ServerSettingsModal() {
                   )}
                 >
                   <Lock className="w-4 h-4" />
-                  Private
+                  {t('server.private')}
                 </button>
                 <button
                   type="button"
@@ -306,7 +308,7 @@ export function ServerSettingsModal() {
                   )}
                 >
                   <Globe className="w-4 h-4" />
-                  Public
+                  {t('server.public')}
                 </button>
               </div>
             </div>
@@ -319,11 +321,11 @@ export function ServerSettingsModal() {
                   disabled={isSaving || !serverName.trim()}
                   className="btn-rally-primary px-6 py-2"
                 >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
+                  {isSaving ? t('common.saving') : t('common.save')}
                 </button>
                 {saveSuccess && (
                   <span className="text-sm text-rally-green flex items-center gap-1">
-                    <Check className="w-4 h-4" /> Saved!
+                    <Check className="w-4 h-4" /> {t('common.saved')}
                   </span>
                 )}
               </div>
@@ -331,7 +333,7 @@ export function ServerSettingsModal() {
 
             {!isOwner && (
               <p className="text-xs text-rally-text-muted italic">
-                Only the server owner can edit these settings.
+                {t('server.ownerOnly')}
               </p>
             )}
           </div>
@@ -341,7 +343,7 @@ export function ServerSettingsModal() {
         {activeTab === 'ranks' && (
           <div className="space-y-4">
             <p className="text-sm text-rally-text-muted mb-4">
-              Ranks define what members can do in this server. Higher position = higher priority.
+              {t('server.ranksDesc')}
             </p>
 
             {activeServer?.roles && activeServer.roles.length > 0 ? (
@@ -363,11 +365,11 @@ export function ServerSettingsModal() {
                         </h3>
                         {role.isDefault && (
                           <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-rally-blue/10 text-rally-blue font-display">
-                            Default
+                            {t('server.default')}
                           </span>
                         )}
                         <span className="text-[10px] text-rally-text-muted ml-auto">
-                          Position: {role.position}
+                          {t('server.position')} {role.position}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -386,7 +388,7 @@ export function ServerSettingsModal() {
             ) : (
               <div className="text-center py-12">
                 <Shield className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                <p className="text-white/30 text-sm">No ranks configured yet.</p>
+                <p className="text-white/30 text-sm">{t('server.noRanks')}</p>
                 <p className="text-white/20 text-xs mt-1">
                   Ranks will appear here once they are created via the API.
                 </p>
@@ -400,7 +402,7 @@ export function ServerSettingsModal() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-rally-text-muted">
-                {members.length} member{members.length !== 1 ? 's' : ''} in this server
+                {t('server.membersCount', { count: members.length })}
               </p>
             </div>
 
@@ -471,7 +473,7 @@ export function ServerSettingsModal() {
               {members.length === 0 && (
                 <div className="text-center py-12">
                   <Users className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                  <p className="text-white/30 text-sm">No members loaded.</p>
+                  <p className="text-white/30 text-sm">{t('server.noMembers')}</p>
                 </div>
               )}
             </div>
@@ -482,13 +484,13 @@ export function ServerSettingsModal() {
         {activeTab === 'invites' && (
           <div className="space-y-6">
             <p className="text-sm text-rally-text-muted">
-              Generate invite codes to let others join this server.
+              {t('server.generateInvite')}
             </p>
 
             {/* Create invite */}
             <div className="card-rally rounded-lg p-5 border border-white/5">
               <h3 className="font-display font-semibold text-rally-text mb-3">
-                Create New Invite
+                {t('server.createNewInvite')}
               </h3>
               {!inviteCode ? (
                 <button
@@ -499,12 +501,12 @@ export function ServerSettingsModal() {
                   {isCreatingInvite ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
+                      {t('server.generating')}
                     </>
                   ) : (
                     <>
                       <Plus className="w-4 h-4" />
-                      Generate Invite Code
+                      {t('server.generateInviteCode')}
                     </>
                   )}
                 </button>
@@ -530,7 +532,7 @@ export function ServerSettingsModal() {
                     </button>
                   </div>
                   {copied && (
-                    <p className="text-xs text-rally-green">Copied to clipboard!</p>
+                    <p className="text-xs text-rally-green">{t('common.copied')}</p>
                   )}
                   <button
                     onClick={() => {
@@ -539,7 +541,7 @@ export function ServerSettingsModal() {
                     }}
                     className="text-xs text-rally-text-muted hover:text-rally-text transition-colors"
                   >
-                    Generate another
+                    {t('server.generateAnother')}
                   </button>
                 </div>
               )}

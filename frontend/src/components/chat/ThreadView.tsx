@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Reply } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { MessageItem } from '@/components/chat/MessageItem';
@@ -31,6 +32,7 @@ export function ThreadView({
   onClose,
   className,
 }: ThreadViewProps) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { sendMessage, addReaction } = useSocket();
   const { messages: allMessages } = useMessageStore();
@@ -82,10 +84,10 @@ export function ThreadView({
         <div className="flex items-center gap-2">
           <Reply className="h-4 w-4 text-rally-blue -scale-x-100" />
           <h3 className="font-display text-sm font-semibold text-white">
-            Thread
+            {t('chat.thread')}
           </h3>
           <span className="text-xs text-gray-500">
-            {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+            {replies.length === 1 ? t('chat.replyCount', { count: replies.length }) : t('chat.replyCountPlural', { count: replies.length })}
           </span>
         </div>
         <button
@@ -126,7 +128,7 @@ export function ThreadView({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <Reply className="h-8 w-8 text-gray-700 -scale-x-100 mb-2" />
             <p className="text-xs text-gray-600">
-              No replies yet. Start the conversation!
+              {t('chat.noReplies')}
             </p>
           </div>
         )}

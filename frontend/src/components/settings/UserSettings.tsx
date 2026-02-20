@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
-import { X, User, Shield, Gamepad2, Bell, Volume2, Palette, Camera, Check, Mic, Speaker } from 'lucide-react';
+import { X, User, Shield, Gamepad2, Bell, Volume2, Palette, Camera, Check, Mic, Speaker, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const TABS = [
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'privacy', label: 'Privacy', icon: Shield },
-  { id: 'gaming', label: 'Gaming', icon: Gamepad2 },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'audio', label: 'Voice & Audio', icon: Volume2 },
-  { id: 'appearance', label: 'Appearance', icon: Palette },
+const TAB_KEYS = [
+  { id: 'profile', key: 'settings.profile', icon: User },
+  { id: 'privacy', key: 'settings.privacy', icon: Shield },
+  { id: 'gaming', key: 'settings.gaming', icon: Gamepad2 },
+  { id: 'notifications', key: 'settings.notifications', icon: Bell },
+  { id: 'audio', key: 'settings.voiceAudio', icon: Volume2 },
+  { id: 'appearance', key: 'settings.appearance', icon: Palette },
 ];
 
 interface UserSettingsProps {
@@ -18,6 +19,7 @@ interface UserSettingsProps {
 }
 
 export function UserSettings({ onClose }: UserSettingsProps) {
+  const { t, i18n } = useTranslation();
   const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
   const [displayName, setDisplayName] = useState(user?.displayName || '');
@@ -100,10 +102,10 @@ export function UserSettings({ onClose }: UserSettingsProps) {
       {/* Sidebar */}
       <div className="w-56 bg-[#0D1117] border-r border-rally-border flex flex-col">
         <div className="p-4">
-          <h2 className="font-display text-sm font-bold uppercase tracking-wider text-rally-text-muted">Settings</h2>
+          <h2 className="font-display text-sm font-bold uppercase tracking-wider text-rally-text-muted">{t('settings.settings')}</h2>
         </div>
         <nav className="flex-1 px-2 space-y-0.5">
-          {TABS.map((tab) => (
+          {TAB_KEYS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -112,12 +114,12 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 activeTab === tab.id ? 'bg-rally-blue/10 text-rally-blue' : 'text-rally-text-muted hover:text-rally-text hover:bg-white/5'
               )}
             >
-              <tab.icon className="w-4 h-4" />{tab.label}
+              <tab.icon className="w-4 h-4" />{t(tab.key)}
             </button>
           ))}
         </nav>
         <div className="p-4 border-t border-rally-border">
-          <button onClick={async () => { const { useAuthStore: s } = await import('@/stores/authStore'); s.getState().logout(); onClose(); }} className="btn-rally-danger w-full text-xs">Log Out</button>
+          <button onClick={async () => { const { useAuthStore: s } = await import('@/stores/authStore'); s.getState().logout(); onClose(); }} className="btn-rally-danger w-full text-xs">{t('settings.logOut')}</button>
         </div>
       </div>
 
@@ -125,7 +127,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
       <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-2xl font-bold text-rally-text">
-            {TABS.find((t) => t.id === activeTab)?.label}
+            {t(TAB_KEYS.find((tab) => tab.id === activeTab)?.key ?? '')}
           </h1>
           <button onClick={onClose} className="p-2 rounded hover:bg-white/10 text-rally-text-muted">
             <X className="w-5 h-5" />
@@ -175,24 +177,24 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Display Name</label>
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('settings.displayName')}</label>
               <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input-rally rounded w-full" />
             </div>
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Custom Status</label>
-              <input value={customStatus} onChange={(e) => setCustomStatus(e.target.value)} className="input-rally rounded w-full" placeholder="What are you up to?" />
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('settings.customStatus')}</label>
+              <input value={customStatus} onChange={(e) => setCustomStatus(e.target.value)} className="input-rally rounded w-full" />
             </div>
             <div>
-              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">Bio</label>
-              <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input-rally rounded h-24 resize-none w-full" placeholder="Tell everyone about yourself..." />
+              <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">{t('settings.bio')}</label>
+              <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input-rally rounded h-24 resize-none w-full" />
             </div>
             <div className="flex items-center gap-3">
               <button onClick={handleSaveProfile} disabled={isSaving} className="btn-rally-primary px-6 py-2">
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? t('common.saving') : t('common.save')}
               </button>
               {saveSuccess && (
                 <span className="text-sm text-rally-green flex items-center gap-1">
-                  <Check className="w-4 h-4" /> Saved!
+                  <Check className="w-4 h-4" /> {t('common.saved')}
                 </span>
               )}
             </div>
@@ -201,21 +203,18 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
         {activeTab === 'privacy' && (
           <div className="space-y-4">
-            <ToggleSetting label="Allow DMs from server members" description="Let anyone in your servers send you direct messages" defaultChecked />
-            <ToggleSetting label="Allow friend requests" description="Allow others to send you friend requests" defaultChecked />
-            <ToggleSetting label="Show online status" description="Let others see when you're online" defaultChecked />
-            <ToggleSetting label="Show current game" description="Display what game you're currently playing" defaultChecked />
-            <ToggleSetting label="Enable E2E encryption for DMs" description="Encrypt all direct messages end-to-end" />
+            <ToggleSetting label={t('settings.allowDms')} description={t('settings.allowDmsDesc')} defaultChecked />
+            <ToggleSetting label={t('settings.allowFriendRequests')} description={t('settings.allowFriendRequestsDesc')} defaultChecked />
+            <ToggleSetting label={t('settings.showOnline')} description={t('settings.showOnlineDesc')} defaultChecked />
+            <ToggleSetting label={t('settings.showActivity')} description={t('settings.showActivityDesc')} defaultChecked />
           </div>
         )}
 
         {activeTab === 'notifications' && (
           <div className="space-y-4">
-            <ToggleSetting label="Desktop notifications" description="Show desktop notifications for messages" defaultChecked />
-            <ToggleSetting label="Sound notifications" description="Play sounds for new messages" defaultChecked />
-            <ToggleSetting label="Rally calls" description="Get notified when someone starts a rally call" defaultChecked />
-            <ToggleSetting label="Stream alerts" description="Get notified when friends go live" defaultChecked />
-            <ToggleSetting label="Mention highlights" description="Get notified when you're mentioned" defaultChecked />
+            <ToggleSetting label={t('settings.desktopNotifications')} description={t('settings.desktopNotificationsDesc')} defaultChecked />
+            <ToggleSetting label={t('settings.soundEffects')} description={t('settings.soundEffectsDesc')} defaultChecked />
+            <ToggleSetting label={t('settings.mentionNotifications')} description={t('settings.mentionNotificationsDesc')} defaultChecked />
           </div>
         )}
 
@@ -226,7 +225,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">
                 <span className="flex items-center gap-2">
                   <Mic className="w-3.5 h-3.5" />
-                  Input Device
+                  {t('settings.inputDevice')}
                 </span>
               </label>
               <select
@@ -234,7 +233,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 onChange={(e) => { setSelectedInputDevice(e.target.value); localStorage.setItem('rally-audio-input', e.target.value); }}
                 className="input-rally rounded w-full bg-[#0D1117] text-rally-text cursor-pointer"
               >
-                <option value="default">System Default</option>
+                <option value="default">{t('settings.systemDefault')}</option>
                 {audioInputDevices.map((device) => (
                   <option key={device.deviceId} value={device.deviceId}>
                     {device.label || `Microphone (${device.deviceId.slice(0, 8)})`}
@@ -251,7 +250,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             {/* Input Volume */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted">Input Volume</label>
+                <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted">{t('settings.inputVolume')}</label>
                 <span className="text-xs text-rally-blue font-display">{inputVolume}%</span>
               </div>
               <input
@@ -269,7 +268,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
               <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">
                 <span className="flex items-center gap-2">
                   <Speaker className="w-3.5 h-3.5" />
-                  Output Device
+                  {t('settings.outputDevice')}
                 </span>
               </label>
               <select
@@ -277,7 +276,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 onChange={(e) => { setSelectedOutputDevice(e.target.value); localStorage.setItem('rally-audio-output', e.target.value); }}
                 className="input-rally rounded w-full bg-[#0D1117] text-rally-text cursor-pointer"
               >
-                <option value="default">System Default</option>
+                <option value="default">{t('settings.systemDefault')}</option>
                 {audioOutputDevices.map((device) => (
                   <option key={device.deviceId} value={device.deviceId}>
                     {device.label || `Speaker (${device.deviceId.slice(0, 8)})`}
@@ -294,7 +293,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             {/* Output Volume */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted">Output Volume</label>
+                <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted">{t('settings.outputVolume')}</label>
                 <span className="text-xs text-rally-blue font-display">{outputVolume}%</span>
               </div>
               <input
@@ -309,12 +308,11 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
             {/* Voice Settings Toggles */}
             <div className="pt-2 border-t border-rally-border">
-              <h3 className="font-display text-sm font-semibold text-rally-text mb-3">Voice Processing</h3>
+              <h3 className="font-display text-sm font-semibold text-rally-text mb-3">{t('settings.voiceProcessing')}</h3>
               <div className="space-y-1">
-                <ToggleSetting label="Push to talk" description="Hold a key to transmit your voice" />
-                <ToggleSetting label="Noise suppression" description="Filter out background noise" defaultChecked />
-                <ToggleSetting label="Echo cancellation" description="Prevent echo from speakers" defaultChecked />
-                <ToggleSetting label="Automatic gain control" description="Automatically adjust microphone volume" defaultChecked />
+                <ToggleSetting label={t('settings.noiseSuppression')} description="" defaultChecked />
+                <ToggleSetting label={t('settings.echoCancellation')} description="" defaultChecked />
+                <ToggleSetting label={t('settings.autoGainControl')} description="" defaultChecked />
               </div>
             </div>
           </div>
@@ -322,10 +320,10 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
         {activeTab === 'gaming' && (
           <div className="space-y-4">
-            <ToggleSetting label="Game activity detection" description="Automatically detect and show what game you're playing" defaultChecked />
+            <ToggleSetting label={t('settings.gameActivity')} description={t('settings.gameActivityDesc')} defaultChecked />
             <div className="card-rally rounded-lg p-4">
-              <h3 className="font-display font-semibold text-rally-text mb-2">Linked Accounts</h3>
-              <p className="text-sm text-rally-text-muted">Connect your gaming accounts to show stats and activity.</p>
+              <h3 className="font-display font-semibold text-rally-text mb-2">{t('settings.linkedAccounts')}</h3>
+              <p className="text-sm text-rally-text-muted">{t('settings.gameActivityDesc')}</p>
               <div className="mt-3 space-y-2">
                 {['Steam', 'Epic Games', 'Riot Games', 'Battle.net'].map((platform) => (
                   <div key={platform} className="flex items-center justify-between py-2">
@@ -340,12 +338,44 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
         {activeTab === 'appearance' && (
           <div className="space-y-4">
+            {/* Language Picker */}
             <div className="card-rally rounded-lg p-4">
-              <h3 className="font-display font-semibold text-rally-text mb-2">Theme</h3>
-              <p className="text-sm text-rally-text-muted">Rally's aggressive esports aesthetic. Additional themes coming soon.</p>
+              <h3 className="font-display font-semibold text-rally-text mb-2 flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                {t('settings.language')}
+              </h3>
+              <div className="mt-3 flex gap-3">
+                <button
+                  onClick={() => i18n.changeLanguage('en')}
+                  className={cn(
+                    'px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors',
+                    i18n.language === 'en'
+                      ? 'border-rally-blue bg-rally-blue/10 text-rally-blue'
+                      : 'border-rally-border text-rally-text-muted hover:border-white/20'
+                  )}
+                >
+                  {t('settings.english')}
+                </button>
+                <button
+                  onClick={() => i18n.changeLanguage('ar')}
+                  className={cn(
+                    'px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors',
+                    i18n.language === 'ar'
+                      ? 'border-rally-blue bg-rally-blue/10 text-rally-blue'
+                      : 'border-rally-border text-rally-text-muted hover:border-white/20'
+                  )}
+                >
+                  {t('settings.arabic')}
+                </button>
+              </div>
+            </div>
+
+            {/* Theme */}
+            <div className="card-rally rounded-lg p-4">
+              <h3 className="font-display font-semibold text-rally-text mb-2">{t('settings.theme')}</h3>
               <div className="mt-3 flex gap-3">
                 <div className="w-16 h-16 rounded-lg bg-black border-2 border-rally-blue flex items-center justify-center">
-                  <span className="text-[10px] text-rally-blue font-bold">DARK</span>
+                  <span className="text-[10px] text-rally-blue font-bold">{t('settings.dark')}</span>
                 </div>
               </div>
             </div>

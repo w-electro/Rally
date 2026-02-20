@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Globe, Lock } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
 
 export function CreateServerModal() {
+  const { t } = useTranslation();
   const closeModal = useUIStore((s) => s.closeModal);
   const createServer = useServerStore((s) => s.createServer);
   const setActiveServer = useServerStore((s) => s.setActiveServer);
@@ -15,7 +17,7 @@ export function CreateServerModal() {
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError('Server name is required');
+      setError(t('server.nameRequired'));
       return;
     }
     setIsSubmitting(true);
@@ -60,7 +62,7 @@ export function CreateServerModal() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <h2 className="font-display text-lg font-bold uppercase tracking-wider text-white">
-            Create Server
+            {t('server.createServer')}
           </h2>
           <button
             onClick={closeModal}
@@ -83,12 +85,12 @@ export function CreateServerModal() {
           {/* Server Name */}
           <div>
             <label className="block text-xs font-display uppercase tracking-wider text-white/60 mb-1.5">
-              Server Name <span className="text-rally-magenta">*</span>
+              {t('server.serverName')} <span className="text-rally-magenta">*</span>
             </label>
             <input
               type="text"
               className="input-rally w-full"
-              placeholder="My Awesome Server"
+              placeholder={t('server.serverNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={100}
@@ -99,11 +101,11 @@ export function CreateServerModal() {
           {/* Description */}
           <div>
             <label className="block text-xs font-display uppercase tracking-wider text-white/60 mb-1.5">
-              Description
+              {t('server.description')}
             </label>
             <textarea
               className="input-rally w-full resize-none h-20"
-              placeholder="What's your server about?"
+              placeholder={t('server.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={1024}
@@ -113,7 +115,7 @@ export function CreateServerModal() {
           {/* Visibility toggle */}
           <div>
             <label className="block text-xs font-display uppercase tracking-wider text-white/60 mb-2">
-              Visibility
+              {t('server.visibility')}
             </label>
             <div className="flex gap-2">
               <button
@@ -126,7 +128,7 @@ export function CreateServerModal() {
                 }`}
               >
                 <Lock className="w-4 h-4" />
-                Private
+                {t('server.private')}
               </button>
               <button
                 type="button"
@@ -138,7 +140,7 @@ export function CreateServerModal() {
                 }`}
               >
                 <Globe className="w-4 h-4" />
-                Public
+                {t('server.public')}
               </button>
             </div>
           </div>
@@ -152,7 +154,7 @@ export function CreateServerModal() {
             className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors font-body"
             disabled={isSubmitting}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -160,7 +162,7 @@ export function CreateServerModal() {
             className="btn-rally-primary px-5 py-2 text-sm"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Create Server'}
+            {isSubmitting ? t('server.creating') : t('server.createServer')}
           </button>
         </div>
 

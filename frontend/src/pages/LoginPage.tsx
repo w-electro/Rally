@@ -1,5 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore, getSavedAccounts, removeSavedAccount } from '@/stores/authStore';
 import type { SavedAccount } from '@/stores/authStore';
 import { X } from 'lucide-react';
@@ -8,6 +9,7 @@ import { X } from 'lucide-react';
 /*  LoginPage                                                          */
 /* ================================================================== */
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, loginWithRefreshToken, isLoading, error, clearError, isAuthenticated } =
     useAuthStore();
@@ -61,15 +63,15 @@ export function LoginPage() {
   /* ---- validation ---- */
   function validate(): boolean {
     if (!email.trim()) {
-      setLocalError('Email is required.');
+      setLocalError(t('auth.emailRequired'));
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setLocalError('Please enter a valid email address.');
+      setLocalError(t('auth.invalidEmail'));
       return false;
     }
     if (!password) {
-      setLocalError('Password is required.');
+      setLocalError(t('auth.passwordRequired'));
       return false;
     }
     setLocalError(null);
@@ -121,7 +123,7 @@ export function LoginPage() {
               Rally
             </h1>
             <p className="font-body text-xs text-rally-text-muted mt-1 tracking-wide">
-              {view === 'accounts' ? 'Choose an account' : 'Welcome back, Commander.'}
+              {view === 'accounts' ? t('auth.chooseAccount') : t('auth.welcomeBack')}
             </p>
           </div>
 
@@ -166,7 +168,7 @@ export function LoginPage() {
                   <div
                     onClick={(e) => handleRemoveAccount(e, account)}
                     className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 text-white/30 hover:text-rally-magenta hover:bg-rally-magenta/10 transition-all cursor-pointer"
-                    title="Remove saved account"
+                    title={t('auth.removeAccount')}
                   >
                     <X className="w-3.5 h-3.5" />
                   </div>
@@ -177,7 +179,7 @@ export function LoginPage() {
               {isLoading && (
                 <div className="flex items-center justify-center py-2 gap-2 text-rally-text-muted text-sm">
                   <span className="w-4 h-4 border-2 border-rally-blue/30 border-t-rally-blue rounded-full animate-spin" />
-                  Signing in...
+                  {t('auth.signingIn')}
                 </div>
               )}
 
@@ -186,7 +188,7 @@ export function LoginPage() {
                 onClick={() => { setView('form'); clearError(); setLocalError(null); }}
                 className="w-full py-3 text-sm font-body text-rally-text-muted hover:text-rally-blue transition-colors border border-transparent hover:border-white/10 rounded-sm"
               >
-                Use another account
+                {t('auth.useAnother')}
               </button>
             </div>
           )}
@@ -214,7 +216,7 @@ export function LoginPage() {
               </div>
 
               <p className="text-xs text-rally-text-muted mb-4">
-                Your session expired. Enter your password to sign back in.
+                {t('auth.sessionExpired')}
               </p>
 
               <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
@@ -223,7 +225,7 @@ export function LoginPage() {
                     htmlFor="password"
                     className="block font-display text-xs font-semibold uppercase tracking-widest text-rally-text-muted mb-1.5"
                   >
-                    Password
+                    {t('auth.password')}
                   </label>
                   <div className="relative">
                     <input
@@ -231,7 +233,7 @@ export function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setLocalError(null); }}
-                      placeholder="Enter your password"
+                      placeholder={t('auth.passwordPlaceholder')}
                       autoComplete="current-password"
                       autoFocus
                       className="input-rally rounded-sm pr-10"
@@ -264,10 +266,10 @@ export function LoginPage() {
                   {isLoading ? (
                     <>
                       <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                      Signing in...
+                      {t('auth.signingIn')}
                     </>
                   ) : (
-                    'Sign In'
+                    t('auth.signIn')
                   )}
                 </button>
               </form>
@@ -276,7 +278,7 @@ export function LoginPage() {
                 onClick={() => { setView('accounts'); setPassword(''); clearError(); setLocalError(null); }}
                 className="w-full mt-4 py-2 text-xs font-body text-rally-text-muted hover:text-rally-blue transition-colors"
               >
-                Back to accounts
+                {t('auth.backToAccounts')}
               </button>
             </div>
           )}
@@ -291,14 +293,14 @@ export function LoginPage() {
                     htmlFor="email"
                     className="block font-display text-xs font-semibold uppercase tracking-widest text-rally-text-muted mb-1.5"
                   >
-                    Email
+                    {t('auth.email')}
                   </label>
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setLocalError(null); }}
-                    placeholder="you@example.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     autoComplete="email"
                     className="input-rally rounded-sm"
                   />
@@ -310,7 +312,7 @@ export function LoginPage() {
                     htmlFor="password"
                     className="block font-display text-xs font-semibold uppercase tracking-widest text-rally-text-muted mb-1.5"
                   >
-                    Password
+                    {t('auth.password')}
                   </label>
                   <div className="relative">
                     <input
@@ -318,7 +320,7 @@ export function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setLocalError(null); }}
-                      placeholder="Enter your password"
+                      placeholder={t('auth.passwordPlaceholder')}
                       autoComplete="current-password"
                       className="input-rally rounded-sm pr-10"
                     />
@@ -349,7 +351,7 @@ export function LoginPage() {
                     to="#"
                     className="font-body text-xs text-rally-text-muted hover:text-rally-blue transition-colors"
                   >
-                    Forgot password?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
 
@@ -362,10 +364,10 @@ export function LoginPage() {
                   {isLoading ? (
                     <>
                       <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                      Logging in...
+                      {t('auth.loggingIn')}
                     </>
                   ) : (
-                    'Login'
+                    t('auth.login')
                   )}
                 </button>
               </form>
@@ -378,7 +380,7 @@ export function LoginPage() {
                     onClick={() => { setView('accounts'); clearError(); setLocalError(null); setPassword(''); }}
                     className="w-full py-2 text-sm font-body text-rally-text-muted hover:text-rally-blue transition-colors"
                   >
-                    Back to saved accounts
+                    {t('auth.backToSaved')}
                   </button>
                 </>
               )}
@@ -387,12 +389,12 @@ export function LoginPage() {
 
               {/* Register link */}
               <p className="text-center font-body text-sm text-rally-text-muted">
-                Don&apos;t have an account?{' '}
+                {t('auth.noAccount')}{' '}
                 <Link
                   to="/register"
                   className="font-semibold text-rally-blue hover:text-rally-cyan transition-colors"
                 >
-                  Register
+                  {t('auth.register')}
                 </Link>
               </p>
             </>
@@ -403,12 +405,12 @@ export function LoginPage() {
             <>
               <div className="divider-geo my-6" />
               <p className="text-center font-body text-sm text-rally-text-muted">
-                Don&apos;t have an account?{' '}
+                {t('auth.noAccount')}{' '}
                 <Link
                   to="/register"
                   className="font-semibold text-rally-blue hover:text-rally-cyan transition-colors"
                 >
-                  Register
+                  {t('auth.register')}
                 </Link>
               </p>
             </>

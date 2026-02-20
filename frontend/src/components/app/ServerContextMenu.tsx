@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pin, EyeOff, Bell, Settings } from 'lucide-react';
 
 interface ServerContextMenuProps {
@@ -18,6 +19,7 @@ export function ServerContextMenu({
   onHide,
   onClose,
 }: ServerContextMenuProps) {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export function ServerContextMenu({
         }}
       >
         <Pin className="h-3.5 w-3.5" />
-        {isPinned ? 'Unpin Server' : 'Pin Server'}
+        {isPinned ? t('server.unpinServer') : t('server.pinServer')}
       </button>
 
       {/* Hide Server */}
@@ -69,7 +71,7 @@ export function ServerContextMenu({
         }}
       >
         <EyeOff className="h-3.5 w-3.5" />
-        Hide Server
+        {t('server.hideServer')}
       </button>
 
       {/* Divider */}
@@ -81,7 +83,7 @@ export function ServerContextMenu({
         disabled
       >
         <Bell className="h-3.5 w-3.5" />
-        Notifications
+        {t('server.notifications')}
       </button>
 
       {/* Server Settings (disabled) */}
@@ -90,7 +92,7 @@ export function ServerContextMenu({
         disabled
       >
         <Settings className="h-3.5 w-3.5" />
-        Server Settings
+        {t('server.serverSettings')}
       </button>
     </div>
   );

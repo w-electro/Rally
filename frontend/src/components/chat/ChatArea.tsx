@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Hash,
   Search,
@@ -58,6 +59,7 @@ function needsDateDivider(
 // ---------------------------------------------------------------------------
 
 export function ChatArea({ channel, className }: ChatAreaProps) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const {
     sendMessage,
@@ -272,19 +274,19 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
           {/* Right header icons */}
           <button
             className="rounded p-1.5 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-            title="Search"
+            title={t('chat.searchMessages')}
           >
             <Search className="h-4 w-4" />
           </button>
           <button
             className="rounded p-1.5 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-            title="Pinned Messages"
+            title={t('chat.pinnedMessages')}
           >
             <Pin className="h-4 w-4" />
           </button>
           <button
             className="rounded p-1.5 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-            title="Members"
+            title={t('chat.members')}
           >
             <Users className="h-4 w-4" />
           </button>
@@ -313,8 +315,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                 </h3>
               </div>
               <p className="text-sm text-gray-500">
-                This is the very beginning of{' '}
-                <span className="font-semibold text-white">#{channel.name}</span>.
+                {t('chat.beginningOfChannel', { channel: channel.name })}
               </p>
               <div className="mt-4 h-px bg-white/10" />
             </div>
@@ -325,11 +326,10 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
               <Hash className="h-12 w-12 text-gray-700 mb-3" />
               <h3 className="font-display text-lg font-semibold text-gray-400 mb-1">
-                Welcome to #{channel.name}
+                {t('chat.welcomeToChannel', { channel: channel.name })}
               </h3>
               <p className="text-sm text-gray-600 max-w-md">
-                This is the start of the #{channel.name} channel. Send a message
-                to begin the conversation.
+                {t('chat.sendToBegin')}
               </p>
             </div>
           )}
@@ -360,7 +360,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                   onEdit={(m) => {
                     // Simple inline edit: prompt for simplicity; a full modal editor
                     // can be built separately.
-                    const newContent = window.prompt('Edit message:', m.content);
+                    const newContent = window.prompt(t('chat.editMessage'), m.content);
                     if (newContent && newContent !== m.content) {
                       editMessage(m.id, newContent);
                     }
@@ -388,7 +388,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
               className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/10 bg-rally-navy/90 px-3 py-1.5 text-xs text-gray-300 shadow-lg backdrop-blur hover:bg-rally-navy transition-colors"
             >
               <ChevronDown className="h-3.5 w-3.5" />
-              New messages
+              {t('chat.newMessages')}
             </button>
           </div>
         )}
@@ -404,10 +404,10 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
               </span>
               <span className="ml-1">
                 {typingUsers.length === 1
-                  ? `${typingUsers[0]} is typing...`
+                  ? `${typingUsers[0]} ${t('chat.isTyping')}`
                   : typingUsers.length === 2
-                    ? `${typingUsers[0]} and ${typingUsers[1]} are typing...`
-                    : `${typingUsers[0]} and ${typingUsers.length - 1} others are typing...`}
+                    ? `${typingUsers[0]} and ${typingUsers[1]} ${t('chat.areTyping')}`
+                    : `${typingUsers[0]} ${t('chat.othersTyping', { count: typingUsers.length - 1 })}`}
               </span>
             </span>
           </div>

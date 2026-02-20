@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Play,
   Square,
@@ -21,6 +22,7 @@ import type { StreamSession } from '@/lib/types';
 type QualityOption = 'Auto' | '1080p' | '720p' | '480p' | '360p';
 
 export function StreamView() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const activeServer = useServerStore((s) => s.activeServer);
   const activeChannel = useServerStore((s) => s.activeChannel);
@@ -85,7 +87,7 @@ export function StreamView() {
       const session = await api.startStream({
         serverId: activeServer.id,
         channelId: activeChannel.id,
-        title: streamTitle || 'Untitled Stream',
+        title: streamTitle || t('stream.untitledStream'),
         category: streamCategory || undefined,
       });
       setStream(session);
@@ -143,14 +145,14 @@ export function StreamView() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#8B00FF]/20">
                     <Radio size={32} className="text-[#8B00FF]" />
                   </div>
-                  <p className="text-sm text-rally-text-muted">Stream is live</p>
+                  <p className="text-sm text-rally-text-muted">{t('stream.streamLive')}</p>
                 </div>
 
                 {/* LIVE badge */}
                 <div className="absolute left-4 top-4 flex items-center gap-2">
                   <span className="flex items-center gap-1 rounded bg-[#FF006E] px-2 py-0.5 text-xs font-bold uppercase text-white">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                    Live
+                    {t('stream.live')}
                   </span>
                 </div>
 
@@ -194,13 +196,13 @@ export function StreamView() {
                 <div className="flex h-20 w-20 items-center justify-center rounded-full border border-rally-border/20 bg-rally-dark-surface">
                   <Radio size={36} className="text-rally-text-muted/40" />
                 </div>
-                <p className="text-rally-text-muted">No one is streaming</p>
+                <p className="text-rally-text-muted">{t('stream.noStreaming')}</p>
                 <button
                   onClick={() => setShowGoLiveForm(true)}
                   className="flex items-center gap-2 rounded-lg bg-[#FF006E] px-5 py-2.5 text-sm font-bold text-white transition-all hover:shadow-[0_0_20px_rgba(255,0,110,0.4)]"
                 >
                   <Play size={16} />
-                  Go Live
+                  {t('stream.goLive')}
                 </button>
               </div>
             )}
@@ -213,10 +215,10 @@ export function StreamView() {
                 <>
                   <div>
                     <h3 className="text-sm font-semibold text-rally-text">
-                      {stream.title || 'Untitled Stream'}
+                      {stream.title || t('stream.untitledStream')}
                     </h3>
                     <p className="text-xs text-rally-text-muted">
-                      {stream.category || 'Just Chatting'}
+                      {stream.category || t('stream.justChatting')}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-rally-text-muted">
@@ -245,7 +247,7 @@ export function StreamView() {
                 title="Channel Points"
               >
                 <Gift size={14} />
-                Points
+                {t('stream.points')}
               </button>
               <button
                 onClick={() => setShowChat(!showChat)}
@@ -257,7 +259,7 @@ export function StreamView() {
                 )}
               >
                 <MessageSquare size={14} />
-                Chat
+                {t('stream.chat')}
               </button>
               {isStreamer && isLive && (
                 <>
@@ -266,14 +268,14 @@ export function StreamView() {
                     className="flex items-center gap-1 rounded bg-[#8B00FF]/20 px-2.5 py-1.5 text-xs font-medium text-[#8B00FF] transition-colors hover:bg-[#8B00FF]/30"
                   >
                     <Zap size={14} />
-                    Raid
+                    {t('stream.raid')}
                   </button>
                   <button
                     onClick={handleEndStream}
                     className="flex items-center gap-1 rounded bg-[#FF006E]/20 px-2.5 py-1.5 text-xs font-medium text-[#FF006E] transition-colors hover:bg-[#FF006E]/30"
                   >
                     <Square size={14} />
-                    End Stream
+                    {t('stream.endStream')}
                   </button>
                 </>
               )}
@@ -286,7 +288,7 @@ export function StreamView() {
           <div className="flex w-80 flex-col border-l border-rally-border/20 bg-rally-dark-surface">
             <div className="border-b border-rally-border/20 px-4 py-2.5">
               <h4 className="font-display text-xs font-bold uppercase tracking-wider text-rally-text">
-                Stream Chat
+                {t('stream.streamChat')}
               </h4>
             </div>
 
@@ -294,7 +296,7 @@ export function StreamView() {
             <div className="flex-1 overflow-y-auto px-3 py-2">
               {chatMessages.length === 0 && (
                 <p className="py-8 text-center text-xs text-rally-text-muted">
-                  Welcome to the stream chat!
+                  {t('stream.welcomeChat')}
                 </p>
               )}
               {chatMessages.map((msg) => (
@@ -317,7 +319,7 @@ export function StreamView() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                  placeholder="Send a message"
+                  placeholder={t('stream.sendMessage')}
                   className="flex-1 bg-transparent text-xs text-rally-text outline-none placeholder:text-rally-text-muted"
                 />
                 <button
@@ -342,30 +344,30 @@ export function StreamView() {
           />
           <div className="relative z-10 w-full max-w-md rounded-xl border border-rally-border/30 bg-rally-dark-surface p-6 shadow-2xl">
             <h3 className="mb-4 font-display text-lg font-bold uppercase tracking-wider text-rally-text">
-              Go Live
+              {t('stream.goLive')}
             </h3>
             <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-rally-text-muted">
-                  Stream Title
+                  {t('stream.streamTitle')}
                 </label>
                 <input
                   type="text"
                   value={streamTitle}
                   onChange={(e) => setStreamTitle(e.target.value)}
-                  placeholder="Enter stream title..."
+                  placeholder={t('stream.titlePlaceholder')}
                   className="w-full rounded-lg border border-rally-border/30 bg-rally-dark-bg px-3 py-2 text-sm text-rally-text outline-none transition-colors focus:border-[#00D9FF]/50 placeholder:text-rally-text-muted"
                 />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-rally-text-muted">
-                  Category
+                  {t('stream.category')}
                 </label>
                 <input
                   type="text"
                   value={streamCategory}
                   onChange={(e) => setStreamCategory(e.target.value)}
-                  placeholder="e.g. Just Chatting, Gaming..."
+                  placeholder={t('stream.categoryPlaceholder')}
                   className="w-full rounded-lg border border-rally-border/30 bg-rally-dark-bg px-3 py-2 text-sm text-rally-text outline-none transition-colors focus:border-[#00D9FF]/50 placeholder:text-rally-text-muted"
                 />
               </div>
@@ -374,14 +376,14 @@ export function StreamView() {
                   onClick={() => setShowGoLiveForm(false)}
                   className="flex-1 rounded-lg border border-rally-border/30 px-4 py-2 text-sm text-rally-text-muted transition-colors hover:text-rally-text"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleGoLive}
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#FF006E] px-4 py-2 text-sm font-bold text-white transition-all hover:shadow-[0_0_20px_rgba(255,0,110,0.4)]"
                 >
                   <Play size={14} />
-                  Start Streaming
+                  {t('stream.startStreaming')}
                 </button>
               </div>
             </div>
@@ -398,18 +400,18 @@ export function StreamView() {
           />
           <div className="relative z-10 w-full max-w-sm rounded-xl border border-[#8B00FF]/30 bg-rally-dark-surface p-6 shadow-2xl">
             <h3 className="mb-4 font-display text-lg font-bold uppercase tracking-wider text-rally-text">
-              Raid a Channel
+              {t('stream.raidChannel')}
             </h3>
             <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-rally-text-muted">
-                  Target Channel or User
+                  {t('stream.targetChannel')}
                 </label>
                 <input
                   type="text"
                   value={raidTarget}
                   onChange={(e) => setRaidTarget(e.target.value)}
-                  placeholder="Enter channel name..."
+                  placeholder={t('stream.targetPlaceholder')}
                   className="w-full rounded-lg border border-rally-border/30 bg-rally-dark-bg px-3 py-2 text-sm text-rally-text outline-none transition-colors focus:border-[#8B00FF]/50 placeholder:text-rally-text-muted"
                 />
               </div>
@@ -418,7 +420,7 @@ export function StreamView() {
                   onClick={() => setShowRaidDialog(false)}
                   className="flex-1 rounded-lg border border-rally-border/30 px-4 py-2 text-sm text-rally-text-muted transition-colors hover:text-rally-text"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleRaid}
@@ -426,7 +428,7 @@ export function StreamView() {
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#8B00FF] px-4 py-2 text-sm font-bold text-white transition-all hover:shadow-[0_0_20px_rgba(139,0,255,0.4)] disabled:opacity-40"
                 >
                   <Zap size={14} />
-                  Start Raid
+                  {t('stream.startRaid')}
                 </button>
               </div>
             </div>

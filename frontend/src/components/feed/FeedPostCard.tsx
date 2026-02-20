@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { api } from '@/lib/api';
 import type { FeedPost, FeedComment } from '@/lib/types';
@@ -20,6 +21,7 @@ interface FeedPostCardProps {
 }
 
 export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -117,7 +119,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
           <div className="flex flex-col items-center justify-center gap-2 text-rally-text-muted/40">
             <ImageIcon className="h-16 w-16" />
             <span className="font-display text-sm uppercase tracking-wider">
-              No media
+              {t('feed.noMedia')}
             </span>
           </div>
         )}
@@ -188,7 +190,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
           <div className="px-4 py-2">
             {comments.length === 0 && !isLoadingComments && (
               <p className="py-4 text-center text-xs text-rally-text-muted">
-                No comments yet. Be the first!
+                {t('feed.noComments')}
               </p>
             )}
             {comments.map((comment) => (
@@ -232,7 +234,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
             </button>
           </div>
           <p className="mt-2 font-display text-sm font-bold text-rally-text">
-            {formatNumber(post.likeCount ?? 0)} {post.likeCount === 1 ? 'like' : 'likes'}
+            {post.likeCount === 1 ? t('feed.likes', { count: post.likeCount ?? 0 }) : t('feed.likesPlural', { count: post.likeCount ?? 0 })}
           </p>
           <p className="mt-0.5 text-[10px] uppercase tracking-wider text-rally-text-muted">
             {formatDate(post.createdAt)}
@@ -244,10 +246,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
           {replyTo && (
             <div className="mb-2 flex items-center justify-between rounded bg-rally-surface px-3 py-1.5 text-xs text-rally-text-muted">
               <span>
-                Replying to{' '}
-                <span className="font-medium text-rally-blue">
-                  @{replyTo.author?.username ?? 'unknown'}
-                </span>
+                {t('feed.replyingTo', { name: replyTo.author?.username ?? 'unknown' })}
               </span>
               <button
                 onClick={() => setReplyTo(null)}
@@ -263,7 +262,7 @@ export function FeedPostCard({ post, onLike }: FeedPostCardProps) {
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Add a comment..."
+              placeholder={t('feed.addComment')}
               className="flex-1 bg-transparent font-body text-sm text-rally-text placeholder:text-rally-text-muted/50 focus:outline-none"
             />
             <button
@@ -294,6 +293,7 @@ interface CommentItemProps {
 }
 
 function CommentItem({ comment, onReply }: CommentItemProps) {
+  const { t } = useTranslation();
   const [showReplies, setShowReplies] = useState(false);
   const hasReplies = comment.replies && comment.replies.length > 0;
 
@@ -334,7 +334,7 @@ function CommentItem({ comment, onReply }: CommentItemProps) {
               onClick={() => onReply(comment)}
               className="font-medium uppercase tracking-wider transition-colors hover:text-rally-blue"
             >
-              Reply
+              {t('chat.reply')}
             </button>
           </div>
         </div>
@@ -351,13 +351,12 @@ function CommentItem({ comment, onReply }: CommentItemProps) {
             {showReplies ? (
               <>
                 <ChevronUp className="h-3 w-3" />
-                Hide replies
+                {t('feed.hideReplies')}
               </>
             ) : (
               <>
                 <ChevronDown className="h-3 w-3" />
-                View {comment.replies!.length}{' '}
-                {comment.replies!.length === 1 ? 'reply' : 'replies'}
+                {comment.replies!.length === 1 ? t('feed.viewReplies', { count: comment.replies!.length }) : t('feed.viewRepliesPlural', { count: comment.replies!.length })}
               </>
             )}
           </button>

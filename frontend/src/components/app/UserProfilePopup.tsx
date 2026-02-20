@@ -1,9 +1,11 @@
 import { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MessageCircle, UserPlus, X } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { getInitials, getStatusColor } from '@/lib/utils';
 
 export function UserProfilePopup() {
+  const { t } = useTranslation();
   const activeModal = useUIStore((s) => s.activeModal);
   const modalData = useUIStore((s) => s.modalData);
   const closeModal = useUIStore((s) => s.closeModal);
@@ -62,7 +64,7 @@ export function UserProfilePopup() {
           <h3 className="text-base font-bold text-white">{user.displayName ?? 'User'}</h3>
           <p className="text-xs text-white/30">@{user.username ?? 'unknown'}</p>
           {user.currentGame && (
-            <p className="text-xs text-[#00D9FF] mt-1">Playing {user.currentGame}</p>
+            <p className="text-xs text-[#00D9FF] mt-1">{t('profile.playing', { game: user.currentGame })}</p>
           )}
           {!user.currentGame && user.customStatus && (
             <p className="text-xs text-white/40 mt-1">{user.customStatus}</p>
@@ -73,11 +75,11 @@ export function UserProfilePopup() {
         <div className="flex gap-2 px-4 pb-4">
           <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#00D9FF]/10 border border-[#00D9FF]/20 text-[#00D9FF] text-xs font-medium hover:bg-[#00D9FF]/20 transition-colors">
             <MessageCircle className="w-3.5 h-3.5" />
-            Message
+            {t('profile.message')}
           </button>
           <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#39FF14]/10 border border-[#39FF14]/20 text-[#39FF14] text-xs font-medium hover:bg-[#39FF14]/20 transition-colors">
             <UserPlus className="w-3.5 h-3.5" />
-            Add Friend
+            {t('profile.addFriend')}
           </button>
         </div>
       </div>

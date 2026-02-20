@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVoiceStore } from '@/stores/voiceStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useSocket } from '@/hooks/useSocket';
@@ -18,6 +19,7 @@ import { cn, getInitials } from '@/lib/utils';
 const MAX_VISIBLE_AVATARS = 4;
 
 export function VoiceBar() {
+  const { t } = useTranslation();
   const { channelId, isMuted, isDeafened, isScreenSharing, participants, toggleMute, toggleDeafen } =
     useVoiceStore();
   const { activeServer } = useServerStore();
@@ -49,10 +51,10 @@ export function VoiceBar() {
         <Signal className="w-4 h-4 text-rally-green shrink-0" />
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-xs font-semibold text-rally-green whitespace-nowrap">
-            Voice Connected
+            {t('voice.voiceConnected')}
           </span>
           <span className="text-xs text-white/40 whitespace-nowrap truncate">
-            {channel?.name || 'Voice Channel'}
+            {channel?.name || t('voice.voiceChannel')}
             {activeServer?.name ? ` / ${activeServer.name}` : ''}
           </span>
         </div>
@@ -103,7 +105,7 @@ export function VoiceBar() {
               ? 'bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30'
               : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
           )}
-          title={isMuted ? 'Unmute' : 'Mute'}
+          title={isMuted ? t('voice.unmute') : t('voice.mute')}
         >
           {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
@@ -117,7 +119,7 @@ export function VoiceBar() {
               ? 'bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30'
               : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
           )}
-          title={isDeafened ? 'Undeafen' : 'Deafen'}
+          title={isDeafened ? t('voice.undeafen') : t('voice.deafen')}
         >
           {isDeafened ? (
             <HeadphoneOff className="w-4 h-4" />
@@ -135,7 +137,7 @@ export function VoiceBar() {
               ? 'bg-rally-green/20 text-rally-green hover:bg-rally-green/30'
               : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
           )}
-          title={isScreenSharing ? 'Stop Sharing' : 'Share Screen'}
+          title={isScreenSharing ? t('voice.stopSharing') : t('voice.shareScreen')}
         >
           {isScreenSharing ? (
             <MonitorOff className="w-4 h-4" />
@@ -148,7 +150,7 @@ export function VoiceBar() {
         <button
           onClick={handleDisconnect}
           className="w-8 h-8 flex items-center justify-center rounded bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30 transition-colors ml-1"
-          title="Disconnect"
+          title={t('voice.disconnect')}
         >
           <PhoneOff className="w-4 h-4" />
         </button>

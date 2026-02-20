@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useServerStore } from '@/stores/serverStore';
 import api from '@/lib/api';
 import { Send, Sparkles, FileText, BarChart3, Compass, Bot } from 'lucide-react';
@@ -10,9 +11,10 @@ interface AiMessage {
 }
 
 export function AiAssistant() {
+  const { t } = useTranslation();
   const { activeServer, activeChannel } = useServerStore();
   const [messages, setMessages] = useState<AiMessage[]>([
-    { role: 'assistant', content: "Hey! I'm Rally AI, your community assistant. I can summarize discussions, generate reports, suggest channels, and more. How can I help?" },
+    { role: 'assistant', content: t('ai.greeting') },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -59,21 +61,21 @@ export function AiAssistant() {
           <Bot className="w-4 h-4 text-rally-purple" />
         </div>
         <div>
-          <h3 className="text-xs font-display font-bold uppercase tracking-wider text-rally-purple">Rally AI</h3>
-          <p className="text-[10px] text-rally-text-muted">Powered by Claude</p>
+          <h3 className="text-xs font-display font-bold uppercase tracking-wider text-rally-purple">{t('ai.rallyAi')}</h3>
+          <p className="text-[10px] text-rally-text-muted">{t('ai.poweredBy')}</p>
         </div>
       </div>
 
       {/* Quick Actions */}
       <div className="p-2 border-b border-rally-border flex flex-wrap gap-1">
         <button onClick={handleSummarize} disabled={!activeChannel || isLoading} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors disabled:opacity-40">
-          <FileText className="w-3 h-3" />Summarize
+          <FileText className="w-3 h-3" />{t('ai.summarize')}
         </button>
         <button onClick={() => sendMessage('Generate an activity report for this server')} disabled={isLoading} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-rally-blue/10 text-rally-blue hover:bg-rally-blue/20 transition-colors disabled:opacity-40">
-          <BarChart3 className="w-3 h-3" />Report
+          <BarChart3 className="w-3 h-3" />{t('ai.report')}
         </button>
         <button onClick={() => sendMessage('Suggest channels based on recent conversations')} disabled={isLoading} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-rally-green/10 text-rally-green hover:bg-rally-green/20 transition-colors disabled:opacity-40">
-          <Compass className="w-3 h-3" />Suggest
+          <Compass className="w-3 h-3" />{t('ai.suggest')}
         </button>
       </div>
 
@@ -112,7 +114,7 @@ export function AiAssistant() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage(input))}
-            placeholder="Ask Rally AI..."
+            placeholder={t('ai.askPlaceholder')}
             className="flex-1 bg-white/5 border border-rally-border rounded px-2 py-1.5 text-xs text-rally-text placeholder-rally-text-muted outline-none focus:border-rally-purple/50"
           />
           <button onClick={() => sendMessage(input)} disabled={!input.trim() || isLoading} className="p-1.5 rounded bg-rally-purple/20 text-rally-purple hover:bg-rally-purple/30 transition-colors disabled:opacity-40">

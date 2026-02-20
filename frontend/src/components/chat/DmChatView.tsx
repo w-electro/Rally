@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MessageCircle, Loader2, ChevronDown } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -46,6 +47,7 @@ function needsDateDivider(
 // ---------------------------------------------------------------------------
 
 export function DmChatView({ conversationId }: DmChatViewProps) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { sendDm } = useSocket();
 
@@ -66,7 +68,7 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
   const getMember = (m: any) => (m?.user ? m.user : m);
 
   const partnerName = (() => {
-    if (!conversation || !user) return 'Direct Message';
+    if (!conversation || !user) return t('dm.directMessage');
     if (conversation.name) return conversation.name;
     const otherMembers = conversation.members
       .filter((m: any) => getMember(m).id !== user.id)
@@ -246,11 +248,10 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <MessageCircle className="h-12 w-12 text-gray-700 mb-3" />
             <h3 className="font-display text-lg font-semibold text-gray-400 mb-1">
-              Start a conversation
+              {t('dm.startConversation')}
             </h3>
             <p className="text-sm text-gray-600 max-w-md">
-              This is the beginning of your direct message history with{' '}
-              <span className="font-semibold text-white">{partnerName}</span>.
+              {t('dm.beginningOfDm', { name: partnerName })}
             </p>
           </div>
         )}
@@ -269,7 +270,7 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
                   {partnerName}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  This is the very beginning of your direct message history.
+                  {t('dm.beginningOfDmGeneric')}
                 </p>
               </div>
             </div>
@@ -363,7 +364,7 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
                   {/* Encrypted badge */}
                   {dm.isEncrypted && (
                     <span className="mt-0.5 inline-block text-[10px] text-gray-600 italic select-none">
-                      Encrypted
+                      {t('dm.encrypted')}
                     </span>
                   )}
                 </div>
@@ -383,7 +384,7 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
             className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/10 bg-rally-navy/90 px-3 py-1.5 text-xs text-gray-300 shadow-lg backdrop-blur hover:bg-rally-navy transition-colors"
           >
             <ChevronDown className="h-3.5 w-3.5" />
-            New messages
+            {t('chat.newMessages')}
           </button>
         </div>
       )}

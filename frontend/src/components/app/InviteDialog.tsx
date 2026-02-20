@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Copy, Check, Link, Loader2 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
 import api from '@/lib/api';
 
 export function InviteDialog() {
+  const { t } = useTranslation();
   const closeModal = useUIStore((s) => s.closeModal);
   const activeServer = useServerStore((s) => s.activeServer);
   const [code, setCode] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export function InviteDialog() {
     api
       .createInvite(activeServer.id)
       .then((data: any) => setCode(data.code))
-      .catch(() => setError('Failed to create invite'))
+      .catch(() => setError(t('server.failedCreateInvite')))
       .finally(() => setIsLoading(false));
   }, [activeServer]);
 
@@ -53,7 +55,7 @@ export function InviteDialog() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <h2 className="font-display text-lg font-bold uppercase tracking-wider text-white">
-            Invite People
+            {t('server.invitePeople')}
           </h2>
           <button
             onClick={closeModal}
@@ -69,7 +71,7 @@ export function InviteDialog() {
           {/* Server info */}
           {activeServer && (
             <p className="text-sm text-white/50 font-body">
-              Share this invite code to let others join{' '}
+              {t('server.shareInvite')}{' '}
               <span className="text-rally-blue font-semibold">{activeServer.name}</span>
             </p>
           )}
@@ -85,7 +87,7 @@ export function InviteDialog() {
           {isLoading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 text-rally-blue animate-spin" />
-              <span className="ml-2 text-sm text-white/40 font-body">Generating invite...</span>
+              <span className="ml-2 text-sm text-white/40 font-body">{t('server.generatingInvite')}</span>
             </div>
           )}
 
@@ -93,7 +95,7 @@ export function InviteDialog() {
           {!isLoading && code && (
             <div className="space-y-3">
               <label className="block text-xs font-display uppercase tracking-wider text-white/60">
-                Invite Code
+                {t('server.inviteCode')}
               </label>
               <div className="flex items-center gap-2">
                 <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-black/40 border border-white/10 rounded-sm">
@@ -119,7 +121,7 @@ export function InviteDialog() {
                 </button>
               </div>
               {copied && (
-                <p className="text-xs text-rally-green font-body">Copied to clipboard!</p>
+                <p className="text-xs text-rally-green font-body">{t('common.copied')}</p>
               )}
             </div>
           )}
@@ -132,7 +134,7 @@ export function InviteDialog() {
             onClick={closeModal}
             className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors font-body"
           >
-            Done
+            {t('common.done')}
           </button>
         </div>
 

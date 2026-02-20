@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { PulsePost } from '@/lib/types';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { Heart, Repeat2, MessageCircle, Eye, Share, MoreHorizontal } from 'lucide-react';
@@ -9,6 +10,7 @@ interface PulsePostCardProps {
 }
 
 export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
+  const { t } = useTranslation();
   return (
     <article className="border-b border-rally-border px-4 py-3 hover:bg-white/[0.02] transition-colors">
       <div className="flex gap-3">
@@ -39,7 +41,7 @@ export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
           {/* Reply indicator */}
           {post.replyToId && (
             <p className="text-xs text-rally-text-muted mb-1">
-              Replying to a post
+              {t('pulse.replyingToPost')}
             </p>
           )}
 
@@ -65,7 +67,7 @@ export function PulsePostCard({ post, onLike, onRepost }: PulsePostCardProps) {
                   {media.type === 'image' ? (
                     <img src={media.url} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-rally-text-muted text-sm">Video</div>
+                    <div className="text-rally-text-muted text-sm">{t('pulse.video')}</div>
                   )}
                 </div>
               ))}

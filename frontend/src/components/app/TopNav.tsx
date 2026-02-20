@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   MessageCircle,
   Compass,
@@ -96,6 +97,7 @@ function ServerTab({
 }
 
 export function TopNav() {
+  const { t } = useTranslation();
   const view = useUIStore((s) => s.view);
   const setView = useUIStore((s) => s.setView);
   const openModal = useUIStore((s) => s.openModal);
@@ -220,7 +222,7 @@ export function TopNav() {
         )}
       >
         <img src="./icon.png" alt="Rally" className="w-5 h-5" />
-        <span className="text-xs font-bold tracking-wider">HOME</span>
+        <span className="text-xs font-bold tracking-wider">{t('nav.home')}</span>
       </button>
 
       {/* Divider */}
@@ -278,14 +280,14 @@ export function TopNav() {
           <button
             onClick={() => setShowHiddenDropdown((prev) => !prev)}
             className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"
-            title="Hidden servers"
+            title={t('server.hiddenServers')}
           >
             <MoreHorizontal className="w-4 h-4" />
           </button>
           {showHiddenDropdown && (
             <div className="absolute top-full right-0 mt-1 z-50 w-48 rounded-lg border border-white/10 bg-[#0A0E27] py-1 shadow-xl">
               <p className="px-3 py-1 text-[10px] font-semibold uppercase text-white/30">
-                Hidden Servers
+                {t('server.hiddenServers')}
               </p>
               {hiddenServers.map((s) => (
                 <button
@@ -311,7 +313,7 @@ export function TopNav() {
         <button
           onClick={() => openModal('createServer')}
           className="w-9 h-full flex items-center justify-center text-white/40 hover:text-[#39FF14] hover:bg-white/5 transition-colors duration-150"
-          title="Create Server"
+          title={t('nav.createServer')}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -320,7 +322,7 @@ export function TopNav() {
         <button
           onClick={() => openModal('joinServer')}
           className="w-9 h-full flex items-center justify-center text-white/40 hover:text-[#39FF14] hover:bg-white/5 transition-colors duration-150"
-          title="Join Server"
+          title={t('nav.joinServer')}
         >
           <UserPlus className="w-4 h-4" />
         </button>
@@ -337,7 +339,7 @@ export function TopNav() {
               ? 'bg-[#00D9FF]/15 text-[#00D9FF]'
               : 'text-white/40 hover:text-white/80 hover:bg-white/5'
           )}
-          title="Direct Messages"
+          title={t('nav.directMessages')}
         >
           <MessageCircle className="w-4 h-4" />
         </button>
@@ -345,7 +347,7 @@ export function TopNav() {
         {/* Explore */}
         <button
           className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-150"
-          title="Explore Servers"
+          title={t('nav.exploreServers')}
         >
           <Compass className="w-4 h-4" />
         </button>
@@ -357,7 +359,7 @@ export function TopNav() {
         <button
           onClick={() => openModal('userSettings')}
           className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-150"
-          title="User Settings"
+          title={t('nav.userSettings')}
         >
           <Settings className="w-4 h-4" />
         </button>
@@ -385,21 +387,21 @@ export function TopNav() {
           <button
             onClick={() => window.electronAPI?.minimize()}
             className="w-10 h-full flex items-center justify-center hover:bg-white/10 transition-colors"
-            aria-label="Minimize"
+            aria-label={t('nav.minimize')}
           >
             <Minus className="w-3.5 h-3.5 text-white/50" />
           </button>
           <button
             onClick={() => window.electronAPI?.maximize()}
             className="w-10 h-full flex items-center justify-center hover:bg-white/10 transition-colors"
-            aria-label="Maximize"
+            aria-label={t('nav.maximize')}
           >
             <Square className="w-3 h-3 text-white/50" />
           </button>
           <button
             onClick={() => window.electronAPI?.close()}
             className="w-10 h-full flex items-center justify-center hover:bg-red-500/80 transition-colors"
-            aria-label="Close"
+            aria-label={t('nav.close')}
           >
             <X className="w-3.5 h-3.5 text-white/50" />
           </button>

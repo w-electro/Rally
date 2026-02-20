@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Reply,
   MoreHorizontal,
@@ -115,6 +116,7 @@ export function MessageItem({
   onThreadOpen,
   className,
 }: MessageItemProps) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [showActions, setShowActions] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -214,7 +216,7 @@ export function MessageItem({
             </span>
             {message.isEdited && (
               <span className="text-[10px] text-gray-600 italic select-none">
-                (edited)
+                {t('chat.edited')}
               </span>
             )}
           </div>
@@ -229,7 +231,7 @@ export function MessageItem({
               </span>
               {message.isEdited && (
                 <span className="text-[10px] text-gray-600 italic mr-1 select-none">
-                  (edited)
+                  {t('chat.edited')}
                 </span>
               )}
             </>
@@ -313,7 +315,7 @@ export function MessageItem({
             <button
               onClick={() => setShowEmojiPicker((prev) => !prev)}
               className="rounded p-1 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-              title="Add reaction"
+              title={t('chat.addReaction')}
             >
               <Smile className="h-4 w-4" />
             </button>
@@ -339,7 +341,7 @@ export function MessageItem({
           <button
             onClick={() => onReply?.(message)}
             className="rounded p-1 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-            title="Reply"
+            title={t('chat.reply')}
           >
             <Reply className="h-4 w-4" />
           </button>
@@ -349,7 +351,7 @@ export function MessageItem({
             <button
               onClick={() => onThreadOpen(message)}
               className="rounded p-1 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-              title="Open thread"
+              title={t('chat.openThread')}
             >
               <Reply className="h-4 w-4 -scale-x-100" />
             </button>
@@ -360,7 +362,7 @@ export function MessageItem({
             <button
               onClick={() => setShowMoreMenu((prev) => !prev)}
               className="rounded p-1 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
-              title="More"
+              title={t('chat.more')}
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
@@ -375,7 +377,7 @@ export function MessageItem({
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/10 transition-colors"
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    Edit Message
+                    {t('chat.editMsg')}
                   </button>
                 )}
                 <button
@@ -386,7 +388,7 @@ export function MessageItem({
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/10 transition-colors"
                 >
                   <Pin className="h-3.5 w-3.5" />
-                  {message.isPinned ? 'Unpin Message' : 'Pin Message'}
+                  {message.isPinned ? t('chat.unpinMessage') : t('chat.pinMessage')}
                 </button>
                 <button
                   onClick={() => {
@@ -396,7 +398,7 @@ export function MessageItem({
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/10 transition-colors"
                 >
                   <Share2 className="h-3.5 w-3.5" />
-                  Repost
+                  {t('chat.repost')}
                 </button>
                 {isOwn && (
                   <button
@@ -407,7 +409,7 @@ export function MessageItem({
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-rally-magenta hover:bg-rally-magenta/10 transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete Message
+                    {t('chat.deleteMessage')}
                   </button>
                 )}
               </div>

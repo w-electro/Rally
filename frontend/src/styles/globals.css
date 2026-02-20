@@ -255,3 +255,49 @@
     pointer-events: none;
   }
 }
+
+/* ========== RTL Support ========== */
+/* When dir="rtl" is set on <html>, flip layout directions */
+
+[dir="rtl"] {
+  /* Flip flex row directions globally for common layout patterns */
+  direction: rtl;
+  text-align: right;
+}
+
+/* Ensure inputs and textareas respect RTL */
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+}
+
+/* Flip the sidebar border from right to left */
+[dir="rtl"] .border-r {
+  border-right: none;
+  border-left: 1px solid;
+  border-left-color: inherit;
+}
+
+/* Flip border-l to border-r in RTL */
+[dir="rtl"] .border-l {
+  border-left: none;
+  border-right: 1px solid;
+  border-right-color: inherit;
+}
+
+/* Scrollbar position for RTL */
+[dir="rtl"] .scrollbar-none {
+  direction: rtl;
+}
+
+/* Flip rounded corners for chat bubbles */
+[dir="rtl"] .rounded-bl-md {
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.25rem;
+}
+
+[dir="rtl"] .rounded-br-md {
+  border-bottom-right-radius: 0.375rem;
+  border-bottom-left-radius: 0.25rem;
+}

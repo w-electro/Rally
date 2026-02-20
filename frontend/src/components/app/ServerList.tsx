@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Compass,
@@ -96,6 +97,7 @@ function ServerIcon({
 }
 
 export function ServerList() {
+  const { t } = useTranslation();
   const view = useUIStore((s) => s.view);
   const setView = useUIStore((s) => s.setView);
   const openModal = useUIStore((s) => s.openModal);
@@ -139,7 +141,7 @@ export function ServerList() {
         {hoveredAction === 'home' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
-              Home
+              {t('tooltips.home')}
             </div>
           </div>
         )}
@@ -168,7 +170,7 @@ export function ServerList() {
         {hoveredAction === 'dms' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
-              Direct Messages
+              {t('tooltips.directMessages')}
             </div>
           </div>
         )}
@@ -205,7 +207,7 @@ export function ServerList() {
         {hoveredAction === 'create' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
-              Create Server
+              {t('tooltips.createServer')}
             </div>
           </div>
         )}
@@ -224,7 +226,7 @@ export function ServerList() {
         {hoveredAction === 'join' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
-              Join a Server
+              {t('tooltips.joinServer')}
             </div>
           </div>
         )}
@@ -242,7 +244,7 @@ export function ServerList() {
         {hoveredAction === 'explore' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
-              Explore Servers
+              {t('tooltips.exploreServers')}
             </div>
           </div>
         )}
