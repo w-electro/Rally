@@ -61,7 +61,7 @@ export function AppLayout() {
       return (
         <div className="flex-1 flex items-center justify-center bg-[#0D1117]">
           <div className="text-center">
-            <img src="/icon.png" alt="Rally" className="w-16 h-16 mx-auto mb-4 opacity-30" />
+            <img src="./icon.png" alt="Rally" className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="text-white/30 text-sm">Select a conversation to start chatting</p>
           </div>
         </div>
@@ -84,7 +84,7 @@ export function AppLayout() {
     return (
       <div className="flex-1 flex items-center justify-center bg-[#0D1117]">
         <div className="text-center">
-          <img src="/icon.png" alt="Rally" className="w-16 h-16 mx-auto mb-4 opacity-30" />
+          <img src="./icon.png" alt="Rally" className="w-16 h-16 mx-auto mb-4 opacity-30" />
           <p className="text-white/30 text-sm">Select a server and channel to get started</p>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function AppLayout() {
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >
         <div className="flex items-center gap-2">
-          <img src="/icon.png" alt="Rally" className="w-4 h-4" />
+          <img src="./icon.png" alt="Rally" className="w-4 h-4" />
           <span className="text-xs font-bold text-[#00D9FF] tracking-wider">RALLY</span>
         </div>
 
@@ -149,8 +149,6 @@ export function AppLayout() {
           <div className="flex-1 overflow-hidden">
             <ServerList />
           </div>
-          {/* Voice connection status bar */}
-          {voiceChannelId && <VoiceBar />}
         </div>
 
         {/* Channel / DM Sidebar */}
@@ -179,6 +177,9 @@ export function AppLayout() {
           </div>
         )}
       </div>
+
+      {/* Voice Bar — full-width bottom bar */}
+      {voiceChannelId && <VoiceBar />}
 
       {/* Modals */}
       {activeModal === 'createServer' && <CreateServerModal />}
