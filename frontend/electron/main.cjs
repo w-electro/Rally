@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, desktopCapturer } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 let mainWindow = null;
@@ -110,6 +111,44 @@ function sendToRenderer(channel, data) {
   }
 }
 
+function setupAutoUpdater() {
+  if (isDev) return;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[AutoUpdater] Checking for update...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('[AutoUpdater] Update available:', info.version);
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('[AutoUpdater] Update not available. Current version is up-to-date.');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    console.log('[AutoUpdater] Download progress:', Math.round(progress.percent) + '%');
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[AutoUpdater] Update downloaded:', info.version);
+    sendToRenderer('update:downloaded', { version: info.version, releaseNotes: info.releaseNotes });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.log('[AutoUpdater] Error:', err.message);
+  });
+
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch((err) => {
+      console.log('[AutoUpdater] Check failed:', err.message);
+    });
+  }, 5000);
+}
+
 // IPC handlers for custom titlebar
 ipcMain.on('window:minimize', () => mainWindow?.minimize());
 ipcMain.on('window:maximize', () => {
@@ -142,8 +181,14 @@ ipcMain.handle('screen:getSources', async () => {
   }));
 });
 
+// Auto-update install trigger
+ipcMain.on('update:install', () => autoUpdater.quitAndInstall(false, true));
+
 // App lifecycle
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  setupAutoUpdater();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

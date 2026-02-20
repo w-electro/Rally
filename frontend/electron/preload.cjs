@@ -18,6 +18,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Screen sharing
   getScreenSources: () => ipcRenderer.invoke('screen:getSources'),
 
+  // Auto-updates
+  onUpdateDownloaded: (callback) => {
+    ipcRenderer.on('update:downloaded', (_, info) => callback(info));
+  },
+  installUpdate: () => ipcRenderer.send('update:install'),
+
   // Platform info
   platform: process.platform,
 });
