@@ -151,14 +151,16 @@ export function TopNav() {
           ref={scrollRef}
           className="flex items-center h-full overflow-x-auto scrollbar-none"
         >
-          {servers.map((server) => (
-            <ServerTab
-              key={server.id}
-              server={server}
-              isActive={activeServer?.id === server.id && view === 'servers'}
-              onClick={() => handleServerClick(server)}
-            />
-          ))}
+          {servers
+            .filter((server) => server.name !== 'Rally HQ')
+            .map((server) => (
+              <ServerTab
+                key={server.id}
+                server={server}
+                isActive={activeServer?.id === server.id && view === 'servers'}
+                onClick={() => handleServerClick(server)}
+              />
+            ))}
         </div>
 
         {/* Right scroll arrow */}
