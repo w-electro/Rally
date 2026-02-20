@@ -7,6 +7,7 @@ frontend/desktop-build/
 frontend/release/
 backend/dist/
 *.log
+*.db
 .DS_Store
 coverage/
 .turbo/
