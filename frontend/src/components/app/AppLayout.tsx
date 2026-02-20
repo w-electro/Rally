@@ -14,6 +14,7 @@ import { DmSidebar } from './DmSidebar';
 import { MemberList } from './MemberList';
 import { VoiceBar } from './VoiceBar';
 import { ChatArea } from '@/components/chat/ChatArea';
+import { DmChatView } from '@/components/chat/DmChatView';
 import { FeedView } from '@/components/feed/FeedView';
 import { PulseView } from '@/components/pulse/PulseView';
 import { VoiceChannel } from '@/components/voice/VoiceChannel';
@@ -37,6 +38,7 @@ export function AppLayout() {
   const view = useUIStore((s) => s.view);
   const rightPanel = useUIStore((s) => s.rightPanel);
   const activeModal = useUIStore((s) => s.activeModal);
+  const activeDmConversationId = useUIStore((s) => s.activeDmConversationId);
   const activeServer = useServerStore((s) => s.activeServer);
   const activeChannel = useServerStore((s) => s.activeChannel);
   const voiceChannelId = useVoiceStore((s) => s.channelId);
@@ -58,7 +60,9 @@ export function AppLayout() {
     }
 
     if (view === 'dms') {
-      // DM chat — no channel selected yet, show placeholder
+      if (activeDmConversationId) {
+        return <DmChatView conversationId={activeDmConversationId} />;
+      }
       return (
         <div className="flex-1 flex items-center justify-center bg-[#0D1117]">
           <div className="text-center">
