@@ -29,7 +29,9 @@ export function useSocket() {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    const serverUrl = localStorage.getItem('rally-server-url') || window.location.origin;
+    const serverUrl = localStorage.getItem('rally-server-url')
+      || import.meta.env.VITE_API_URL
+      || window.location.origin;
     socket = io(serverUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],

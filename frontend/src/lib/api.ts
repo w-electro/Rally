@@ -1,7 +1,14 @@
 function getApiBase(): string {
+  // 1. Explicit override from localStorage (dev/testing)
   const serverUrl = localStorage.getItem('rally-server-url');
   if (serverUrl) return `${serverUrl.replace(/\/$/, '')}/api`;
-  return '/api'; // default: same origin (Vite proxy)
+
+  // 2. Build-time env var (production builds)
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) return `${envUrl.replace(/\/$/, '')}/api`;
+
+  // 3. Fallback: same origin via Vite proxy (dev mode)
+  return '/api';
 }
 
 class ApiClient {
@@ -14,6 +21,7 @@ class ApiClient {
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
       ...(options.headers as Record<string, string>),
     };
 
