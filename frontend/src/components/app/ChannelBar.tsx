@@ -5,6 +5,7 @@ import { useVoiceStore } from '@/stores/voiceStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useSocket } from '@/hooks/useSocket';
 import { cn } from '@/lib/utils';
+import { VoiceChannelPreview } from '@/components/voice/VoiceChannelPreview';
 import type { Channel } from '@/lib/types';
 
 function getChannelIcon(type: string) {
@@ -29,6 +30,7 @@ export function ChannelBar() {
   const activeChannel = useServerStore((s) => s.activeChannel);
   const setActiveChannel = useServerStore((s) => s.setActiveChannel);
   const voiceChannelId = useVoiceStore((s) => s.channelId);
+  const participants = useVoiceStore((s) => s.participants);
   const openModal = useUIStore((s) => s.openModal);
   const { joinVoice } = useSocket();
 
@@ -36,6 +38,8 @@ export function ChannelBar() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [hoveredVoiceChannel, setHoveredVoiceChannel] = useState<string | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const checkScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -73,6 +77,25 @@ export function ChannelBar() {
     setActiveChannel(channel);
   }, [voiceChannelId, joinVoice, setActiveChannel]);
 
+  const handleVoiceHoverEnter = useCallback((channelId: string) => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredVoiceChannel(channelId);
+    }, 300);
+  }, []);
+
+  const handleVoiceHoverLeave = useCallback(() => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = null;
+    setHoveredVoiceChannel(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
+
   if (!activeServer) return null;
 
   const channels = (activeServer.channels || [])
@@ -100,10 +123,10 @@ export function ChannelBar() {
           const Icon = getChannelIcon(channel.type);
           const isActive = activeChannel?.id === channel.id;
           const isVoiceActive = channel.type === 'VOICE' && voiceChannelId === channel.id;
+          const isVoice = channel.type === 'VOICE';
 
-          return (
+          const button = (
             <button
-              key={channel.id}
               onClick={() => handleChannelClick(channel)}
               className={cn(
                 'relative flex items-center gap-1.5 px-3 h-9 shrink-0 text-sm transition-colors whitespace-nowrap',
@@ -126,11 +149,40 @@ export function ChannelBar() {
               />
               <span className="text-xs font-medium">{channel.name}</span>
 
+              {/* Voice participant count badge */}
+              {isVoiceActive && participants.length > 0 && (
+                <span className="text-xs font-medium text-[#39FF14]">
+                  ({participants.length})
+                </span>
+              )}
+
               {/* Active underline */}
               {isActive && (
                 <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-[#00D9FF] rounded-full" />
               )}
             </button>
+          );
+
+          if (isVoice) {
+            return (
+              <div
+                key={channel.id}
+                className="relative shrink-0"
+                onMouseEnter={() => handleVoiceHoverEnter(channel.id)}
+                onMouseLeave={handleVoiceHoverLeave}
+              >
+                {button}
+                {hoveredVoiceChannel === channel.id && (
+                  <VoiceChannelPreview channelId={channel.id} />
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <div key={channel.id} className="shrink-0">
+              {button}
+            </div>
           );
         })}
       </div>
