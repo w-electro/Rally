@@ -14,6 +14,10 @@ function getApiBase(): string {
 class ApiClient {
   private token: string | null = null;
 
+  getApiBase() {
+    return getApiBase();
+  }
+
   setToken(token: string | null) {
     this.token = token;
   }
