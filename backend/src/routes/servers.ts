@@ -33,8 +33,15 @@ function serializeRole<T extends { permissions: bigint }>(role: T): Omit<T, 'per
 
 /** Serialize a server object that includes roles, converting BigInt permissions to strings. */
 function serializeServerWithRoles(server: any): any {
-  if (!server || !server.roles) return server;
-  return { ...server, roles: server.roles.map(serializeRole) };
+  if (!server) return server;
+  const result: any = { ...server };
+  if (server._count?.members != null) {
+    result.memberCount = server._count.members;
+  }
+  if (server.roles) {
+    result.roles = server.roles.map(serializeRole);
+  }
+  return result;
 }
 
 /** Resolve the authenticated member's computed permissions for a server. */
@@ -214,6 +221,7 @@ router.get(
 
     const servers = memberships.map((m) => ({
       ...m.server,
+      memberCount: (m.server as any)._count?.members ?? 0,
       joinedAt: m.joinedAt,
       nickname: m.nickname,
     }));
