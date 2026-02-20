@@ -7,7 +7,8 @@ import {
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useVoiceStore } from '@/stores/voiceStore';
-import { ServerList } from './ServerList';
+import { TopNav } from './TopNav';
+import { Dashboard } from './Dashboard';
 import { ChannelSidebar } from './ChannelSidebar';
 import { DmSidebar } from './DmSidebar';
 import { MemberList } from './MemberList';
@@ -81,14 +82,7 @@ export function AppLayout() {
       return <ChatArea channel={activeChannel} />;
     }
 
-    return (
-      <div className="flex-1 flex items-center justify-center bg-[#0D1117]">
-        <div className="text-center">
-          <img src="./icon.png" alt="Rally" className="w-16 h-16 mx-auto mb-4 opacity-30" />
-          <p className="text-white/30 text-sm">Select a server and channel to get started</p>
-        </div>
-      </div>
-    );
+    return <Dashboard />;
   };
 
   const renderSidebar = () => {
@@ -142,15 +136,11 @@ export function AppLayout() {
         )}
       </div>
 
+      {/* Top Nav */}
+      <TopNav />
+
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Server List (narrow sidebar) */}
-        <div className="w-[72px] shrink-0 flex flex-col">
-          <div className="flex-1 overflow-hidden">
-            <ServerList />
-          </div>
-        </div>
-
         {/* Channel / DM Sidebar */}
         {renderSidebar() && (
           <div className="w-60 shrink-0 flex flex-col overflow-hidden">
