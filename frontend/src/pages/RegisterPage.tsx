@@ -10,7 +10,8 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const isPackaged = window.location.protocol === 'file:';
+  const [showAdvanced, setShowAdvanced] = useState(isPackaged);
   const [serverUrl, setServerUrl] = useState(localStorage.getItem('rally-server-url') || '');
   const { register, isLoading, error, clearError } = useAuthStore();
 
@@ -54,7 +55,7 @@ export function RegisterPage() {
     <div className="min-h-screen bg-black bg-grid flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/icon.png" alt="Rally" className="w-16 h-16 mx-auto" />
+          <img src="./icon.png" alt="Rally" className="w-16 h-16 mx-auto" />
           <h1 className="mt-4 font-display text-3xl font-bold text-rally-blue tracking-wider">CREATE ACCOUNT</h1>
           <p className="mt-1 text-rally-text-muted text-sm">Join the next generation of gaming</p>
         </div>

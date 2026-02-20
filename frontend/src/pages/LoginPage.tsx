@@ -14,7 +14,9 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // In packaged Electron (file: protocol), the server URL is required — always show it
+  const isPackaged = window.location.protocol === 'file:';
+  const [showAdvanced, setShowAdvanced] = useState(isPackaged);
   const [serverUrl, setServerUrl] = useState(localStorage.getItem('rally-server-url') || '');
 
   const handleServerUrlChange = (url: string) => {
@@ -91,7 +93,7 @@ export function LoginPage() {
           <div className="flex flex-col items-center mb-8">
             <Link to="/">
               <img
-                src="/icon.png"
+                src="./icon.png"
                 alt="Rally"
                 className="w-14 h-14 mb-3 drop-shadow-[0_0_16px_rgba(0,217,255,0.3)] hover:drop-shadow-[0_0_24px_rgba(0,217,255,0.5)] transition"
               />
@@ -240,11 +242,13 @@ export function LoginPage() {
                     type="text"
                     value={serverUrl}
                     onChange={(e) => handleServerUrlChange(e.target.value)}
-                    placeholder="http://localhost:3001"
+                    placeholder="http://192.168.x.x:3001"
                     className="input-rally rounded-sm"
                   />
                   <p className="text-xs text-rally-text-muted mt-1 font-body">
-                    Leave empty for local server. Enter the URL of your Rally server for LAN/internet play.
+                    {isPackaged
+                      ? 'Enter the IP address of the person hosting the Rally server (e.g. http://192.168.1.100:3001)'
+                      : 'Leave empty for local server. Enter the URL of your Rally server for LAN/internet play.'}
                   </p>
                 </div>
               )}

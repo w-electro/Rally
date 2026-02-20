@@ -134,7 +134,7 @@ export function ServerList() {
               : 'bg-[#1A1F36] hover:rounded-2xl hover:bg-[#00D9FF]/10'
           )}
         >
-          <img src="/icon.png" alt="Rally" className="w-7 h-7" />
+          <img src="./icon.png" alt="Rally" className="w-7 h-7" />
         </button>
         {hoveredAction === 'home' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">

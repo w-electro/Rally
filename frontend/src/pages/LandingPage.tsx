@@ -318,7 +318,7 @@ export function LandingPage() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <img
-              src="/icon.png"
+              src="./icon.png"
               alt="Rally"
               className="w-8 h-8 group-hover:drop-shadow-[0_0_8px_rgba(0,217,255,0.5)] transition"
             />
@@ -418,7 +418,7 @@ export function LandingPage() {
         <div className="relative z-10 flex flex-col items-center text-center max-w-3xl">
           {/* Logo */}
           <img
-            src="/icon.png"
+            src="./icon.png"
             alt="Rally Logo"
             className="w-28 h-28 md:w-36 md:h-36 mb-6 drop-shadow-[0_0_30px_rgba(0,217,255,0.35)] animate-glow-pulse"
           />
@@ -542,7 +542,7 @@ export function LandingPage() {
       <footer className="border-t border-rally-border/30 py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src="/icon.png" alt="Rally" className="w-5 h-5 opacity-60" />
+            <img src="./icon.png" alt="Rally" className="w-5 h-5 opacity-60" />
             <span className="font-display text-xs text-rally-text-muted tracking-widest uppercase">
               Rally
             </span>
