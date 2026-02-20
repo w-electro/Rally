@@ -164,7 +164,10 @@ export function VoiceChannel() {
             <div className="flex items-center gap-2 border-b border-rally-border/30 px-3 py-2">
               <Monitor size={14} className="text-[#39FF14]" />
               <span className="text-xs font-medium text-rally-text">
-                {remoteScreenStream ? `${screenShareUserId} is sharing` : 'You are sharing your screen'}
+                {isScreenSharing
+                  ? 'You are sharing your screen'
+                  : `${participants.find(p => p.userId === screenShareUserId)?.displayName ?? 'Someone'} is sharing`
+                }
               </span>
             </div>
             <video

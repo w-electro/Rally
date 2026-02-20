@@ -26,6 +26,7 @@ interface VoiceStoreState extends VoiceState {
   stopScreenShare: () => void;
   setRemoteScreenShare: (userId: string, stream: MediaStream) => void;
   clearRemoteScreenShare: () => void;
+  setScreenShareUser: (userId: string | null) => void;
 }
 
 export const useVoiceStore = create<VoiceStoreState>((set) => ({
@@ -107,4 +108,5 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
     screenShareUserId: null,
     remoteScreenStream: null,
   }),
+  setScreenShareUser: (userId) => set({ screenShareUserId: userId }),
 }));

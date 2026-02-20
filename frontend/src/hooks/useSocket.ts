@@ -95,8 +95,7 @@ export function useSocket() {
     });
 
     socket.on('screen:start', (data: { userId: string; username: string }) => {
-      // Remote user started sharing — the actual stream comes via WebRTC
-      // Just update store to show "X is sharing their screen" UI
+      useVoiceStore.getState().setScreenShareUser(data.userId);
     });
 
     socket.on('screen:stop', (data: { userId: string }) => {
