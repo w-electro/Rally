@@ -70,9 +70,13 @@ export function ServerSettingsModal() {
         isPublic,
         iconUrl: serverIconPreview || undefined,
       });
-      // Update the store
-      const { setActiveServer } = useServerStore.getState();
-      await setActiveServer({ ...activeServer, name: serverName.trim(), description: serverDescription.trim(), isPublic, iconUrl: serverIconPreview || undefined });
+      // Update both activeServer and servers list in one shot
+      useServerStore.getState().updateServerLocal(activeServer.id, {
+        name: serverName.trim(),
+        description: serverDescription.trim(),
+        isPublic,
+        iconUrl: serverIconPreview || undefined,
+      });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch {

@@ -16,6 +16,7 @@ interface ServerState {
   joinServer: (serverId: string) => Promise<void>;
   leaveServer: (serverId: string) => Promise<void>;
   loadMembers: (serverId: string) => Promise<void>;
+  updateServerLocal: (serverId: string, data: Partial<Server>) => void;
   addChannel: (channel: Channel) => void;
   removeChannel: (channelId: string) => void;
 }
@@ -89,6 +90,13 @@ export const useServerStore = create<ServerState>((set, get) => ({
       const members = Array.isArray(data) ? data : (data as any)?.members ?? [];
       set({ members });
     } catch {}
+  },
+
+  updateServerLocal: (serverId, data) => {
+    set((s) => ({
+      servers: s.servers.map((sv) => (sv.id === serverId ? { ...sv, ...data } : sv)),
+      activeServer: s.activeServer?.id === serverId ? { ...s.activeServer, ...data } : s.activeServer,
+    }));
   },
 
   addChannel: (channel) => {

@@ -211,8 +211,8 @@ export function BubbleMessage({
         {showActions && (
           <div
             className={cn(
-              'absolute -top-3 z-10 flex items-center gap-0.5 rounded border border-white/10 bg-[#0A0E27] px-1 py-0.5 shadow-xl',
-              isOwn ? 'left-4' : 'right-4',
+              'absolute -top-7 z-10 flex items-center gap-0.5 rounded-md bg-[#1A1F2E]/90 backdrop-blur-sm px-1 py-0.5 shadow-lg',
+              isOwn ? 'right-0' : 'left-0',
             )}
           >
             {/* Quick emoji picker */}
