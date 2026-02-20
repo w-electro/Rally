@@ -350,20 +350,7 @@ export function BubbleMessage({
               : 'bg-[#1A1F2E] border border-white/5 rounded-2xl rounded-bl-md',
           )}
         >
-          {/* Compact: show author name inline */}
-          {isCompact && (
-            <>
-              <span className="font-display font-semibold text-[#00D9FF] mr-1 cursor-pointer hover:underline text-xs">
-                {author.displayName}
-              </span>
-              {message.isEdited && (
-                <span className="text-[10px] text-gray-600 italic mr-1 select-none">
-                  (edited)
-                </span>
-              )}
-            </>
-          )}
-          {!isCompact && message.isEdited && (
+          {message.isEdited && (
             <span className="text-[10px] text-gray-600 italic mr-1 select-none">
               (edited)
             </span>
