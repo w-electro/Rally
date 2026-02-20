@@ -5,6 +5,10 @@ interface VoiceStoreState extends VoiceState {
   participants: VoiceParticipant[];
   spatialPositions: Record<string, { x: number; y: number }>;
   remoteStreams: Record<string, MediaStream>;
+  screenShareUserId: string | null;
+  screenShareStream: MediaStream | null;
+  remoteScreenStream: MediaStream | null;
+  isScreenSharing: boolean;
 
   joinChannel: (channelId: string) => void;
   leaveChannel: () => void;
@@ -18,6 +22,10 @@ interface VoiceStoreState extends VoiceState {
   updateSpatialPosition: (userId: string, position: { x: number; y: number }) => void;
   setRemoteStream: (userId: string, stream: MediaStream) => void;
   removeRemoteStream: (userId: string) => void;
+  startScreenShare: (stream: MediaStream) => void;
+  stopScreenShare: () => void;
+  setRemoteScreenShare: (userId: string, stream: MediaStream) => void;
+  clearRemoteScreenShare: () => void;
 }
 
 export const useVoiceStore = create<VoiceStoreState>((set) => ({
@@ -28,9 +36,22 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   participants: [],
   spatialPositions: {},
   remoteStreams: {},
+  screenShareUserId: null,
+  screenShareStream: null,
+  remoteScreenStream: null,
+  isScreenSharing: false,
 
   joinChannel: (channelId) => set({ channelId, isMuted: false, isDeafened: false }),
-  leaveChannel: () => set({ channelId: null, participants: [], spatialPositions: {}, remoteStreams: {} }),
+  leaveChannel: () => set({
+    channelId: null,
+    participants: [],
+    spatialPositions: {},
+    remoteStreams: {},
+    screenShareUserId: null,
+    screenShareStream: null,
+    remoteScreenStream: null,
+    isScreenSharing: false,
+  }),
 
   toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
   toggleDeafen: () =>
@@ -70,4 +91,20 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
       const { [userId]: _, ...rest } = s.remoteStreams;
       return { remoteStreams: rest };
     }),
+  startScreenShare: (stream) => set({
+    isScreenSharing: true,
+    screenShareStream: stream,
+  }),
+  stopScreenShare: () => set({
+    isScreenSharing: false,
+    screenShareStream: null,
+  }),
+  setRemoteScreenShare: (userId, stream) => set({
+    screenShareUserId: userId,
+    remoteScreenStream: stream,
+  }),
+  clearRemoteScreenShare: () => set({
+    screenShareUserId: null,
+    remoteScreenStream: null,
+  }),
 }));
