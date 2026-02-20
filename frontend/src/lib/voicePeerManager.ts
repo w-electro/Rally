@@ -306,34 +306,44 @@ export class VoicePeerManager {
    * Electron's chromeMediaSource and adds the video track to all existing peers.
    */
   async startScreenShare(sourceId: string, withAudio: boolean): Promise<MediaStream> {
-    // Get screen capture stream using Electron's chromeMediaSource
-    this.screenStream = await navigator.mediaDevices.getUserMedia({
-      audio: withAudio ? {
-        mandatory: {
-          chromeMediaSource: 'desktop',
-          chromeMediaSourceId: sourceId,
-        },
-      } as any : false,
-      video: {
-        mandatory: {
-          chromeMediaSource: 'desktop',
-          chromeMediaSourceId: sourceId,
-        },
-      } as any,
-    });
+    const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
-    // Add video track to all existing peers
+    if (isElectron && sourceId !== 'browser') {
+      // Electron: use chromeMediaSource for specific screen/window
+      this.screenStream = await navigator.mediaDevices.getUserMedia({
+        audio: withAudio ? {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: sourceId,
+          },
+        } as any : false,
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: sourceId,
+          },
+        } as any,
+      });
+    } else {
+      // Browser fallback: use standard getDisplayMedia API
+      this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: withAudio,
+      });
+    }
+
+    // Add screen stream to all peers using addStream (triggers renegotiation)
+    for (const [, peer] of this.peers) {
+      try {
+        (peer as any).addStream(this.screenStream);
+      } catch (e) {
+        console.error('[VoicePeerManager] Failed to add screen stream:', e);
+      }
+    }
+
+    // Listen for track ending (user stops from OS or browser UI)
     const videoTrack = this.screenStream.getVideoTracks()[0];
     if (videoTrack) {
-      for (const [, peer] of this.peers) {
-        try {
-          peer.addTrack(videoTrack, this.screenStream);
-        } catch (e) {
-          console.error('[VoicePeerManager] Failed to add screen track:', e);
-        }
-      }
-
-      // Listen for track ending (user stops from OS)
       videoTrack.onended = () => {
         this.stopScreenShare();
       };
@@ -349,19 +359,16 @@ export class VoicePeerManager {
   stopScreenShare(): void {
     if (!this.screenStream) return;
 
-    // Remove video tracks from all peers
-    const videoTrack = this.screenStream.getVideoTracks()[0];
-    if (videoTrack) {
-      for (const [, peer] of this.peers) {
-        try {
-          peer.removeTrack(videoTrack, this.screenStream);
-        } catch (e) {
-          // Peer may not have the track
-        }
+    // Remove screen stream from all peers using removeStream
+    for (const [, peer] of this.peers) {
+      try {
+        (peer as any).removeStream(this.screenStream);
+      } catch (e) {
+        // Peer may not have the stream
       }
     }
 
-    // Stop all tracks in the screen stream
+    // Stop all tracks
     for (const track of this.screenStream.getTracks()) {
       track.stop();
     }
