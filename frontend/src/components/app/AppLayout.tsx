@@ -9,7 +9,7 @@ import { useServerStore } from '@/stores/serverStore';
 import { useVoiceStore } from '@/stores/voiceStore';
 import { TopNav } from './TopNav';
 import { Dashboard } from './Dashboard';
-import { ChannelSidebar } from './ChannelSidebar';
+import { ChannelBar } from './ChannelBar';
 import { DmSidebar } from './DmSidebar';
 import { MemberList } from './MemberList';
 import { VoiceBar } from './VoiceBar';
@@ -82,16 +82,6 @@ export function AppLayout() {
     return <Dashboard />;
   };
 
-  const renderSidebar = () => {
-    if (view === 'dms') {
-      return <DmSidebar />;
-    }
-    if (view === 'servers' && activeServer) {
-      return <ChannelSidebar />;
-    }
-    return null;
-  };
-
   const showRightPanel = view === 'servers' && activeServer && rightPanel !== 'none';
 
   return (
@@ -136,12 +126,15 @@ export function AppLayout() {
       {/* Top Nav */}
       <TopNav />
 
+      {/* Channel Bar (horizontal, for server views) */}
+      {view === 'servers' && activeServer && <ChannelBar />}
+
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Channel / DM Sidebar */}
-        {renderSidebar() && (
+        {/* DM Sidebar (only for DM view) */}
+        {view === 'dms' && (
           <div className="w-60 shrink-0 flex flex-col overflow-hidden">
-            {renderSidebar()}
+            <DmSidebar />
           </div>
         )}
 
