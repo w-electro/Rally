@@ -133,16 +133,27 @@ export function ScreenSharePicker({ onSelect, onCancel }: ScreenSharePickerProps
         {/* Fallback for non-Electron */}
         {!isElectronAvailable ? (
           <div className="px-6 py-12 text-center">
-            <Monitor size={48} className="mx-auto mb-4 text-gray-500" />
-            <p className="text-gray-400 text-sm mb-6">
-              Screen sharing requires the Rally desktop app
+            <Monitor size={48} className="mx-auto mb-4 text-[#00D9FF]" />
+            <p className="text-gray-300 text-sm mb-2 font-medium">
+              Share Your Screen
             </p>
-            <button
-              onClick={onCancel}
-              className="px-6 py-2 rounded-lg border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 transition-colors"
-            >
-              Cancel
-            </button>
+            <p className="text-gray-500 text-xs mb-6">
+              Your browser will ask which screen or window to share
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={onCancel}
+                className="px-4 py-2 rounded-lg border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => onSelect('browser', false)}
+                className="px-6 py-2 rounded-lg bg-[#00D9FF] text-black text-sm font-medium hover:bg-[#00D9FF]/90 transition-colors"
+              >
+                Share Screen
+              </button>
+            </div>
           </div>
         ) : (
           <>
