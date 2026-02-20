@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { VoiceParticipant, VoiceState } from '../lib/types';
 
 interface VoiceStoreState extends VoiceState {
+  _localUserId: string | null;
   participants: VoiceParticipant[];
   spatialPositions: Record<string, { x: number; y: number }>;
   remoteStreams: Record<string, MediaStream>;
@@ -10,7 +11,7 @@ interface VoiceStoreState extends VoiceState {
   remoteScreenStream: MediaStream | null;
   isScreenSharing: boolean;
 
-  joinChannel: (channelId: string) => void;
+  joinChannel: (channelId: string, localUserId?: string) => void;
   leaveChannel: () => void;
   toggleMute: () => void;
   toggleDeafen: () => void;
@@ -31,6 +32,7 @@ interface VoiceStoreState extends VoiceState {
 
 export const useVoiceStore = create<VoiceStoreState>((set) => ({
   channelId: null,
+  _localUserId: null,
   isMuted: false,
   isDeafened: false,
   isSpeaking: false,
@@ -42,9 +44,10 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   remoteScreenStream: null,
   isScreenSharing: false,
 
-  joinChannel: (channelId) => set({ channelId, isMuted: false, isDeafened: false }),
+  joinChannel: (channelId, localUserId) => set({ channelId, isMuted: false, isDeafened: false, _localUserId: localUserId ?? null }),
   leaveChannel: () => set({
     channelId: null,
+    _localUserId: null,
     participants: [],
     spatialPositions: {},
     remoteStreams: {},
@@ -54,12 +57,30 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
     isScreenSharing: false,
   }),
 
-  toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
+  toggleMute: () =>
+    set((s) => {
+      const newMuted = !s.isMuted;
+      return {
+        isMuted: newMuted,
+        participants: s.participants.map((p) =>
+          p.userId === s._localUserId ? { ...p, isMuted: newMuted } : p,
+        ),
+      };
+    }),
   toggleDeafen: () =>
-    set((s) => ({
-      isDeafened: !s.isDeafened,
-      isMuted: !s.isDeafened ? true : s.isMuted,
-    })),
+    set((s) => {
+      const newDeafened = !s.isDeafened;
+      const newMuted = newDeafened ? true : s.isMuted;
+      return {
+        isDeafened: newDeafened,
+        isMuted: newMuted,
+        participants: s.participants.map((p) =>
+          p.userId === s._localUserId
+            ? { ...p, isDeafened: newDeafened, isMuted: newMuted }
+            : p,
+        ),
+      };
+    }),
   setSpeaking: (isSpeaking) => set({ isSpeaking }),
 
   setParticipants: (participants) => set({ participants }),

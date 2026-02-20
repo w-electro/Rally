@@ -213,8 +213,23 @@ export function useSocket() {
     // Tell the server we're joining voice
     socketRef.current?.emit('voice:join', channelId);
 
-    // Update the store
-    useVoiceStore.getState().joinChannel(channelId);
+    // Update the store (pass local user ID for mute/deafen sync)
+    const currentUser = useAuthStore.getState().user;
+    useVoiceStore.getState().joinChannel(channelId, currentUser?.id);
+
+    // Add the local user as a participant so the stage shows them
+    if (currentUser) {
+      useVoiceStore.getState().addParticipant({
+        userId: currentUser.id,
+        username: currentUser.username,
+        displayName: currentUser.displayName,
+        avatarUrl: currentUser.avatarUrl,
+        isMuted: false,
+        isDeafened: false,
+        isSpeaking: false,
+        isStreaming: false,
+      });
+    }
   }, []);
 
   const leaveVoice = useCallback(() => {
