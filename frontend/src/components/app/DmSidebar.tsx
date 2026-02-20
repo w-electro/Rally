@@ -5,14 +5,18 @@ import {
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
+import { useSocket } from '@/hooks/useSocket';
 import api from '@/lib/api';
 import { cn, getInitials, getStatusColor, formatDate } from '@/lib/utils';
 import type { DmConversation } from '@/lib/types';
 
 export function DmSidebar() {
   const user = useAuthStore((s) => s.user);
+  const activeConversationId = useUIStore((s) => s.activeDmConversationId);
+  const setActiveDmConversation = useUIStore((s) => s.setActiveDmConversation);
+  const { socket } = useSocket();
   const [conversations, setConversations] = useState<DmConversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -123,7 +127,10 @@ export function DmSidebar() {
           return (
             <button
               key={conv.id}
-              onClick={() => setActiveConversationId(conv.id)}
+              onClick={() => {
+                setActiveDmConversation(conv.id);
+                socket?.emit('dm:join', conv.id);
+              }}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors group',
                 isActive

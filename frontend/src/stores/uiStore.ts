@@ -12,6 +12,7 @@ interface UIState {
   isSidebarCollapsed: boolean;
   showSplash: boolean;
   theme: 'dark';
+  activeDmConversationId: string | null;
 
   setView: (view: View) => void;
   setRightPanel: (panel: RightPanel) => void;
@@ -19,6 +20,7 @@ interface UIState {
   closeModal: () => void;
   toggleSidebar: () => void;
   hideSplash: () => void;
+  setActiveDmConversation: (id: string | null) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -29,6 +31,7 @@ export const useUIStore = create<UIState>((set) => ({
   isSidebarCollapsed: false,
   showSplash: true,
   theme: 'dark',
+  activeDmConversationId: null,
 
   setView: (view) => set({ view }),
   setRightPanel: (rightPanel) => set({ rightPanel }),
@@ -36,4 +39,5 @@ export const useUIStore = create<UIState>((set) => ({
   closeModal: () => set({ activeModal: null, modalData: null }),
   toggleSidebar: () => set((s) => ({ isSidebarCollapsed: !s.isSidebarCollapsed })),
   hideSplash: () => set({ showSplash: false }),
+  setActiveDmConversation: (activeDmConversationId) => set({ activeDmConversationId }),
 }));
