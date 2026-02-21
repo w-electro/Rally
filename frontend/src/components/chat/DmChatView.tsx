@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageCircle, Loader2, ChevronDown } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
@@ -42,6 +42,10 @@ function needsDateDivider(
   return d1 !== d2;
 }
 
+// Module-level cache so DM messages survive tab switches (component unmount/remount)
+const _dmMessageCache = new Map<string, DirectMessage[]>();
+const _dmConversationCache = new Map<string, DmConversation>();
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -51,10 +55,19 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
   const { user } = useAuthStore();
   const { sendDm } = useSocket();
 
-  // Local state
-  const [messages, setMessages] = useState<DirectMessage[]>([]);
-  const [conversation, setConversation] = useState<DmConversation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Local state — initialized from cache for instant display
+  const [messages, setMessagesRaw] = useState<DirectMessage[]>(_dmMessageCache.get(conversationId) ?? []);
+  const [conversation, setConversation] = useState<DmConversation | null>(_dmConversationCache.get(conversationId) ?? null);
+  const [isLoading, setIsLoading] = useState(!_dmMessageCache.has(conversationId));
+
+  // Wrap setMessages to also write to the cache
+  const setMessages = useCallback((updater: DirectMessage[] | ((prev: DirectMessage[]) => DirectMessage[])) => {
+    setMessagesRaw((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      _dmMessageCache.set(conversationId, next);
+      return next;
+    });
+  }, [conversationId]);
   const [showScrollDown, setShowScrollDown] = useState(false);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -106,7 +119,13 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
     let cancelled = false;
 
     const fetchData = async () => {
-      setIsLoading(true);
+      // Load cached data instantly if available
+      const cachedMsgs = _dmMessageCache.get(conversationId);
+      const cachedConvo = _dmConversationCache.get(conversationId);
+      if (cachedMsgs) setMessagesRaw(cachedMsgs);
+      if (cachedConvo) setConversation(cachedConvo);
+
+      setIsLoading(!cachedMsgs);
       isInitialLoad.current = true;
 
       try {
@@ -114,7 +133,10 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
         const convos: any = await api.getDmConversations();
         const list = Array.isArray(convos) ? convos : convos?.conversations ?? [];
         const matched = list.find((c: any) => c.id === conversationId) ?? null;
-        if (!cancelled) setConversation(matched);
+        if (!cancelled) {
+          setConversation(matched);
+          if (matched) _dmConversationCache.set(conversationId, matched);
+        }
 
         // Fetch message history
         const msgData: any = await api.getDmMessages(conversationId);

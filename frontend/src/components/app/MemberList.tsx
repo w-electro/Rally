@@ -70,13 +70,35 @@ function MemberCard({ member, dimmed, onClick }: { member: ServerMember; dimmed?
         <p className="text-sm font-medium text-white truncate leading-tight">
           {member.nickname || member.user.displayName}
         </p>
+        {/* Role badges */}
+        {member.roles && member.roles.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {member.roles
+              .filter((r: any) => r.role && r.role.name !== '@everyone')
+              .sort((a: any, b: any) => (b.role.position ?? 0) - (a.role.position ?? 0))
+              .map((r: any) => (
+                <span
+                  key={r.role.id}
+                  className="inline-flex items-center gap-1 rounded-full px-1.5 py-0 text-[10px] font-medium border border-white/10"
+                  style={{
+                    color: r.role.color || '#8B8B8B',
+                    backgroundColor: `${r.role.color || '#8B8B8B'}15`,
+                    borderColor: `${r.role.color || '#8B8B8B'}30`,
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: r.role.color || '#8B8B8B' }} />
+                  {r.role.name}
+                </span>
+              ))}
+          </div>
+        )}
         {member.user.currentGame && (
-          <p className="text-[11px] text-[#00D9FF] truncate leading-tight">
+          <p className="text-[11px] text-[#00D9FF] truncate leading-tight mt-0.5">
             {t('members.playing', { game: member.user.currentGame })}
           </p>
         )}
         {!member.user.currentGame && member.user.customStatus && (
-          <p className="text-[11px] text-white/30 truncate leading-tight">
+          <p className="text-[11px] text-white/30 truncate leading-tight mt-0.5">
             {member.user.customStatus}
           </p>
         )}

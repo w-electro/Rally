@@ -213,7 +213,7 @@ export function BubbleMessage({
         {showActions && (
           <div
             className={cn(
-              'absolute -top-7 z-10 flex items-center gap-0.5 rounded-md bg-[#1A1F2E]/90 backdrop-blur-sm px-1 py-0.5 shadow-lg',
+              'absolute bottom-full z-10 flex flex-col gap-0.5 rounded-md bg-[#1A1F2E]/90 backdrop-blur-sm px-0.5 py-1 shadow-lg mb-1',
               isOwn ? 'right-0' : 'left-0',
             )}
           >
@@ -227,7 +227,10 @@ export function BubbleMessage({
                 <Smile className="h-4 w-4" />
               </button>
               {showEmojiPicker && (
-                <div className="absolute bottom-full right-0 mb-1 flex flex-col gap-0.5 rounded border border-white/10 bg-[#0A0E27] p-1 shadow-xl z-20">
+                <div className={cn(
+                  'absolute top-0 flex flex-col gap-0.5 rounded border border-white/10 bg-[#0A0E27] p-1 shadow-xl z-20',
+                  isOwn ? 'right-full mr-1' : 'left-full ml-1',
+                )}>
                   {QUICK_REACTIONS.map((emoji) => (
                     <button
                       key={emoji}
@@ -274,7 +277,10 @@ export function BubbleMessage({
                 <MoreHorizontal className="h-4 w-4" />
               </button>
               {showMoreMenu && (
-                <div className="absolute top-full right-0 mt-1 w-40 rounded border border-white/10 bg-[#0A0E27] py-1 shadow-xl z-20">
+                <div className={cn(
+                  'absolute top-0 w-40 rounded border border-white/10 bg-[#0A0E27] py-1 shadow-xl z-20',
+                  isOwn ? 'right-full mr-1' : 'left-full ml-1',
+                )}>
                   {isOwn && (
                     <button
                       onClick={() => {

@@ -7,12 +7,14 @@ import {
   Users,
   ChevronDown,
   Loader2,
+  X,
 } from 'lucide-react';
 import { BubbleMessage } from '@/components/chat/BubbleMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ThreadView } from '@/components/chat/ThreadView';
 import { useMessageStore } from '@/stores/messageStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
 import { useSocket } from '@/hooks/useSocket';
 import type { Message, Channel } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
@@ -81,18 +83,31 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
     setHasMore,
   } = useMessageStore();
 
+  const { rightPanel, setRightPanel } = useUIStore();
+
   // Local state
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showPinnedPanel, setShowPinnedPanel] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
   const prevChannelId = useRef<string | null>(null);
 
-  const channelMessages = allMessages[channel.id] ?? [];
+  const rawMessages = allMessages[channel.id] ?? [];
+  // Filter by search query if active
+  const channelMessages = searchQuery
+    ? rawMessages.filter((m) =>
+        m.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.author?.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : rawMessages;
 
   // ------------------------------------------------------------------
   // Socket: join / leave channel room
@@ -179,7 +194,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
 
     // Load more when scrolled to top
     if (scrollTop < 60 && hasMore[channel.id] && !isLoading) {
-      const firstMsg = channelMessages[0];
+      const firstMsg = rawMessages[0];
       if (!firstMsg) return;
 
       const prevScrollHeight = container.scrollHeight;
@@ -303,24 +318,82 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
 
           {/* Right header icons */}
           <button
-            className="rounded p-1.5 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
+            onClick={() => setShowSearch((p) => !p)}
+            className={cn(
+              'rounded p-1.5 transition-colors',
+              showSearch ? 'bg-white/10 text-rally-blue' : 'text-gray-500 hover:bg-white/10 hover:text-gray-300',
+            )}
             title={t('chat.searchMessages')}
           >
             <Search className="h-4 w-4" />
           </button>
           <button
-            className="rounded p-1.5 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
+            onClick={() => setShowPinnedPanel((p) => !p)}
+            className={cn(
+              'rounded p-1.5 transition-colors',
+              showPinnedPanel ? 'bg-white/10 text-rally-blue' : 'text-gray-500 hover:bg-white/10 hover:text-gray-300',
+            )}
             title={t('chat.pinnedMessages')}
           >
             <Pin className="h-4 w-4" />
           </button>
           <button
-            className="rounded p-1.5 text-gray-500 hover:bg-white/10 hover:text-gray-300 transition-colors"
+            onClick={() => setRightPanel(rightPanel === 'members' ? 'none' : 'members')}
+            className={cn(
+              'rounded p-1.5 transition-colors',
+              rightPanel === 'members' ? 'bg-white/10 text-rally-blue' : 'text-gray-500 hover:bg-white/10 hover:text-gray-300',
+            )}
             title={t('chat.members')}
           >
             <Users className="h-4 w-4" />
           </button>
         </header>
+
+        {/* Search bar (toggleable) */}
+        {showSearch && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-white/10 bg-[#0A0E27]">
+            <Search className="h-4 w-4 text-gray-500 shrink-0" />
+            <input
+              type="text"
+              placeholder={t('chat.searchMessages')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+              autoFocus
+            />
+            <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="text-gray-500 hover:text-white">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Pinned messages panel (toggleable) */}
+        {showPinnedPanel && (
+          <div className="max-h-64 overflow-y-auto border-b border-white/10 bg-[#0A0E27]/80">
+            <div className="flex items-center justify-between px-4 py-2">
+              <span className="text-xs font-display font-semibold uppercase tracking-wider text-gray-400">
+                <Pin className="inline h-3 w-3 mr-1" />
+                {t('chat.pinnedMessages')}
+              </span>
+              <button onClick={() => setShowPinnedPanel(false)} className="text-gray-500 hover:text-white">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {channelMessages.filter((m) => m.isPinned).length === 0 ? (
+              <p className="px-4 pb-3 text-xs text-gray-600">{t('chat.noPinnedMessages') || 'No pinned messages yet.'}</p>
+            ) : (
+              channelMessages.filter((m) => m.isPinned).map((m) => (
+                <div key={m.id} className="px-4 py-2 border-t border-white/5 hover:bg-white/[0.02]">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xs font-semibold text-rally-blue">{m.author?.displayName}</span>
+                    <span className="text-[10px] text-gray-600">{formatDate(m.createdAt)}</span>
+                  </div>
+                  <p className="text-sm text-gray-300 mt-0.5">{m.content}</p>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Message list */}
         <div
@@ -387,12 +460,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                   message={msg}
                   isCompact={isCompact}
                   onReply={(m) => setReplyingTo(m)}
-                  onEdit={(m) => {
-                    const newContent = window.prompt(t('chat.editMessage'), m.content);
-                    if (newContent && newContent !== m.content) {
-                      editMessage(m.id, newContent);
-                    }
-                  }}
+                  onEdit={(m) => setEditingMessage(m)}
                   onDelete={handleDelete}
                   onPin={handlePin}
                   onReaction={handleReaction}
@@ -438,6 +506,32 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                     : `${typingUsers[0]} ${t('chat.othersTyping', { count: typingUsers.length - 1 })}`}
               </span>
             </span>
+          </div>
+        )}
+
+        {/* Inline edit bar */}
+        {editingMessage && (
+          <div className="flex items-center gap-2 px-4 py-2 border-t border-[#00D9FF]/20 bg-[#0A0E27]">
+            <span className="text-xs text-gray-400 shrink-0">{t('chat.editMsg') || 'Edit'}:</span>
+            <input
+              type="text"
+              defaultValue={editingMessage.content}
+              autoFocus
+              className="flex-1 bg-transparent text-sm text-white outline-none border-b border-[#00D9FF]/30 py-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const val = (e.target as HTMLInputElement).value;
+                  if (val && val !== editingMessage.content) {
+                    editMessage(editingMessage.id, val);
+                  }
+                  setEditingMessage(null);
+                }
+                if (e.key === 'Escape') setEditingMessage(null);
+              }}
+            />
+            <button onClick={() => setEditingMessage(null)} className="text-gray-500 hover:text-white text-xs">
+              {t('common.cancel') || 'Cancel'}
+            </button>
           </div>
         )}
 

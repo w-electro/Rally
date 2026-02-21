@@ -86,7 +86,13 @@ export function DmSidebar() {
       .catch(() => {});
   }, []);
 
-  // Load friends data when switching to friends view
+  // Pre-load friends data on mount (so it's cached when clicking Friends)
+  useEffect(() => {
+    loadFriends();
+    loadFriendRequests();
+  }, []);
+
+  // Also refresh when switching to friends view
   useEffect(() => {
     if (sidebarView !== 'friends') return;
     loadFriends();
