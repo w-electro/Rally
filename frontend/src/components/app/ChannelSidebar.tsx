@@ -452,6 +452,14 @@ export function ChannelSidebar() {
         </button>
 
         <button
+          onClick={() => openModal('invite')}
+          className="w-8 h-8 flex items-center justify-center rounded-md text-white/40 hover:text-rally-green hover:bg-rally-green/10 transition-colors"
+          aria-label={t('server.invitePeople')}
+        >
+          <UserPlus className="w-4 h-4" />
+        </button>
+
+        <button
           onClick={() => openModal('serverSettings')}
           className="w-8 h-8 flex items-center justify-center rounded-md text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
           aria-label="Settings"

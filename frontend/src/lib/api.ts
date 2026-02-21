@@ -319,6 +319,26 @@ class ApiClient {
   joinByInvite(code: string) {
     return this.request<any>(`/invites/${code}/join`, { method: 'POST' });
   }
+
+  // Roles
+  getRoles(serverId: string) {
+    return this.request<any>(`/servers/${serverId}/roles`);
+  }
+  createRole(serverId: string, data: { name: string; color?: string; permissions?: string }) {
+    return this.request<any>(`/servers/${serverId}/roles`, { method: 'POST', body: JSON.stringify(data) });
+  }
+  updateRole(serverId: string, roleId: string, data: { name?: string; color?: string; permissions?: string; position?: number }) {
+    return this.request<any>(`/servers/${serverId}/roles/${roleId}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+  deleteRole(serverId: string, roleId: string) {
+    return this.request<any>(`/servers/${serverId}/roles/${roleId}`, { method: 'DELETE' });
+  }
+  assignRole(serverId: string, memberId: string, roleId: string) {
+    return this.request<any>(`/servers/${serverId}/members/${memberId}/roles`, { method: 'POST', body: JSON.stringify({ roleId }) });
+  }
+  removeRole(serverId: string, memberId: string, roleId: string) {
+    return this.request<any>(`/servers/${serverId}/members/${memberId}/roles/${roleId}`, { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

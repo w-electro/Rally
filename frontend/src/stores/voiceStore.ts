@@ -3,6 +3,7 @@ import type { VoiceParticipant, VoiceState } from '../lib/types';
 
 interface VoiceStoreState extends VoiceState {
   _localUserId: string | null;
+  _mutedBeforeDeafen: boolean;
   participants: VoiceParticipant[];
   spatialPositions: Record<string, { x: number; y: number }>;
   remoteStreams: Record<string, MediaStream>;
@@ -33,6 +34,7 @@ interface VoiceStoreState extends VoiceState {
 export const useVoiceStore = create<VoiceStoreState>((set) => ({
   channelId: null,
   _localUserId: null,
+  _mutedBeforeDeafen: false,
   isMuted: false,
   isDeafened: false,
   isSpeaking: false,
@@ -48,6 +50,7 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   leaveChannel: () => set({
     channelId: null,
     _localUserId: null,
+    _mutedBeforeDeafen: false,
     participants: [],
     spatialPositions: {},
     remoteStreams: {},
@@ -70,10 +73,13 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   toggleDeafen: () =>
     set((s) => {
       const newDeafened = !s.isDeafened;
-      const newMuted = newDeafened ? true : s.isMuted;
+      // When deafening: save current mute state, force mute on
+      // When undeafening: restore the saved mute state
+      const newMuted = newDeafened ? true : s._mutedBeforeDeafen;
       return {
         isDeafened: newDeafened,
         isMuted: newMuted,
+        _mutedBeforeDeafen: newDeafened ? s.isMuted : s._mutedBeforeDeafen,
         participants: s.participants.map((p) =>
           p.userId === s._localUserId
             ? { ...p, isDeafened: newDeafened, isMuted: newMuted }

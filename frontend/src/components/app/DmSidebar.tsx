@@ -13,9 +13,12 @@ import {
   ArrowLeft,
   Loader2,
   UserMinus,
+  Link,
+  Copy,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useServerStore } from '@/stores/serverStore';
 import { useSocket } from '@/hooks/useSocket';
 import api from '@/lib/api';
 import { cn, getInitials, getStatusColor, formatDate } from '@/lib/utils';
@@ -37,10 +40,10 @@ interface Friend {
 
 interface FriendRequest {
   id: string;
-  senderId: string;
-  receiverId: string;
-  sender: { id: string; username: string; displayName: string; avatarUrl?: string };
-  receiver: { id: string; username: string; displayName: string; avatarUrl?: string };
+  requesterId: string;
+  targetId: string;
+  requester: { id: string; username: string; displayName: string; avatarUrl?: string };
+  target: { id: string; username: string; displayName: string; avatarUrl?: string };
   createdAt: string;
 }
 
@@ -50,6 +53,7 @@ export function DmSidebar() {
   const activeConversationId = useUIStore((s) => s.activeDmConversationId);
   const setActiveDmConversation = useUIStore((s) => s.setActiveDmConversation);
   const { socket } = useSocket();
+  const servers = useServerStore((s) => s.servers);
   const [conversations, setConversations] = useState<DmConversation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -63,6 +67,8 @@ export function DmSidebar() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
+  const [inviteDropdownUser, setInviteDropdownUser] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [friendMessage, setFriendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -168,6 +174,23 @@ export function DmSidebar() {
         setConversations(Array.isArray(data) ? data : data?.conversations ?? []);
       }
     } catch {}
+  };
+
+  const handleInviteToServer = async (serverId: string) => {
+    setFriendActionLoading(serverId);
+    try {
+      const data = await api.createInvite(serverId);
+      const code = data?.code ?? data?.invite?.code;
+      if (code) {
+        setInviteCode(code);
+        await navigator.clipboard.writeText(code);
+        setFriendMessage({ type: 'success', text: t('dm.inviteCopied') });
+      }
+    } catch {
+      setFriendMessage({ type: 'error', text: t('dm.inviteFailed') });
+    }
+    setFriendActionLoading(null);
+    setInviteDropdownUser(null);
   };
 
   // Backend returns members as user objects directly (not wrapped in { user: ... })
@@ -314,6 +337,45 @@ export function DmSidebar() {
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                         </button>
+                        <div className="relative">
+                          <button
+                            onClick={() => setInviteDropdownUser(inviteDropdownUser === f.user.id ? null : f.user.id)}
+                            className="p-1.5 rounded text-white/40 hover:text-rally-green hover:bg-rally-green/10 transition-colors"
+                            title={t('dm.inviteToServer')}
+                          >
+                            <Link className="w-3.5 h-3.5" />
+                          </button>
+                          {inviteDropdownUser === f.user.id && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setInviteDropdownUser(null)} />
+                              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/10 bg-[#1A1F36] py-1 shadow-xl">
+                                <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
+                                  {t('dm.selectServer')}
+                                </p>
+                                {servers.map((s) => (
+                                  <button
+                                    key={s.id}
+                                    onClick={() => handleInviteToServer(s.id)}
+                                    disabled={friendActionLoading === s.id}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                                  >
+                                    {s.iconUrl ? (
+                                      <img src={s.iconUrl} alt="" className="w-5 h-5 rounded-full" />
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-full bg-rally-blue/20 flex items-center justify-center text-[10px] font-bold text-rally-blue">
+                                        {s.name?.[0]}
+                                      </div>
+                                    )}
+                                    <span className="truncate">{s.name}</span>
+                                  </button>
+                                ))}
+                                {servers.length === 0 && (
+                                  <p className="px-3 py-2 text-xs text-white/30">{t('dm.noServers')}</p>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <button
                           onClick={() => handleRemoveFriend(f.friendshipId)}
                           className="p-1.5 rounded text-white/40 hover:text-rally-magenta hover:bg-rally-magenta/10 transition-colors"
@@ -345,15 +407,15 @@ export function DmSidebar() {
                   {pendingRequests.received.map((req) => (
                     <div key={req.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.04]">
                       <div className="w-9 h-9 rounded-full overflow-hidden bg-[#1A1F36] flex items-center justify-center shrink-0">
-                        {req.sender.avatarUrl ? (
-                          <img src={req.sender.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        {req.requester.avatarUrl ? (
+                          <img src={req.requester.avatarUrl} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-xs font-bold text-white/60">{getInitials(req.sender.displayName)}</span>
+                          <span className="text-xs font-bold text-white/60">{getInitials(req.requester.displayName)}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white/80 truncate">{req.sender.displayName}</p>
-                        <p className="text-[10px] text-white/30">@{req.sender.username}</p>
+                        <p className="text-sm font-medium text-white/80 truncate">{req.requester.displayName}</p>
+                        <p className="text-[10px] text-white/30">@{req.requester.username}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -386,14 +448,14 @@ export function DmSidebar() {
                   {pendingRequests.sent.map((req) => (
                     <div key={req.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
                       <div className="w-9 h-9 rounded-full overflow-hidden bg-[#1A1F36] flex items-center justify-center shrink-0">
-                        {req.receiver.avatarUrl ? (
-                          <img src={req.receiver.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        {req.target.avatarUrl ? (
+                          <img src={req.target.avatarUrl} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-xs font-bold text-white/60">{getInitials(req.receiver.displayName)}</span>
+                          <span className="text-xs font-bold text-white/60">{getInitials(req.target.displayName)}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white/80 truncate">{req.receiver.displayName}</p>
+                        <p className="text-sm font-medium text-white/80 truncate">{req.target.displayName}</p>
                         <p className="text-[10px] text-white/30">{t('dm.pendingStatus')}</p>
                       </div>
                     </div>

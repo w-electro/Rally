@@ -290,22 +290,41 @@ export function createSocketServer(httpServer: HttpServer): Server {
       }
 
       // Get existing participants BEFORE adding new user
-      const existingParticipants = Array.from(voiceChannels.get(channelId)!);
+      const existingParticipantIds = Array.from(voiceChannels.get(channelId)!);
 
       voiceChannels.get(channelId)!.add(userId);
       socket.join(`voice:${channelId}`);
 
-      // Tell the NEW user about all existing participants
+      // Fetch full user objects for existing participants
+      const existingUsers = existingParticipantIds.length > 0
+        ? await prisma.user.findMany({
+            where: { id: { in: existingParticipantIds } },
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+          })
+        : [];
+
+      // Tell the NEW user about all existing participants (with full user info)
       socket.emit('voice:participants', {
         channelId,
-        participants: existingParticipants,
+        participants: existingUsers.map((u) => ({
+          userId: u.id,
+          username: u.username,
+          displayName: u.displayName,
+          avatarUrl: u.avatarUrl,
+        })),
       });
 
-      // Tell EXISTING users about the new user
+      // Tell EXISTING users about the new user (fetch full details)
+      const joiningUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, username: true, displayName: true, avatarUrl: true },
+      });
       socket.to(`voice:${channelId}`).emit('voice:user_joined', {
         channelId,
         userId,
-        username,
+        username: joiningUser?.username ?? username,
+        displayName: joiningUser?.displayName ?? username,
+        avatarUrl: joiningUser?.avatarUrl ?? null,
       });
 
       // Update presence

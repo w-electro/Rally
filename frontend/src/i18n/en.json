@@ -141,6 +141,13 @@
     "default": "Default",
     "position": "Position:",
     "noRanks": "No ranks configured yet",
+    "createRank": "Create Rank",
+    "editRank": "Edit Rank",
+    "rankName": "Rank Name",
+    "rankColor": "Color",
+    "permissions": "Permissions",
+    "assignRank": "Assign Rank",
+    "noAvailableRanks": "No ranks to assign",
     "reset": "Reset",
     "membersCount": "{{count}} member(s) in this server",
     "noMembers": "No members loaded",
@@ -235,7 +242,12 @@
     "you": "You: ",
     "beginningOfDm": "This is the beginning of your direct message history with {{name}}",
     "beginningOfDmGeneric": "This is the very beginning of your direct message history",
-    "encrypted": "Encrypted"
+    "encrypted": "Encrypted",
+    "inviteToServer": "Invite to Server",
+    "selectServer": "Select a server",
+    "inviteCopied": "Invite code copied!",
+    "inviteFailed": "Failed to create invite",
+    "noServers": "No servers"
   },
 
   "members": {

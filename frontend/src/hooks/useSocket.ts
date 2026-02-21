@@ -66,7 +66,8 @@ export function useSocket() {
       addParticipant({
         userId: data.userId,
         username: data.username,
-        displayName: data.username,
+        displayName: data.displayName ?? data.username,
+        avatarUrl: data.avatarUrl,
         isMuted: false,
         isDeafened: false,
         isSpeaking: false,
@@ -82,9 +83,23 @@ export function useSocket() {
       removeParticipant(data.userId);
     });
 
-    socket.on('voice:participants', (data: { participants: string[] }) => {
+    socket.on('voice:participants', (data: { participants: Array<{ userId: string; username: string; displayName: string; avatarUrl?: string }> }) => {
+      // Add each existing participant to the voice store
+      for (const p of data.participants) {
+        addParticipant({
+          userId: p.userId,
+          username: p.username,
+          displayName: p.displayName,
+          avatarUrl: p.avatarUrl,
+          isMuted: false,
+          isDeafened: false,
+          isSpeaking: false,
+          isStreaming: false,
+        });
+      }
+      // Create peer connections to each existing participant
       if (peerManager) {
-        peerManager.connectToParticipants(data.participants);
+        peerManager.connectToParticipants(data.participants.map((p) => p.userId));
       }
     });
 
@@ -124,17 +139,23 @@ export function useSocket() {
     };
   }, [isAuthenticated]);
 
-  // Wire mute/deafen changes to peer manager
+  // Wire mute/deafen changes to peer manager + broadcast to other participants
   useEffect(() => {
     let prevMuted = useVoiceStore.getState().isMuted;
     let prevDeafened = useVoiceStore.getState().isDeafened;
 
     const unsubscribe = useVoiceStore.subscribe((state) => {
-      if (state.isMuted !== prevMuted && peerManager) {
-        peerManager.setMuted(state.isMuted);
+      if (state.isMuted !== prevMuted) {
+        if (peerManager) peerManager.setMuted(state.isMuted);
+        if (socketRef.current && state.channelId) {
+          socketRef.current.emit('voice:mute', { channelId: state.channelId, isMuted: state.isMuted });
+        }
       }
-      if (state.isDeafened !== prevDeafened && peerManager) {
-        peerManager.setDeafened(state.isDeafened);
+      if (state.isDeafened !== prevDeafened) {
+        if (peerManager) peerManager.setDeafened(state.isDeafened);
+        if (socketRef.current && state.channelId) {
+          socketRef.current.emit('voice:deafen', { channelId: state.channelId, isDeafened: state.isDeafened });
+        }
       }
       prevMuted = state.isMuted;
       prevDeafened = state.isDeafened;

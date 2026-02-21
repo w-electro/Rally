@@ -14,6 +14,9 @@ import {
   Lock,
   Plus,
   Crown,
+  Pencil,
+  Trash2,
+  ChevronDown,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
@@ -53,13 +56,108 @@ export function ServerSettingsModal() {
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Roles state
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [showRoleForm, setShowRoleForm] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [roleName, setRoleName] = useState('');
+  const [roleColor, setRoleColor] = useState('#00D9FF');
+  const [rolePerms, setRolePerms] = useState<bigint>(0n);
+  const [isSavingRole, setIsSavingRole] = useState(false);
+  const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
+  const [assignDropdownMember, setAssignDropdownMember] = useState<string | null>(null);
+  const [roleActionLoading, setRoleActionLoading] = useState<string | null>(null);
+
   useEffect(() => {
     if (activeServer) {
       loadMembers(activeServer.id);
+      loadRoles();
     }
   }, [activeServer, loadMembers]);
 
   const isOwner = user?.id === activeServer?.ownerId;
+
+  const loadRoles = async () => {
+    if (!activeServer) return;
+    try {
+      const data = await api.getRoles(activeServer.id);
+      setRoles(Array.isArray(data) ? data : data?.roles ?? []);
+    } catch {}
+  };
+
+  const openRoleForm = (role?: Role) => {
+    if (role) {
+      setEditingRole(role);
+      setRoleName(role.name);
+      setRoleColor(role.color || '#00D9FF');
+      try { setRolePerms(BigInt(role.permissions)); } catch { setRolePerms(0n); }
+    } else {
+      setEditingRole(null);
+      setRoleName('');
+      setRoleColor('#00D9FF');
+      setRolePerms(0n);
+    }
+    setShowRoleForm(true);
+  };
+
+  const handleSaveRole = async () => {
+    if (!activeServer || !roleName.trim()) return;
+    setIsSavingRole(true);
+    try {
+      if (editingRole) {
+        await api.updateRole(activeServer.id, editingRole.id, {
+          name: roleName.trim(),
+          color: roleColor,
+          permissions: rolePerms.toString(),
+        });
+      } else {
+        await api.createRole(activeServer.id, {
+          name: roleName.trim(),
+          color: roleColor,
+          permissions: rolePerms.toString(),
+        });
+      }
+      await loadRoles();
+      setShowRoleForm(false);
+    } catch {}
+    setIsSavingRole(false);
+  };
+
+  const handleDeleteRole = async (roleId: string) => {
+    if (!activeServer) return;
+    setRoleActionLoading(roleId);
+    try {
+      await api.deleteRole(activeServer.id, roleId);
+      await loadRoles();
+      setDeletingRoleId(null);
+    } catch {}
+    setRoleActionLoading(null);
+  };
+
+  const handleAssignRole = async (memberId: string, roleId: string) => {
+    if (!activeServer) return;
+    setRoleActionLoading(roleId);
+    try {
+      await api.assignRole(activeServer.id, memberId, roleId);
+      loadMembers(activeServer.id);
+    } catch {}
+    setRoleActionLoading(null);
+    setAssignDropdownMember(null);
+  };
+
+  const handleRemoveRole = async (memberId: string, roleId: string) => {
+    if (!activeServer) return;
+    setRoleActionLoading(roleId);
+    try {
+      await api.removeRole(activeServer.id, memberId, roleId);
+      loadMembers(activeServer.id);
+    } catch {}
+    setRoleActionLoading(null);
+  };
+
+  const togglePerm = (bit: bigint) => {
+    setRolePerms((prev) => (prev & bit) ? prev & ~bit : prev | bit);
+  };
 
   const handleSaveOverview = async () => {
     if (!activeServer) return;
@@ -120,19 +218,45 @@ export function ServerSettingsModal() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Permission bit labels
-  const permissionLabels: Record<string, string> = {
-    '1': 'Admin',
-    '2': 'Manage Server',
-    '4': 'Manage Channels',
-    '8': 'Manage Ranks',
-    '16': 'Kick Members',
-    '32': 'Ban Members',
-    '64': 'Manage Messages',
-    '128': 'Mention Everyone',
-    '256': 'Send Messages',
-    '512': 'Read Messages',
-  };
+  // All permission bits matching backend/src/utils/permissions.ts
+  const PERMISSION_BITS: Array<{ bit: bigint; label: string; key: string }> = [
+    { bit: 1n << 0n, label: 'Administrator', key: 'admin' },
+    { bit: 1n << 1n, label: 'Manage Server', key: 'manageServer' },
+    { bit: 1n << 2n, label: 'Manage Channels', key: 'manageChannels' },
+    { bit: 1n << 3n, label: 'Manage Roles', key: 'manageRoles' },
+    { bit: 1n << 4n, label: 'Manage Members', key: 'manageMembers' },
+    { bit: 1n << 5n, label: 'Kick Members', key: 'kickMembers' },
+    { bit: 1n << 6n, label: 'Ban Members', key: 'banMembers' },
+    { bit: 1n << 7n, label: 'Create Invite', key: 'createInvite' },
+    { bit: 1n << 8n, label: 'Send Messages', key: 'sendMessages' },
+    { bit: 1n << 9n, label: 'Embed Links', key: 'embedLinks' },
+    { bit: 1n << 10n, label: 'Attach Files', key: 'attachFiles' },
+    { bit: 1n << 11n, label: 'Read Messages', key: 'readMessages' },
+    { bit: 1n << 12n, label: 'Manage Messages', key: 'manageMessages' },
+    { bit: 1n << 13n, label: 'Mention Everyone', key: 'mentionEveryone' },
+    { bit: 1n << 14n, label: 'Use Reactions', key: 'useReactions' },
+    { bit: 1n << 15n, label: 'Connect Voice', key: 'connectVoice' },
+    { bit: 1n << 16n, label: 'Speak', key: 'speak' },
+    { bit: 1n << 17n, label: 'Mute Members', key: 'muteMembers' },
+    { bit: 1n << 18n, label: 'Deafen Members', key: 'deafenMembers' },
+    { bit: 1n << 19n, label: 'Move Members', key: 'moveMembers' },
+    { bit: 1n << 20n, label: 'Voice Activity', key: 'voiceActivity' },
+    { bit: 1n << 21n, label: 'Stream', key: 'stream' },
+    { bit: 1n << 22n, label: 'Manage Feed', key: 'manageFeed' },
+    { bit: 1n << 23n, label: 'Post Feed', key: 'postFeed' },
+    { bit: 1n << 24n, label: 'Manage Stories', key: 'manageStories' },
+    { bit: 1n << 25n, label: 'Manage Points', key: 'managePoints' },
+    { bit: 1n << 26n, label: 'Manage Commerce', key: 'manageCommerce' },
+    { bit: 1n << 27n, label: 'Manage AI', key: 'manageAI' },
+    { bit: 1n << 28n, label: 'View Analytics', key: 'viewAnalytics' },
+  ];
+
+  const COLOR_PRESETS = ['#00D9FF', '#39FF14', '#8B00FF', '#FF006E', '#FF6B35', '#FFD700', '#00F0FF', '#99AAB5'];
+
+  // Permission bit labels for display
+  const permissionLabels: Record<string, string> = Object.fromEntries(
+    PERMISSION_BITS.map((p) => [p.bit.toString(), p.label])
+  );
 
   const parsePermissions = (permBigInt: string): string[] => {
     try {
@@ -342,18 +466,128 @@ export function ServerSettingsModal() {
         {/* === RANKS TAB === */}
         {activeTab === 'ranks' && (
           <div className="space-y-4">
-            <p className="text-sm text-rally-text-muted mb-4">
-              {t('server.ranksDesc')}
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-rally-text-muted">
+                {t('server.ranksDesc')}
+              </p>
+              {isOwner && !showRoleForm && (
+                <button
+                  onClick={() => openRoleForm()}
+                  className="btn-rally-primary px-4 py-1.5 text-xs flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t('server.createRank')}
+                </button>
+              )}
+            </div>
 
-            {activeServer?.roles && activeServer.roles.length > 0 ? (
+            {/* Role Form (Create / Edit) */}
+            {showRoleForm && (
+              <div className="card-rally rounded-lg p-5 border border-rally-blue/30 space-y-4">
+                <h3 className="font-display font-semibold text-rally-text">
+                  {editingRole ? t('server.editRank') : t('server.createRank')}
+                </h3>
+
+                {/* Name */}
+                <div>
+                  <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-1">
+                    {t('server.rankName')}
+                  </label>
+                  <input
+                    value={roleName}
+                    onChange={(e) => setRoleName(e.target.value)}
+                    className="input-rally rounded w-full"
+                    placeholder="e.g. Moderator"
+                    maxLength={50}
+                  />
+                </div>
+
+                {/* Color */}
+                <div>
+                  <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">
+                    {t('server.rankColor')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {COLOR_PRESETS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setRoleColor(c)}
+                        className={cn(
+                          'w-7 h-7 rounded-full transition-all',
+                          roleColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-110' : 'hover:scale-110'
+                        )}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      value={roleColor}
+                      onChange={(e) => setRoleColor(e.target.value)}
+                      className="w-7 h-7 rounded cursor-pointer bg-transparent border border-white/20"
+                    />
+                  </div>
+                </div>
+
+                {/* Permissions */}
+                <div>
+                  <label className="block text-xs font-display font-semibold uppercase tracking-wider text-rally-text-muted mb-2">
+                    {t('server.permissions')}
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1">
+                    {PERMISSION_BITS.map((p) => (
+                      <label
+                        key={p.key}
+                        className={cn(
+                          'flex items-center gap-2 px-2.5 py-1.5 rounded cursor-pointer text-xs transition-colors',
+                          (rolePerms & p.bit) ? 'bg-rally-blue/10 text-rally-blue' : 'bg-white/[0.03] text-rally-text-muted hover:bg-white/[0.06]'
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!(rolePerms & p.bit)}
+                          onChange={() => togglePerm(p.bit)}
+                          className="sr-only"
+                        />
+                        <div className={cn(
+                          'w-3.5 h-3.5 rounded-sm border flex items-center justify-center shrink-0',
+                          (rolePerms & p.bit) ? 'border-rally-blue bg-rally-blue' : 'border-white/20'
+                        )}>
+                          {!!(rolePerms & p.bit) && <Check className="w-2.5 h-2.5 text-black" />}
+                        </div>
+                        {p.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    onClick={handleSaveRole}
+                    disabled={isSavingRole || !roleName.trim()}
+                    className="btn-rally-primary px-5 py-2 text-sm"
+                  >
+                    {isSavingRole ? t('common.saving') : (editingRole ? t('common.save') : t('common.create'))}
+                  </button>
+                  <button
+                    onClick={() => setShowRoleForm(false)}
+                    className="px-5 py-2 text-sm text-rally-text-muted hover:text-rally-text transition-colors"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Role List */}
+            {roles.length > 0 ? (
               <div className="space-y-2">
-                {[...activeServer.roles]
+                {[...roles]
                   .sort((a, b) => b.position - a.position)
                   .map((role: Role) => (
                     <div
                       key={role.id}
-                      className="card-rally rounded-lg p-4 border border-white/5 hover:border-white/10 transition-colors"
+                      className="card-rally rounded-lg p-4 border border-white/5 hover:border-white/10 transition-colors group"
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <div
@@ -371,6 +605,40 @@ export function ServerSettingsModal() {
                         <span className="text-[10px] text-rally-text-muted ml-auto">
                           {t('server.position')} {role.position}
                         </span>
+                        {isOwner && !role.isDefault && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => openRoleForm(role)}
+                              className="p-1 rounded text-white/40 hover:text-rally-blue hover:bg-rally-blue/10 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            {deletingRoleId === role.id ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleDeleteRole(role.id)}
+                                  disabled={roleActionLoading === role.id}
+                                  className="px-2 py-0.5 text-[10px] rounded bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30"
+                                >
+                                  {roleActionLoading === role.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('common.delete')}
+                                </button>
+                                <button
+                                  onClick={() => setDeletingRoleId(null)}
+                                  className="px-2 py-0.5 text-[10px] rounded text-white/40 hover:text-white/70"
+                                >
+                                  {t('common.cancel')}
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeletingRoleId(role.id)}
+                                className="p-1 rounded text-white/40 hover:text-rally-magenta hover:bg-rally-magenta/10 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {parsePermissions(role.permissions).map((perm) => (
@@ -389,9 +657,6 @@ export function ServerSettingsModal() {
               <div className="text-center py-12">
                 <Shield className="w-10 h-10 text-white/10 mx-auto mb-3" />
                 <p className="text-white/30 text-sm">{t('server.noRanks')}</p>
-                <p className="text-white/20 text-xs mt-1">
-                  Ranks will appear here once they are created via the API.
-                </p>
               </div>
             )}
           </div>
@@ -451,11 +716,11 @@ export function ServerSettingsModal() {
                     </div>
 
                     {/* Ranks */}
-                    <div className="flex gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       {memberRoles.map((role: Role) => (
                         <span
                           key={role.id}
-                          className="text-[10px] px-2 py-0.5 rounded-full font-display"
+                          className="text-[10px] px-2 py-0.5 rounded-full font-display inline-flex items-center gap-1 group/role"
                           style={{
                             backgroundColor: `${role.color || '#8B949E'}20`,
                             color: role.color || '#8B949E',
@@ -463,8 +728,53 @@ export function ServerSettingsModal() {
                           }}
                         >
                           {role.name}
+                          {isOwner && !role.isDefault && (
+                            <button
+                              onClick={() => handleRemoveRole(member.id, role.id)}
+                              className="opacity-0 group-hover/role:opacity-100 hover:text-rally-magenta transition-all"
+                              disabled={roleActionLoading === role.id}
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          )}
                         </span>
                       ))}
+                      {isOwner && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setAssignDropdownMember(assignDropdownMember === member.id ? null : member.id)}
+                            className="w-5 h-5 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/30 hover:text-white/60 transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                          {assignDropdownMember === member.id && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setAssignDropdownMember(null)} />
+                              <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-[#1A1F36] py-1 shadow-xl">
+                                <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
+                                  {t('server.assignRank')}
+                                </p>
+                                {roles
+                                  .filter((r) => !r.isDefault && !memberRoles.some((mr) => mr.id === r.id))
+                                  .map((role) => (
+                                    <button
+                                      key={role.id}
+                                      onClick={() => handleAssignRole(member.id, role.id)}
+                                      disabled={roleActionLoading === role.id}
+                                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-white/70 hover:bg-white/10 transition-colors"
+                                    >
+                                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: role.color || '#8B949E' }} />
+                                      <span>{role.name}</span>
+                                    </button>
+                                  ))}
+                                {roles.filter((r) => !r.isDefault && !memberRoles.some((mr) => mr.id === r.id)).length === 0 && (
+                                  <p className="px-3 py-2 text-[10px] text-white/30">{t('server.noAvailableRanks')}</p>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
