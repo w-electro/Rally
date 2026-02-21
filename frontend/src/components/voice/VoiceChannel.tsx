@@ -41,37 +41,13 @@ export function VoiceChannel() {
 
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [showScreenPicker, setShowScreenPicker] = useState(false);
-  const [localMicStream, setLocalMicStream] = useState<MediaStream | null>(null);
 
   const channelName = activeChannel?.name ?? t('voice.voiceChat');
 
-  // Acquire microphone stream for the AudioVisualizer
-  useEffect(() => {
-    let cancelled = false;
-    let stream: MediaStream | null = null;
-
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((s) => {
-        if (cancelled) {
-          s.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        stream = s;
-        setLocalMicStream(s);
-      })
-      .catch(() => {
-        // Microphone unavailable — visualizer will use idle animation
-      });
-
-    return () => {
-      cancelled = true;
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
-      }
-      setLocalMicStream(null);
-    };
-  }, [channelId]);
+  // Use the existing stream from VoicePeerManager instead of creating a duplicate
+  // getUserMedia call (some audio drivers block multiple concurrent captures)
+  const { getPeerManagerStream } = useSocket();
+  const localMicStream = getPeerManagerStream?.() ?? null;
 
   const handleDisconnect = useCallback(() => {
     leaveVoice();

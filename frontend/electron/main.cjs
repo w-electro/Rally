@@ -1,6 +1,11 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, desktopCapturer } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, desktopCapturer, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
+
+// MUST be before app.whenReady() — allow WebRTC audio autoplay without user gesture
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+// Disable audio sandbox which can conflict with multiple WebRTC streams
+app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox');
 
 let mainWindow = null;
 let tray = null;
@@ -186,6 +191,16 @@ ipcMain.on('update:install', () => autoUpdater.quitAndInstall(false, true));
 
 // App lifecycle
 app.whenReady().then(() => {
+  // Auto-grant microphone/camera/screen-capture permissions for WebRTC
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    const allowed = ['media', 'mediaKeySystem', 'audioCapture', 'display-capture'];
+    callback(allowed.includes(permission));
+  });
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    const allowed = ['media', 'mediaKeySystem', 'audioCapture', 'display-capture'];
+    return allowed.includes(permission);
+  });
+
   createWindow();
   setupAutoUpdater();
 });

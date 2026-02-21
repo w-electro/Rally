@@ -340,6 +340,10 @@ export function useSocket() {
     socketRef.current?.emit('presence:update', { status, customStatus });
   }, []);
 
+  const getPeerManagerStream = useCallback((): MediaStream | null => {
+    return peerManager?.getLocalStream() ?? null;
+  }, []);
+
   return {
     socket: socketRef.current,
     sendMessage,
@@ -357,5 +361,6 @@ export function useSocket() {
     stopScreenShare,
     sendDm,
     updatePresence,
+    getPeerManagerStream,
   };
 }

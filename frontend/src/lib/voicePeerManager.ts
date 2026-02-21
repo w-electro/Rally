@@ -103,6 +103,10 @@ export class VoicePeerManager {
     if (!this.localStream) return;
 
     this.audioContext = new AudioContext();
+    // Chromium may start AudioContext in suspended state — resume it
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
     const source = this.audioContext.createMediaStreamSource(this.localStream);
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 512;
@@ -161,9 +165,15 @@ export class VoicePeerManager {
     const { fromUserId, offer } = data;
     console.log(`[VoicePeerManager] Received offer from ${fromUserId}`);
 
-    // If we already have a peer for this user, destroy it first
     if (this.peers.has(fromUserId)) {
-      console.log(`[VoicePeerManager] Replacing existing peer for ${fromUserId}`);
+      // Glare: both sides tried to initiate. Lower userId wins initiator role.
+      if (this.localUserId && this.localUserId < fromUserId) {
+        // We are the rightful initiator — ignore their offer
+        console.log(`[VoicePeerManager] Ignoring offer from ${fromUserId} (we are initiator)`);
+        return;
+      }
+      // They are the rightful initiator — destroy our attempt, accept theirs
+      console.log(`[VoicePeerManager] Accepting offer from ${fromUserId} (they are initiator)`);
       this.removePeer(fromUserId);
     }
 
@@ -262,8 +272,22 @@ export class VoicePeerManager {
       trickle: true,
       config: {
         iceServers: ICE_SERVERS,
+        bundlePolicy: 'max-bundle' as RTCBundlePolicy,
+        rtcpMuxPolicy: 'require' as RTCRtcpMuxPolicy,
       },
-    });
+      offerOptions: {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: false,
+      },
+      answerOptions: {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: false,
+      },
+      // Optimize SDP for voice: Opus mono, 64kbps, forward error correction
+      sdpTransform: (sdp: string) => {
+        return sdp.replace('useinbandfec=1', 'useinbandfec=1;stereo=0;maxaveragebitrate=64000');
+      },
+    } as any);
 
     this.peers.set(targetUserId, peer);
 
