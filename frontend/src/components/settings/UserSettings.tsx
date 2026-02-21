@@ -418,7 +418,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             {/* Rally Brand Card */}
             <div className="card-rally rounded-lg p-6 text-center">
               <div className="flex justify-center mb-4">
-                <img src="/rally-logo.webp" alt="Rally" className="h-16 w-auto" />
+                <img src={`${import.meta.env.BASE_URL}rally-logo.webp`} alt="Rally" className="h-16 w-auto" />
               </div>
               <h2 className="font-display text-2xl font-bold text-rally-text">Rally</h2>
               <p className="text-sm text-rally-text-muted mt-1">Next-gen gaming & social platform</p>
@@ -433,44 +433,50 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 <Download className="w-4 h-4" />
                 Updates
               </h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleCheckForUpdates}
-                  disabled={updateStatus === 'checking'}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                    updateStatus === 'checking'
-                      ? 'bg-rally-border text-rally-text-muted cursor-not-allowed'
-                      : 'bg-rally-blue/20 hover:bg-rally-blue/30 text-rally-blue border border-rally-blue/30'
-                  )}
-                >
-                  {updateStatus === 'checking' ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  {updateStatus === 'checking' ? 'Checking...' : 'Check for Updates'}
-                </button>
+              {(window as any).electronAPI ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={handleCheckForUpdates}
+                    disabled={updateStatus === 'checking'}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      updateStatus === 'checking'
+                        ? 'bg-rally-border text-rally-text-muted cursor-not-allowed'
+                        : 'bg-rally-blue/20 hover:bg-rally-blue/30 text-rally-blue border border-rally-blue/30'
+                    )}
+                  >
+                    {updateStatus === 'checking' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                    {updateStatus === 'checking' ? 'Checking...' : 'Check for Updates'}
+                  </button>
 
-                {updateStatus === 'up-to-date' && (
-                  <span className="flex items-center gap-1.5 text-sm text-rally-green">
-                    <CheckCircle className="w-4 h-4" />
-                    Up to date (v{updateVersion})
-                  </span>
-                )}
-                {updateStatus === 'available' && (
-                  <span className="flex items-center gap-1.5 text-sm text-rally-blue">
-                    <Download className="w-4 h-4" />
-                    v{updateVersion} available — downloading...
-                  </span>
-                )}
-                {updateStatus === 'dev-mode' && (
-                  <span className="text-sm text-rally-text-muted">{updateMessage}</span>
-                )}
-                {updateStatus === 'error' && (
-                  <span className="text-sm text-rally-magenta">{updateMessage}</span>
-                )}
-              </div>
+                  {updateStatus === 'up-to-date' && (
+                    <span className="flex items-center gap-1.5 text-sm text-rally-green">
+                      <CheckCircle className="w-4 h-4" />
+                      Up to date (v{updateVersion})
+                    </span>
+                  )}
+                  {updateStatus === 'available' && (
+                    <span className="flex items-center gap-1.5 text-sm text-rally-blue">
+                      <Download className="w-4 h-4" />
+                      v{updateVersion} available — downloading...
+                    </span>
+                  )}
+                  {updateStatus === 'dev-mode' && (
+                    <span className="text-sm text-rally-text-muted">{updateMessage}</span>
+                  )}
+                  {updateStatus === 'error' && (
+                    <span className="text-sm text-rally-magenta">{updateMessage}</span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-rally-text-muted">
+                  Auto-updates are available in the Rally desktop app.
+                </p>
+              )}
             </div>
           </div>
         )}
