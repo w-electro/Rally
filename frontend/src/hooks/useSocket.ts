@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../stores/authStore';
 import { useMessageStore } from '../stores/messageStore';
+import { useServerStore } from '../stores/serverStore';
 import { useVoiceStore } from '../stores/voiceStore';
 import { useUIStore } from '../stores/uiStore';
 import { VoicePeerManager } from '../lib/voicePeerManager';
@@ -59,7 +60,6 @@ export function useSocket() {
     socket.on('message:new', (message: Message) => {
       addMessage(message.channelId, message);
       // Track unread if this channel is not currently viewed
-      const { useServerStore } = require('../stores/serverStore');
       const activeChannel = useServerStore.getState().activeChannel;
       if (activeChannel?.id !== message.channelId) {
         const currentUserId = useAuthStore.getState().user?.id;

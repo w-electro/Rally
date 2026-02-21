@@ -15,7 +15,7 @@ import { ThreadView } from '@/components/chat/ThreadView';
 import { useMessageStore } from '@/stores/messageStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket, getSocket } from '@/hooks/useSocket';
 import type { Message, Channel } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
 import api from '@/lib/api';
@@ -228,7 +228,6 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   // Typing indicator (incoming) -- listen via socket event at component level
   // ------------------------------------------------------------------
   useEffect(() => {
-    const { getSocket } = require('@/hooks/useSocket');
     const socket = getSocket();
     if (!socket) return;
 
