@@ -4,6 +4,9 @@ import { getSocket } from '../hooks/useSocket';
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
   { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
@@ -26,6 +29,10 @@ export class VoicePeerManager {
   private isSpeaking = false;
   private isMuted = false;
   private isDeafened = false;
+  private localUserId: string | null = null;
+
+  // Queue for signals that arrive before peer is created
+  private pendingSignals: Map<string, any[]> = new Map();
 
   private onSpeakingChange: (speaking: boolean) => void;
   private onRemoteStream: (userId: string, stream: MediaStream) => void;
@@ -49,18 +56,33 @@ export class VoicePeerManager {
   }
 
   /**
+   * Set the local user ID for deterministic initiator selection.
+   */
+  setLocalUserId(userId: string): void {
+    this.localUserId = userId;
+  }
+
+  /**
    * Start the voice session: acquire microphone, set up VAD, attach socket listeners.
    */
   async start(): Promise<void> {
-    // Acquire local microphone stream
+    // Acquire local microphone stream with preferred device
+    const savedDeviceId = localStorage.getItem('rally-audio-input-device');
+    const audioConstraints: MediaTrackConstraints = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    };
+    if (savedDeviceId) {
+      audioConstraints.deviceId = { preferred: savedDeviceId } as any;
+    }
+
     this.localStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
+      audio: audioConstraints,
       video: false,
     });
+
+    console.log('[VoicePeerManager] Local stream acquired, tracks:', this.localStream.getAudioTracks().length);
 
     // Set up Voice Activity Detection
     this.setupVAD();
@@ -71,7 +93,6 @@ export class VoicePeerManager {
 
   /**
    * Set up Voice Activity Detection using Web Audio API.
-   * Polls frequency data every 100ms and fires onSpeakingChange when state changes.
    */
   private setupVAD(): void {
     if (!this.localStream) return;
@@ -89,7 +110,6 @@ export class VoicePeerManager {
 
       this.analyser.getByteFrequencyData(frequencyData);
 
-      // Calculate average frequency magnitude
       let sum = 0;
       for (let i = 0; i < frequencyData.length; i++) {
         sum += frequencyData[i];
@@ -131,13 +151,14 @@ export class VoicePeerManager {
 
   /**
    * Handle an incoming WebRTC offer from a remote peer.
-   * Creates a non-initiator peer and signals the offer to it.
    */
   private handleOffer(data: { fromUserId: string; offer: any }): void {
     const { fromUserId, offer } = data;
+    console.log(`[VoicePeerManager] Received offer from ${fromUserId}`);
 
     // If we already have a peer for this user, destroy it first
     if (this.peers.has(fromUserId)) {
+      console.log(`[VoicePeerManager] Replacing existing peer for ${fromUserId}`);
       this.removePeer(fromUserId);
     }
 
@@ -150,9 +171,13 @@ export class VoicePeerManager {
    */
   private handleAnswer(data: { fromUserId: string; answer: any }): void {
     const { fromUserId, answer } = data;
+    console.log(`[VoicePeerManager] Received answer from ${fromUserId}`);
     const peer = this.peers.get(fromUserId);
     if (peer) {
       peer.signal(answer);
+    } else {
+      console.warn(`[VoicePeerManager] No peer found for answer from ${fromUserId}, queueing`);
+      this.queueSignal(fromUserId, answer);
     }
   }
 
@@ -164,26 +189,68 @@ export class VoicePeerManager {
     const peer = this.peers.get(fromUserId);
     if (peer) {
       peer.signal(candidate);
+    } else {
+      // Queue ICE candidates that arrive before peer creation
+      this.queueSignal(fromUserId, candidate);
     }
   }
 
   /**
-   * Connect to a list of existing participants by creating initiator peers.
+   * Queue a signal for a peer that doesn't exist yet.
+   */
+  private queueSignal(userId: string, signal: any): void {
+    if (!this.pendingSignals.has(userId)) {
+      this.pendingSignals.set(userId, []);
+    }
+    this.pendingSignals.get(userId)!.push(signal);
+  }
+
+  /**
+   * Flush any queued signals to a peer.
+   */
+  private flushPendingSignals(userId: string, peer: SimplePeer.Instance): void {
+    const queued = this.pendingSignals.get(userId);
+    if (queued && queued.length > 0) {
+      console.log(`[VoicePeerManager] Flushing ${queued.length} queued signals for ${userId}`);
+      for (const signal of queued) {
+        try {
+          peer.signal(signal);
+        } catch (e) {
+          console.error(`[VoicePeerManager] Error flushing signal for ${userId}:`, e);
+        }
+      }
+      this.pendingSignals.delete(userId);
+    }
+  }
+
+  /**
+   * Connect to a single peer, determining initiator based on userId comparison.
+   */
+  connectToPeer(userId: string): void {
+    if (this.peers.has(userId)) return;
+
+    // Deterministic initiator: lower userId is always the initiator
+    const shouldInitiate = this.localUserId ? this.localUserId < userId : true;
+    console.log(`[VoicePeerManager] Connecting to ${userId}, initiator: ${shouldInitiate}`);
+    this.createPeer(userId, shouldInitiate);
+  }
+
+  /**
+   * Connect to a list of existing participants.
    * Called when joining a voice channel that already has users.
    */
   connectToParticipants(userIds: string[]): void {
     for (const userId of userIds) {
-      if (!this.peers.has(userId)) {
-        this.createPeer(userId, true);
-      }
+      this.connectToPeer(userId);
     }
   }
 
   /**
    * Create a SimplePeer instance for a specific target user.
-   * Returns the peer instance (also stored internally).
    */
   private createPeer(targetUserId: string, initiator: boolean): SimplePeer.Instance {
+    console.log(`[VoicePeerManager] Creating peer for ${targetUserId}, initiator: ${initiator}, hasStream: ${!!this.localStream}`);
+
     const peer = new SimplePeer({
       initiator,
       stream: this.localStream || undefined,
@@ -201,17 +268,18 @@ export class VoicePeerManager {
       if (!socket) return;
 
       if (signalData.type === 'offer') {
+        console.log(`[VoicePeerManager] Sending offer to ${targetUserId}`);
         socket.emit('webrtc:offer', {
           targetUserId,
           offer: signalData,
         });
       } else if (signalData.type === 'answer') {
+        console.log(`[VoicePeerManager] Sending answer to ${targetUserId}`);
         socket.emit('webrtc:answer', {
           targetUserId,
           answer: signalData,
         });
       } else if ('candidate' in signalData) {
-        // ICE candidate (signalData has { candidate, sdpMid, sdpMLineIndex })
         socket.emit('webrtc:ice_candidate', {
           targetUserId,
           candidate: signalData,
@@ -219,7 +287,12 @@ export class VoicePeerManager {
       }
     });
 
+    peer.on('connect', () => {
+      console.log(`[VoicePeerManager] Peer CONNECTED to ${targetUserId}`);
+    });
+
     peer.on('stream', (remoteStream: MediaStream) => {
+      console.log(`[VoicePeerManager] Received stream from ${targetUserId}, video: ${remoteStream.getVideoTracks().length}, audio: ${remoteStream.getAudioTracks().length}`);
       if (remoteStream.getVideoTracks().length > 0) {
         this.onScreenStream(targetUserId, remoteStream);
       } else {
@@ -228,15 +301,19 @@ export class VoicePeerManager {
     });
 
     peer.on('close', () => {
+      console.log(`[VoicePeerManager] Peer CLOSED for ${targetUserId}`);
       this.peers.delete(targetUserId);
       this.onPeerDisconnect(targetUserId);
     });
 
     peer.on('error', (err: Error) => {
-      console.error(`[VoicePeerManager] Peer error with ${targetUserId}:`, err.message);
+      console.error(`[VoicePeerManager] Peer ERROR with ${targetUserId}:`, err.message);
       this.peers.delete(targetUserId);
       this.onPeerDisconnect(targetUserId);
     });
+
+    // Flush any signals that arrived before this peer was created
+    this.flushPendingSignals(targetUserId, peer);
 
     return peer;
   }
@@ -258,7 +335,6 @@ export class VoicePeerManager {
 
   /**
    * Mute or unmute the local microphone.
-   * Disables/enables all audio tracks on the local stream.
    */
   setMuted(muted: boolean): void {
     this.isMuted = muted;
@@ -267,7 +343,6 @@ export class VoicePeerManager {
         track.enabled = !muted;
       }
     }
-    // If muted, immediately report not speaking
     if (muted && this.isSpeaking) {
       this.isSpeaking = false;
       this.onSpeakingChange(false);
@@ -275,16 +350,14 @@ export class VoicePeerManager {
   }
 
   /**
-   * Set deafened state. The actual muting of remote audio is handled by the UI layer
-   * (e.g., setting volume to 0 on <audio> elements), but we track the state here
-   * so the VAD and other internals can reference it.
+   * Set deafened state.
    */
   setDeafened(deafened: boolean): void {
     this.isDeafened = deafened;
   }
 
   /**
-   * Get the local microphone stream (for UI level meters, etc.).
+   * Get the local microphone stream.
    */
   getLocalStream(): MediaStream | null {
     return this.localStream;
@@ -305,14 +378,12 @@ export class VoicePeerManager {
   }
 
   /**
-   * Start sharing a screen/window. Acquires the desktop capture stream via
-   * Electron's chromeMediaSource and adds the video track to all existing peers.
+   * Start sharing a screen/window.
    */
   async startScreenShare(sourceId: string, withAudio: boolean): Promise<MediaStream> {
     const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
     if (isElectron && sourceId !== 'browser') {
-      // Electron: use chromeMediaSource for specific screen/window
       this.screenStream = await navigator.mediaDevices.getUserMedia({
         audio: withAudio ? {
           mandatory: {
@@ -328,14 +399,12 @@ export class VoicePeerManager {
         } as any,
       });
     } else {
-      // Browser fallback: use standard getDisplayMedia API
       this.screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: withAudio,
       });
     }
 
-    // Add screen stream to all peers using addStream (triggers renegotiation)
     for (const [, peer] of this.peers) {
       try {
         (peer as any).addStream(this.screenStream);
@@ -344,7 +413,6 @@ export class VoicePeerManager {
       }
     }
 
-    // Listen for track ending (user stops from OS or browser UI)
     const videoTrack = this.screenStream.getVideoTracks()[0];
     if (videoTrack) {
       videoTrack.onended = () => {
@@ -356,13 +424,11 @@ export class VoicePeerManager {
   }
 
   /**
-   * Stop the current screen share. Removes the video track from all peers
-   * and stops all tracks on the screen stream.
+   * Stop the current screen share.
    */
   stopScreenShare(): void {
     if (!this.screenStream) return;
 
-    // Remove screen stream from all peers using removeStream
     for (const [, peer] of this.peers) {
       try {
         (peer as any).removeStream(this.screenStream);
@@ -371,7 +437,6 @@ export class VoicePeerManager {
       }
     }
 
-    // Stop all tracks
     for (const track of this.screenStream.getTracks()) {
       track.stop();
     }
@@ -386,12 +451,10 @@ export class VoicePeerManager {
   }
 
   /**
-   * Stop the entire voice session: destroy all peers, stop local stream,
-   * clean up VAD, and remove socket listeners.
+   * Stop the entire voice session.
    */
   stop(): void {
-    // Destroy all peer connections
-    for (const [userId, peer] of this.peers.entries()) {
+    for (const [, peer] of this.peers.entries()) {
       try {
         peer.destroy();
       } catch {
@@ -399,8 +462,8 @@ export class VoicePeerManager {
       }
     }
     this.peers.clear();
+    this.pendingSignals.clear();
 
-    // Stop local media stream
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {
         track.stop();
@@ -408,7 +471,6 @@ export class VoicePeerManager {
       this.localStream = null;
     }
 
-    // Clean up Voice Activity Detection
     if (this.vadInterval) {
       clearInterval(this.vadInterval);
       this.vadInterval = null;
@@ -420,7 +482,6 @@ export class VoicePeerManager {
     this.analyser = null;
     this.isSpeaking = false;
 
-    // Clean up screen share stream
     if (this.screenStream) {
       for (const track of this.screenStream.getTracks()) {
         track.stop();
@@ -428,7 +489,6 @@ export class VoicePeerManager {
       this.screenStream = null;
     }
 
-    // Remove socket listeners
     this.detachSocketListeners();
   }
 }

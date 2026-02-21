@@ -23,12 +23,23 @@ export const useMessageStore = create<MessageState>((set) => ({
   hasMore: {},
 
   addMessage: (channelId, message) =>
-    set((s) => ({
-      messages: {
-        ...s.messages,
-        [channelId]: [...(s.messages[channelId] || []), message],
-      },
-    })),
+    set((s) => {
+      const existing = s.messages[channelId] || [];
+      // If this is a server-confirmed message, replace any matching optimistic temp message
+      if (!message.id.startsWith('temp-')) {
+        const tempIdx = existing.findIndex(
+          (m) => m.id.startsWith('temp-') && m.authorId === message.authorId && m.content === message.content
+        );
+        if (tempIdx >= 0) {
+          const updated = [...existing];
+          updated[tempIdx] = message;
+          return { messages: { ...s.messages, [channelId]: updated } };
+        }
+      }
+      // Avoid exact duplicate IDs
+      if (existing.some((m) => m.id === message.id)) return s;
+      return { messages: { ...s.messages, [channelId]: [...existing, message] } };
+    }),
 
   setMessages: (channelId, messages) =>
     set((s) => ({

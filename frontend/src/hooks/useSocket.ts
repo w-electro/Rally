@@ -63,6 +63,7 @@ export function useSocket() {
     });
 
     socket.on('voice:user_joined', (data: any) => {
+      console.log('[useSocket] voice:user_joined', data.userId);
       addParticipant({
         userId: data.userId,
         username: data.username,
@@ -73,6 +74,10 @@ export function useSocket() {
         isSpeaking: false,
         isStreaming: false,
       });
+      // Also create a peer connection to the new user
+      if (peerManager) {
+        peerManager.connectToPeer(data.userId);
+      }
     });
 
     socket.on('voice:user_left', (data: { userId: string }) => {
@@ -163,8 +168,8 @@ export function useSocket() {
     return unsubscribe;
   }, []);
 
-  const sendMessage = useCallback((channelId: string, content: string, replyToId?: string) => {
-    socketRef.current?.emit('message:send', { channelId, content, replyToId });
+  const sendMessage = useCallback((channelId: string, content: string, replyToId?: string, attachments?: any[]) => {
+    socketRef.current?.emit('message:send', { channelId, content, replyToId, attachments });
   }, []);
 
   const editMessage = useCallback((messageId: string, content: string) => {
@@ -224,6 +229,12 @@ export function useSocket() {
       },
     });
 
+    // Set local user ID for deterministic initiator selection
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser) {
+      peerManager.setLocalUserId(currentUser.id);
+    }
+
     // Start microphone capture and VAD
     try {
       await peerManager.start();
@@ -235,9 +246,6 @@ export function useSocket() {
 
     // Tell the server we're joining voice
     socketRef.current?.emit('voice:join', channelId);
-
-    // Update the store (pass local user ID for mute/deafen sync)
-    const currentUser = useAuthStore.getState().user;
     useVoiceStore.getState().joinChannel(channelId, currentUser?.id);
 
     // Add the local user as a participant so the stage shows them

@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import { createServer } from 'http';
 import rateLimit from 'express-rate-limit';
 import { config } from './config';
@@ -20,6 +21,7 @@ import aiRoutes from './routes/ai';
 import commerceRoutes from './routes/commerce';
 import gamingRoutes from './routes/gaming';
 import inviteRoutes from './routes/invites';
+import uploadRoutes from './routes/upload';
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +64,10 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/commerce', commerceRoutes);
 app.use('/api/gaming', gamingRoutes);
 app.use('/api', inviteRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Error handler
 app.use(errorHandler);

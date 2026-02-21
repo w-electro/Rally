@@ -27,6 +27,11 @@ import type { DmConversation } from '@/lib/types';
 type SidebarView = 'conversations' | 'friends';
 type FriendsTab = 'all' | 'pending' | 'add';
 
+// Module-level caches (persist across mount/unmount for instant navigation)
+let _cachedConversations: DmConversation[] | null = null;
+let _cachedFriends: Friend[] | null = null;
+let _cachedPending: { sent: FriendRequest[]; received: FriendRequest[] } | null = null;
+
 interface Friend {
   friendshipId: string;
   user: {
@@ -54,15 +59,15 @@ export function DmSidebar() {
   const setActiveDmConversation = useUIStore((s) => s.setActiveDmConversation);
   const { socket } = useSocket();
   const servers = useServerStore((s) => s.servers);
-  const [conversations, setConversations] = useState<DmConversation[]>([]);
+  const [conversations, setConversations] = useState<DmConversation[]>(_cachedConversations ?? []);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [sidebarView, setSidebarView] = useState<SidebarView>('conversations');
 
   // Friends state
   const [friendsTab, setFriendsTab] = useState<FriendsTab>('all');
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<{ sent: FriendRequest[]; received: FriendRequest[] }>({ sent: [], received: [] });
+  const [friends, setFriends] = useState<Friend[]>(_cachedFriends ?? []);
+  const [pendingRequests, setPendingRequests] = useState<{ sent: FriendRequest[]; received: FriendRequest[] }>(_cachedPending ?? { sent: [], received: [] });
   const [addFriendQuery, setAddFriendQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -75,6 +80,7 @@ export function DmSidebar() {
     api.getDmConversations()
       .then((data: any) => {
         const list = Array.isArray(data) ? data : data?.conversations ?? [];
+        _cachedConversations = list;
         setConversations(list);
       })
       .catch(() => {});
@@ -90,17 +96,21 @@ export function DmSidebar() {
   const loadFriends = async () => {
     try {
       const data = await api.getFriends();
-      setFriends(data?.friends ?? []);
+      const list = data?.friends ?? [];
+      _cachedFriends = list;
+      setFriends(list);
     } catch {}
   };
 
   const loadFriendRequests = async () => {
     try {
       const data = await api.getFriendRequests();
-      setPendingRequests({
+      const pending = {
         sent: data?.sent ?? [],
         received: data?.received ?? [],
-      });
+      };
+      _cachedPending = pending;
+      setPendingRequests(pending);
     } catch {}
   };
 

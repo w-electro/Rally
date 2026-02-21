@@ -218,11 +218,33 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   // ------------------------------------------------------------------
   // Handlers
   // ------------------------------------------------------------------
+  const { addMessage } = useMessageStore();
   const handleSend = useCallback(
-    (content: string, replyToId?: string) => {
-      sendMessage(channel.id, content, replyToId);
+    (content: string, replyToId?: string, attachments?: any[]) => {
+      // Optimistic: add message to store immediately
+      if (user) {
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        addMessage(channel.id, {
+          id: tempId,
+          channelId: channel.id,
+          authorId: user.id,
+          content,
+          replyToId: replyToId ?? null,
+          attachments: attachments ?? [],
+          reactions: {},
+          createdAt: new Date().toISOString(),
+          isEdited: false,
+          author: {
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+          },
+        } as any);
+      }
+      sendMessage(channel.id, content, replyToId, attachments);
     },
-    [sendMessage, channel.id],
+    [sendMessage, channel.id, user, addMessage],
   );
 
   const handleTyping = useCallback(() => {

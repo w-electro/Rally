@@ -452,7 +452,8 @@
   "profile": {
     "playing": "Playing {{game}}",
     "message": "Message",
-    "addFriend": "Add Friend"
+    "addFriend": "Add Friend",
+    "requestSent": "Request Sent"
   },
 
   "nav": {

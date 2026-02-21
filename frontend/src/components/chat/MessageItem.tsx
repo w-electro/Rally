@@ -320,7 +320,7 @@ export function MessageItem({
               <Smile className="h-4 w-4" />
             </button>
             {showEmojiPicker && (
-              <div className="absolute top-full right-0 mt-1 flex gap-1 rounded border border-white/10 bg-[#0A0E27] p-1.5 shadow-xl z-20">
+              <div className="absolute bottom-full right-0 mb-1 flex flex-col gap-0.5 rounded border border-white/10 bg-[#0A0E27] p-1 shadow-xl z-20">
                 {QUICK_REACTIONS.map((emoji) => (
                   <button
                     key={emoji}
@@ -328,7 +328,7 @@ export function MessageItem({
                       onReaction?.(message.id, emoji);
                       setShowEmojiPicker(false);
                     }}
-                    className="rounded p-1 text-sm hover:bg-white/10 transition-colors"
+                    className="rounded p-1 text-base hover:bg-white/10 transition-colors"
                   >
                     {emoji}
                   </button>

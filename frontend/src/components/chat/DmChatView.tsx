@@ -195,9 +195,29 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
   const handleSend = useCallback(
     (content: string) => {
       if (!receiverId) return;
+
+      // Optimistic: add message immediately to local state
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const optimisticMsg: DirectMessage = {
+        id: tempId,
+        conversationId,
+        senderId: user?.id ?? '',
+        receiverId,
+        content,
+        isEncrypted: false,
+        createdAt: new Date().toISOString(),
+        sender: user ? {
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+        } : undefined,
+      } as DirectMessage;
+      setMessages((prev) => [...prev, optimisticMsg]);
+
       sendDm(conversationId, receiverId, content);
     },
-    [sendDm, conversationId, receiverId],
+    [sendDm, conversationId, receiverId, user],
   );
 
   const handleTyping = useCallback(() => {

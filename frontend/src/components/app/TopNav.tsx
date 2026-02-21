@@ -56,6 +56,7 @@ function ServerTab({
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
+      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       className={cn(
         'relative flex items-center gap-2 px-3 h-full shrink-0 transition-colors duration-150',
         isActive
@@ -229,11 +230,12 @@ export function TopNav() {
       <div className="w-px h-5 bg-white/10 shrink-0" />
 
       {/* Server tabs area */}
-      <div className="flex-1 flex items-center h-full min-w-0 relative" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      <div className="flex-1 flex items-center h-full min-w-0 relative">
         {/* Left scroll arrow */}
         {canScrollLeft && (
           <button
             onClick={() => scroll('left')}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             className="absolute left-0 z-10 w-7 h-full flex items-center justify-center bg-gradient-to-r from-[#0A0E27] via-[#0A0E27]/90 to-transparent"
           >
             <ChevronLeft className="w-4 h-4 text-white/60 hover:text-white" />
@@ -267,6 +269,7 @@ export function TopNav() {
         {canScrollRight && (
           <button
             onClick={() => scroll('right')}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             className="absolute right-0 z-10 w-7 h-full flex items-center justify-center bg-gradient-to-l from-[#0A0E27] via-[#0A0E27]/90 to-transparent"
           >
             <ChevronRight className="w-4 h-4 text-white/60 hover:text-white" />
@@ -276,7 +279,7 @@ export function TopNav() {
 
       {/* Hidden servers overflow */}
       {hiddenServers.length > 0 && (
-        <div className="relative shrink-0">
+        <div className="relative shrink-0" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <button
             onClick={() => setShowHiddenDropdown((prev) => !prev)}
             className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"

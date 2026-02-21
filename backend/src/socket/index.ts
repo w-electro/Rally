@@ -373,20 +373,26 @@ export function createSocketServer(httpServer: HttpServer): Server {
     socket.on('webrtc:offer', (data: { targetUserId: string; offer: any }) => {
       const targetSocketId = findSocketByUserId(data.targetUserId);
       if (targetSocketId) {
+        console.log(`[WebRTC] Forwarding offer from ${userId} to ${data.targetUserId}`);
         io.to(targetSocketId).emit('webrtc:offer', {
           fromUserId: userId,
           offer: data.offer,
         });
+      } else {
+        console.warn(`[WebRTC] Cannot forward offer: target ${data.targetUserId} not found`);
       }
     });
 
     socket.on('webrtc:answer', (data: { targetUserId: string; answer: any }) => {
       const targetSocketId = findSocketByUserId(data.targetUserId);
       if (targetSocketId) {
+        console.log(`[WebRTC] Forwarding answer from ${userId} to ${data.targetUserId}`);
         io.to(targetSocketId).emit('webrtc:answer', {
           fromUserId: userId,
           answer: data.answer,
         });
+      } else {
+        console.warn(`[WebRTC] Cannot forward answer: target ${data.targetUserId} not found`);
       }
     });
 
@@ -397,6 +403,8 @@ export function createSocketServer(httpServer: HttpServer): Server {
           fromUserId: userId,
           candidate: data.candidate,
         });
+      } else {
+        console.warn(`[WebRTC] Cannot forward ICE candidate: target ${data.targetUserId} not found`);
       }
     });
 
