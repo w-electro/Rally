@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
-import { X, User, Shield, Gamepad2, Bell, Volume2, Palette, Camera, Check, Mic, Speaker, Globe } from 'lucide-react';
+import { X, User, Shield, Gamepad2, Bell, Volume2, Palette, Camera, Check, Mic, Speaker, Globe, Download, RefreshCw, Loader2, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TAB_KEYS = [
@@ -31,6 +31,34 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   // Avatar upload state
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Update check state
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const api = (window as any).electronAPI;
+    if (!api?.onUpdateResult) return;
+    api.onUpdateResult((result: { status: string; version?: string; message?: string }) => {
+      setUpdateStatus(result.status);
+      setUpdateVersion(result.version ?? null);
+      setUpdateMessage(result.message ?? null);
+    });
+  }, []);
+
+  const handleCheckForUpdates = () => {
+    const api = (window as any).electronAPI;
+    if (api?.checkForUpdates) {
+      setUpdateStatus('checking');
+      setUpdateVersion(null);
+      setUpdateMessage(null);
+      api.checkForUpdates();
+    } else {
+      setUpdateStatus('error');
+      setUpdateMessage('Not running in Electron desktop app.');
+    }
+  };
 
   // Voice & Audio state (persisted to localStorage)
   const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
@@ -377,6 +405,55 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 <div className="w-16 h-16 rounded-lg bg-black border-2 border-rally-blue flex items-center justify-center">
                   <span className="text-[10px] text-rally-blue font-bold">{t('settings.dark')}</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Check for Updates */}
+            <div className="card-rally rounded-lg p-4">
+              <h3 className="font-display font-semibold text-rally-text mb-2 flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Updates
+              </h3>
+              <p className="text-xs text-rally-text-muted mb-3">
+                Current version: <span className="text-rally-blue font-mono">v{(window as any).electronAPI?.appVersion ?? 'web'}</span>
+              </p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleCheckForUpdates}
+                  disabled={updateStatus === 'checking'}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    updateStatus === 'checking'
+                      ? 'bg-rally-border text-rally-text-muted cursor-not-allowed'
+                      : 'bg-rally-blue/20 hover:bg-rally-blue/30 text-rally-blue border border-rally-blue/30'
+                  )}
+                >
+                  {updateStatus === 'checking' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  {updateStatus === 'checking' ? 'Checking...' : 'Check for Updates'}
+                </button>
+
+                {updateStatus === 'up-to-date' && (
+                  <span className="flex items-center gap-1.5 text-sm text-rally-green">
+                    <CheckCircle className="w-4 h-4" />
+                    Up to date (v{updateVersion})
+                  </span>
+                )}
+                {updateStatus === 'available' && (
+                  <span className="flex items-center gap-1.5 text-sm text-rally-blue">
+                    <Download className="w-4 h-4" />
+                    v{updateVersion} available — downloading...
+                  </span>
+                )}
+                {updateStatus === 'dev-mode' && (
+                  <span className="text-sm text-rally-text-muted">{updateMessage}</span>
+                )}
+                {updateStatus === 'error' && (
+                  <span className="text-sm text-rally-magenta">{updateMessage}</span>
+                )}
               </div>
             </div>
           </div>

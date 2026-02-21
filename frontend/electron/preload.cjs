@@ -22,7 +22,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateDownloaded: (callback) => {
     ipcRenderer.on('update:downloaded', (_, info) => callback(info));
   },
+  onUpdateResult: (callback) => {
+    ipcRenderer.on('update:result', (_, result) => callback(result));
+  },
   installUpdate: () => ipcRenderer.send('update:install'),
+  checkForUpdates: () => ipcRenderer.send('update:check'),
 
   // Global mute shortcut
   onToggleMute: (callback) => {
@@ -34,4 +38,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Platform info
   platform: process.platform,
+  appVersion: require('../package.json').version,
 });

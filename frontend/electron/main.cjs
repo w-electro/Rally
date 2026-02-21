@@ -272,6 +272,26 @@ ipcMain.handle('screen:getSources', async () => {
 // Auto-update install trigger
 ipcMain.on('update:install', () => autoUpdater.quitAndInstall(false, true));
 
+// Manual check for updates (from Settings UI)
+ipcMain.on('update:check', () => {
+  if (isDev) {
+    sendToRenderer('update:result', { status: 'dev-mode', message: 'Auto-updater is disabled in development mode.' });
+    return;
+  }
+  sendToRenderer('update:result', { status: 'checking' });
+  autoUpdater.checkForUpdates()
+    .then((result) => {
+      if (result && result.updateInfo && result.updateInfo.version !== app.getVersion()) {
+        sendToRenderer('update:result', { status: 'available', version: result.updateInfo.version });
+      } else {
+        sendToRenderer('update:result', { status: 'up-to-date', version: app.getVersion() });
+      }
+    })
+    .catch((err) => {
+      sendToRenderer('update:result', { status: 'error', message: err.message });
+    });
+});
+
 // Desktop notifications — only show when window is not focused
 ipcMain.on('notify', (event, { title, body }) => {
   if (mainWindow && mainWindow.isFocused()) return;

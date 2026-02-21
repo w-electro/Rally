@@ -1,6 +1,6 @@
 {
   "name": "rally-desktop",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Rally - Next-gen gaming & social platform",
   "main": "electron/main.cjs",
   "scripts": {
