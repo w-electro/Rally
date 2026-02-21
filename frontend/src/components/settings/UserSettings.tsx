@@ -433,7 +433,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 <Download className="w-4 h-4" />
                 Updates
               </h3>
-              {(window as any).electronAPI ? (
+              {navigator.userAgent.includes('Electron') ? (
                 <div className="flex items-center gap-3 flex-wrap">
                   <button
                     onClick={handleCheckForUpdates}

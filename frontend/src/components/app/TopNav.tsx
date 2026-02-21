@@ -204,7 +204,7 @@ export function TopNav() {
   const isHomeActive = view === 'servers' && !activeServer;
   const isDmActive = view === 'dms';
 
-  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+  const isElectron = typeof window !== 'undefined' && navigator.userAgent.includes('Electron');
 
   return (
     <div
