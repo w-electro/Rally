@@ -34,6 +34,13 @@ let _cachedConversations: DmConversation[] | null = null;
 let _cachedFriends: Friend[] | null = null;
 let _cachedPending: { sent: FriendRequest[]; received: FriendRequest[] } | null = null;
 
+/** Clear all DM sidebar caches — call on logout */
+export function clearDmSidebarCaches() {
+  _cachedConversations = null;
+  _cachedFriends = null;
+  _cachedPending = null;
+}
+
 interface Friend {
   friendshipId: string;
   user: {
@@ -86,7 +93,7 @@ export function DmSidebar() {
         _cachedConversations = list;
         setConversations(list);
       })
-      .catch(() => {});
+      .catch((err) => console.error('Failed to load DM conversations:', err));
   }, []);
 
   // Pre-load friends data on mount (so it's cached when clicking Friends)
@@ -128,7 +135,9 @@ export function DmSidebar() {
       const list = data?.friends ?? [];
       _cachedFriends = list;
       setFriends(list);
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load friends:', err);
+    }
   };
 
   const loadFriendRequests = async () => {
@@ -140,7 +149,9 @@ export function DmSidebar() {
       };
       _cachedPending = pending;
       setPendingRequests(pending);
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load friend requests:', err);
+    }
   };
 
   const handleSendFriendRequest = async (targetId: string) => {
@@ -163,7 +174,9 @@ export function DmSidebar() {
       await api.acceptFriendRequest(requestId);
       loadFriends();
       loadFriendRequests();
-    } catch {}
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to accept request');
+    }
     setFriendActionLoading(null);
   };
 
@@ -172,7 +185,9 @@ export function DmSidebar() {
     try {
       await api.declineFriendRequest(requestId);
       loadFriendRequests();
-    } catch {}
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to decline request');
+    }
     setFriendActionLoading(null);
   };
 
@@ -182,7 +197,9 @@ export function DmSidebar() {
       await api.removeFriend(friendshipId);
       setFriends((prev) => prev.filter((f) => f.friendshipId !== friendshipId));
       useToastStore.getState().addToast('success', 'Friend removed');
-    } catch {}
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to remove friend');
+    }
     setFriendActionLoading(null);
     setConfirmRemove(null);
   };
@@ -214,7 +231,9 @@ export function DmSidebar() {
         const data: any = await api.getDmConversations();
         setConversations(Array.isArray(data) ? data : data?.conversations ?? []);
       }
-    } catch {}
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to start conversation');
+    }
   };
 
   const handleInviteToServer = async (serverId: string) => {

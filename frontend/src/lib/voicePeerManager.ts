@@ -116,6 +116,14 @@ export class VoicePeerManager {
 
     this.vadInterval = setInterval(() => {
       if (!this.analyser) return;
+      // Skip all audio analysis when muted to save CPU
+      if (this.isMuted) {
+        if (this.isSpeaking) {
+          this.isSpeaking = false;
+          this.onSpeakingChange(false);
+        }
+        return;
+      }
 
       this.analyser.getByteFrequencyData(frequencyData);
 
@@ -125,7 +133,7 @@ export class VoicePeerManager {
       }
       const average = sum / frequencyData.length;
 
-      const speaking = average > 15 && !this.isMuted;
+      const speaking = average > 15;
 
       if (speaking !== this.isSpeaking) {
         this.isSpeaking = speaking;

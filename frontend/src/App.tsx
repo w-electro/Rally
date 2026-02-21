@@ -14,9 +14,10 @@ function SocketProvider({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, isHydrated } = useAuthStore();
 
-  if (isLoading) {
+  // Wait for initial auth check to complete before making routing decisions
+  if (!isHydrated || isLoading) {
     return (
       <div className="h-screen w-screen bg-black flex items-center justify-center">
         <div className="text-center">

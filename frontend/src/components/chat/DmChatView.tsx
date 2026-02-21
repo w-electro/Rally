@@ -48,6 +48,12 @@ function needsDateDivider(
 const _dmMessageCache = new Map<string, DirectMessage[]>();
 const _dmConversationCache = new Map<string, DmConversation>();
 
+/** Clear all DM caches — call on logout */
+export function clearDmChatCaches() {
+  _dmMessageCache.clear();
+  _dmConversationCache.clear();
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------

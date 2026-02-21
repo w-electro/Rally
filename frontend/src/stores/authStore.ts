@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '../lib/types';
 import api from '../lib/api';
+import { clearServerCaches } from './serverStore';
+import { clearDmChatCaches } from '../components/chat/DmChatView';
+import { clearDmSidebarCaches } from '../components/app/DmSidebar';
 
 // ---------------------------------------------------------------------------
 // Saved accounts — persisted separately so they survive logout
@@ -85,6 +88,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
   error: string | null;
 
   login: (email: string, password: string) => Promise<void>;
@@ -102,6 +106,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      isHydrated: false,
       error: null,
 
       login: async (email, password) => {
@@ -166,7 +171,11 @@ export const useAuthStore = create<AuthState>()(
         api.setToken(null);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        set({ user: null, isAuthenticated: false });
+        // Clear all module-level caches to prevent data leaking between accounts
+        clearServerCaches();
+        clearDmChatCaches();
+        clearDmSidebarCaches();
+        set({ user: null, isAuthenticated: false, isHydrated: false });
       },
 
       loadUser: async () => {
@@ -177,12 +186,13 @@ export const useAuthStore = create<AuthState>()(
           if (accounts.length > 0) {
             try {
               await get().loginWithRefreshToken(accounts[0]);
+              set({ isHydrated: true });
               return;
             } catch {
               // Refresh failed — fall through to unauthenticated
             }
           }
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({ user: null, isAuthenticated: false, isLoading: false, isHydrated: true });
           return;
         }
 
@@ -192,7 +202,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const data = await api.getMe();
           const user = (data as any).user ?? data;
-          set({ user, isAuthenticated: true, isLoading: false });
+          set({ user, isAuthenticated: true, isLoading: false, isHydrated: true });
         } catch {
           // Access token invalid — try refresh
           const refreshToken = localStorage.getItem('refreshToken');
@@ -212,7 +222,7 @@ export const useAuthStore = create<AuthState>()(
                 syncSavedAccountToken(refreshToken, data.refreshToken);
                 const meData = await api.getMe();
                 const user = (meData as any).user ?? meData;
-                set({ user, isAuthenticated: true, isLoading: false });
+                set({ user, isAuthenticated: true, isLoading: false, isHydrated: true });
                 return;
               }
             } catch {}
@@ -220,7 +230,7 @@ export const useAuthStore = create<AuthState>()(
           api.setToken(null);
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({ user: null, isAuthenticated: false, isLoading: false, isHydrated: true });
         }
       },
 

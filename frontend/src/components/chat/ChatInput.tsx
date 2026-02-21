@@ -125,15 +125,13 @@ export function ChatInput({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showEmojiPicker]);
 
-  // Debounced typing indicator
+  // Debounced typing indicator — only emit on leading edge
   const emitTyping = useCallback(() => {
     if (!onTyping) return;
+    // Only fire if no recent typing event (leading-edge throttle)
+    if (typingTimeoutRef.current) return;
 
     onTyping();
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
     typingTimeoutRef.current = setTimeout(() => {
       typingTimeoutRef.current = null;
     }, TYPING_DEBOUNCE_MS);
@@ -144,6 +142,7 @@ export function ChatInput({
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
       }
     };
   }, []);
@@ -158,6 +157,12 @@ export function ChatInput({
     setContent('');
     setPendingAttachments([]);
     onCancelReply?.();
+
+    // Clear typing indicator immediately on send
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
 
     // Reset height
     if (textareaRef.current) {

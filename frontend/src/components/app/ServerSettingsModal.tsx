@@ -84,7 +84,9 @@ export function ServerSettingsModal() {
     try {
       const data = await api.getRoles(activeServer.id);
       setRoles(Array.isArray(data) ? data : data?.roles ?? []);
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load roles:', err);
+    }
   };
 
   const openRoleForm = (role?: Role) => {
@@ -194,8 +196,8 @@ export function ServerSettingsModal() {
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
-    } catch {
-      // silently fail
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to save server settings');
     }
     setIsSaving(false);
   };
@@ -220,8 +222,8 @@ export function ServerSettingsModal() {
     try {
       const data = await api.createInvite(activeServer.id);
       setInviteCode((data as any).code);
-    } catch {
-      // silently fail
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to create invite');
     }
     setIsCreatingInvite(false);
   };

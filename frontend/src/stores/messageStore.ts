@@ -3,7 +3,7 @@ import type { Message } from '../lib/types';
 
 interface MessageState {
   messages: Record<string, Message[]>; // channelId -> messages
-  isLoading: boolean;
+  loadingChannels: Record<string, boolean>;
   hasMore: Record<string, boolean>;
 
   addMessage: (channelId: string, message: Message) => void;
@@ -12,14 +12,14 @@ interface MessageState {
   updateMessage: (channelId: string, message: Message) => void;
   deleteMessage: (channelId: string, messageId: string) => void;
   updateReactions: (channelId: string, messageId: string, reactions: Record<string, string[]>) => void;
-  setLoading: (loading: boolean) => void;
+  setLoading: (channelId: string, loading: boolean) => void;
   setHasMore: (channelId: string, hasMore: boolean) => void;
   clearChannel: (channelId: string) => void;
 }
 
 export const useMessageStore = create<MessageState>((set) => ({
   messages: {},
-  isLoading: false,
+  loadingChannels: {},
   hasMore: {},
 
   addMessage: (channelId, message) =>
@@ -82,7 +82,8 @@ export const useMessageStore = create<MessageState>((set) => ({
       },
     })),
 
-  setLoading: (isLoading) => set({ isLoading }),
+  setLoading: (channelId, loading) =>
+    set((s) => ({ loadingChannels: { ...s.loadingChannels, [channelId]: loading } })),
   setHasMore: (channelId, hasMore) =>
     set((s) => ({ hasMore: { ...s.hasMore, [channelId]: hasMore } })),
   clearChannel: (channelId) =>

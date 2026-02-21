@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
@@ -27,14 +27,29 @@ import { ToastContainer } from '@/components/ui/Toast';
 
 // electronAPI type is declared in ScreenSharePicker.tsx
 
+/** Modals extracted so their open/close state doesn't re-render the main layout */
+function ModalHost() {
+  const activeModal = useUIStore((s) => s.activeModal);
+  return (
+    <>
+      {activeModal === 'createServer' && <CreateServerModal />}
+      {activeModal === 'createChannel' && <CreateChannelModal />}
+      {activeModal === 'invite' && <InviteDialog />}
+      {activeModal === 'joinServer' && <JoinServerDialog />}
+      {activeModal === 'serverSettings' && <ServerSettingsModal />}
+      {activeModal === 'userSettings' && <UserSettings onClose={() => useUIStore.getState().closeModal()} />}
+    </>
+  );
+}
+
 export function AppLayout() {
   const { t } = useTranslation();
   const view = useUIStore((s) => s.view);
   const rightPanel = useUIStore((s) => s.rightPanel);
-  const activeModal = useUIStore((s) => s.activeModal);
   const activeDmConversationId = useUIStore((s) => s.activeDmConversationId);
   const activeServer = useServerStore((s) => s.activeServer);
   const activeChannel = useServerStore((s) => s.activeChannel);
+  const isServerLoading = useServerStore((s) => s.isLoading);
   const voiceChannelId = useVoiceStore((s) => s.channelId);
   const loadServers = useServerStore((s) => s.loadServers);
 
@@ -42,7 +57,7 @@ export function AppLayout() {
     loadServers();
   }, [loadServers]);
 
-  const renderMainContent = () => {
+  const mainContent = useMemo(() => {
     if (view === 'pulse') {
       return <PulseView />;
     }
@@ -61,7 +76,19 @@ export function AppLayout() {
       );
     }
 
-    if (view === 'servers' && activeServer && activeChannel) {
+    if (view === 'servers' && activeServer) {
+      // While loading channels for a server switch, show a minimal loading state
+      // instead of flashing the Dashboard
+      if (!activeChannel) {
+        if (isServerLoading) {
+          return (
+            <div className="flex-1 flex items-center justify-center bg-[#0D1117]">
+              <img src="./icon.png" alt="Rally" className="w-10 h-10 animate-pulse opacity-30" />
+            </div>
+          );
+        }
+        return <Dashboard />;
+      }
       if (activeChannel.type === 'VOICE') {
         return <VoiceChannel />;
       }
@@ -75,7 +102,7 @@ export function AppLayout() {
     }
 
     return <Dashboard />;
-  };
+  }, [view, activeServer?.id, activeChannel?.id, activeDmConversationId, isServerLoading, t]);
 
   const showRightPanel = view === 'servers' && activeServer && rightPanel !== 'none';
 
@@ -98,7 +125,7 @@ export function AppLayout() {
 
         {/* Center: main content */}
         <div className="flex-1 flex overflow-hidden min-w-0">
-          {renderMainContent()}
+          {mainContent}
         </div>
 
         {/* Right Panel (toggleable) */}
@@ -119,13 +146,8 @@ export function AppLayout() {
       {/* Voice Bar — full-width bottom bar */}
       {voiceChannelId && <VoiceBar />}
 
-      {/* Modals */}
-      {activeModal === 'createServer' && <CreateServerModal />}
-      {activeModal === 'createChannel' && <CreateChannelModal />}
-      {activeModal === 'invite' && <InviteDialog />}
-      {activeModal === 'joinServer' && <JoinServerDialog />}
-      {activeModal === 'serverSettings' && <ServerSettingsModal />}
-      {activeModal === 'userSettings' && <UserSettings onClose={() => useUIStore.getState().closeModal()} />}
+      {/* Modals (isolated to prevent re-renders of main layout) */}
+      <ModalHost />
       <UserProfilePopup />
       <ToastContainer />
     </div>

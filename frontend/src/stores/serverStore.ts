@@ -13,9 +13,36 @@ try {
   if (raw) _cachedServerList = JSON.parse(raw);
 } catch {}
 
-// Persist last active server/channel IDs so we can restore on launch
+// Persist last active server ID
 const _lastServerId = localStorage.getItem('rally-active-server') ?? null;
-const _lastChannelId = localStorage.getItem('rally-active-channel') ?? null;
+
+// Per-server last-active-channel map (serverId -> channelId)
+let _activeChannels = new Map<string, string>();
+try {
+  const raw = localStorage.getItem('rally-active-channels');
+  if (raw) _activeChannels = new Map(JSON.parse(raw));
+} catch {}
+
+function _persistActiveChannels() {
+  try {
+    localStorage.setItem('rally-active-channels', JSON.stringify([..._activeChannels]));
+  } catch {}
+}
+
+// Generation counter to cancel stale async operations
+let _switchGen = 0;
+
+/** Clear all module-level caches — call on logout */
+export function clearServerCaches() {
+  _memberCache.clear();
+  _serverCache.clear();
+  _cachedServerList = [];
+  _activeChannels.clear();
+  _switchGen = 0;
+  localStorage.removeItem('rally-servers');
+  localStorage.removeItem('rally-active-server');
+  localStorage.removeItem('rally-active-channels');
+}
 
 interface ServerState {
   servers: Server[];
@@ -58,32 +85,37 @@ export const useServerStore = create<ServerState>((set, get) => ({
           get().setActiveServer(lastServer);
         }
       }
-    } catch {
+    } catch (err) {
+      console.error('Failed to load servers:', err);
       set({ isLoading: false });
     }
   },
 
   setActiveServer: async (server) => {
+    const gen = ++_switchGen;
+
     if (!server) {
       set({ activeServer: null, activeChannel: null, members: [] });
       localStorage.removeItem('rally-active-server');
-      localStorage.removeItem('rally-active-channel');
       return;
     }
 
     // INSTANT: use cached full server if available, otherwise use the list item
     const cached = _serverCache.get(server.id);
     const immediate = cached ?? server;
-    // Try to restore the last active channel in this server
+
+    // Restore per-server last-active channel
+    const savedChannelId = _activeChannels.get(server.id);
     let initialChannel: Channel | null = null;
-    if (_lastChannelId && immediate.channels) {
-      initialChannel = immediate.channels.find((c: Channel) => c.id === _lastChannelId) ?? null;
+    if (savedChannelId && immediate.channels) {
+      initialChannel = immediate.channels.find((c: Channel) => c.id === savedChannelId) ?? null;
     }
     if (!initialChannel) {
       initialChannel = immediate.channels?.find(
         (c: Channel) => c.type === 'TEXT' || c.type === 'FEED'
       ) ?? null;
     }
+
     const cachedMembers = _memberCache.get(server.id) ?? [];
     set({
       activeServer: immediate,
@@ -91,35 +123,47 @@ export const useServerStore = create<ServerState>((set, get) => ({
       members: cachedMembers,
       isLoading: !cached,
     });
+
     // Persist active IDs
     localStorage.setItem('rally-active-server', server.id);
-    if (initialChannel) localStorage.setItem('rally-active-channel', initialChannel.id);
+    if (initialChannel) {
+      _activeChannels.set(server.id, initialChannel.id);
+      _persistActiveChannels();
+    }
 
-    // Background refresh: fetch full server data
+    // Background refresh: fetch full server data (cancel if user switched away)
     try {
       const fullServer = await api.getServer(server.id);
+      if (gen !== _switchGen) return; // stale — user already switched
       _serverCache.set(server.id, fullServer);
-      const freshChannel = fullServer.channels?.find(
-        (c: Channel) => c.type === 'TEXT' || c.type === 'FEED'
-      );
-      // Only update if this server is still the active one
-      if (get().activeServer?.id === server.id) {
+      const current = get();
+      const channelChanged = current.activeChannel?.id !== initialChannel?.id;
+      if (current.activeServer?.id === server.id) {
         set({
           activeServer: fullServer,
-          activeChannel: get().activeChannel ?? freshChannel ?? null,
+          // Only override channel if user hasn't navigated away
+          activeChannel: channelChanged
+            ? current.activeChannel
+            : (initialChannel ?? fullServer.channels?.find(
+                (c: Channel) => c.type === 'TEXT' || c.type === 'FEED'
+              ) ?? null),
           isLoading: false,
         });
       }
     } catch {
-      set({ isLoading: false });
+      if (gen === _switchGen) set({ isLoading: false });
     }
-    get().loadMembers(server.id);
+
+    // Load members (also cancelled if stale)
+    if (gen === _switchGen) get().loadMembers(server.id);
   },
 
   setActiveChannel: (channel) => {
     set({ activeChannel: channel });
-    if (channel) {
-      localStorage.setItem('rally-active-channel', channel.id);
+    const serverId = get().activeServer?.id;
+    if (channel && serverId) {
+      _activeChannels.set(serverId, channel.id);
+      _persistActiveChannels();
     }
   },
 
@@ -152,7 +196,9 @@ export const useServerStore = create<ServerState>((set, get) => ({
       if (get().activeServer?.id === serverId) {
         set({ members });
       }
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load members:', err);
+    }
   },
 
   updateServerLocal: (serverId, data) => {

@@ -5,6 +5,7 @@ import { useMessageStore } from '../stores/messageStore';
 import { useServerStore } from '../stores/serverStore';
 import { useVoiceStore } from '../stores/voiceStore';
 import { useUIStore } from '../stores/uiStore';
+import { useToastStore } from '../stores/toastStore';
 import { VoicePeerManager } from '../lib/voicePeerManager';
 import type { Message } from '../lib/types';
 
@@ -55,6 +56,24 @@ export function useSocket() {
 
     socket.on('connect', () => {
       console.log('Socket connected');
+    });
+
+    // Refresh auth token before each reconnect attempt
+    socket.io.on('reconnect_attempt', () => {
+      const freshToken = localStorage.getItem('accessToken');
+      if (freshToken && socket) {
+        (socket.auth as any).token = freshToken;
+      }
+    });
+
+    // Clean up voice state on reconnect failure
+    socket.io.on('reconnect_failed', () => {
+      console.error('Socket reconnection failed after all attempts');
+      if (peerManager) {
+        peerManager.stop();
+        peerManager = null;
+      }
+      useVoiceStore.getState().leaveChannel();
     });
 
     socket.on('message:new', (message: Message) => {
@@ -160,6 +179,31 @@ export function useSocket() {
 
     socket.on('screen:stop', (data: { userId: string }) => {
       useVoiceStore.getState().clearRemoteScreenShare();
+    });
+
+    // Presence updates — update member online status in real-time
+    socket.on('presence:updated', (data: { userId: string; status: string; customStatus?: string }) => {
+      const serverState = useServerStore.getState();
+      if (serverState.members.some((m) => m.userId === data.userId || (m as any).user?.id === data.userId)) {
+        const updatedMembers = serverState.members.map((m) => {
+          const memberId = m.userId ?? (m as any).user?.id;
+          if (memberId === data.userId) {
+            // Update status on the member or nested user object
+            if ((m as any).user) {
+              return { ...m, user: { ...(m as any).user, status: data.status, customStatus: data.customStatus } };
+            }
+            return { ...m, status: data.status, customStatus: data.customStatus };
+          }
+          return m;
+        });
+        useServerStore.setState({ members: updatedMembers });
+      }
+    });
+
+    // Server-side error handler — show toast
+    socket.on('error', (data: { message: string } | string) => {
+      const msg = typeof data === 'string' ? data : data?.message ?? 'An error occurred';
+      useToastStore.getState().addToast('error', msg);
     });
 
     socket.on('disconnect', () => {

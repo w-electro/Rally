@@ -75,13 +75,15 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   } = useSocket();
   const {
     messages: allMessages,
-    isLoading,
+    loadingChannels,
     hasMore,
     setMessages,
     prependMessages,
     setLoading,
     setHasMore,
   } = useMessageStore();
+
+  const isLoading = loadingChannels[channel.id] ?? false;
 
   const { rightPanel, setRightPanel } = useUIStore();
 
@@ -94,6 +96,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showPinnedPanel, setShowPinnedPanel] = useState(false);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+  const [failedTempIds, setFailedTempIds] = useState<Set<string>>(new Set());
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -127,15 +130,12 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   // ------------------------------------------------------------------
   useEffect(() => {
     let cancelled = false;
+    const hasCached = !!allMessages[channel.id]?.length;
 
     const fetchMessages = async () => {
-      // Avoid re-fetching if we already have messages for this channel
-      if (allMessages[channel.id]?.length) {
-        isInitialLoad.current = false;
-        return;
-      }
+      // Only show loading spinner if we have no cached messages
+      if (!hasCached) setLoading(channel.id, true);
 
-      setLoading(true);
       try {
         const data: any = await api.getMessages(channel.id);
         if (cancelled) return;
@@ -146,13 +146,15 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
         console.error('Failed to load messages', err);
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setLoading(channel.id, false);
           isInitialLoad.current = false;
         }
       }
     };
 
-    isInitialLoad.current = true;
+    // If cached messages exist, show them immediately (no flash)
+    // but still re-fetch in the background for freshness
+    isInitialLoad.current = !hasCached;
     fetchMessages();
 
     return () => {
@@ -200,7 +202,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
       if (!firstMsg) return;
 
       const prevScrollHeight = container.scrollHeight;
-      setLoading(true);
+      setLoading(channel.id, true);
 
       api
         .getMessages(channel.id, firstMsg.id)
@@ -220,7 +222,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
           }
         })
         .catch(() => {})
-        .finally(() => setLoading(false));
+        .finally(() => setLoading(channel.id, false));
     }
   }, [channel.id, channelMessages, hasMore, isLoading, prependMessages, setHasMore, setLoading]);
 
@@ -276,7 +278,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   // ------------------------------------------------------------------
   // Handlers
   // ------------------------------------------------------------------
-  const { addMessage } = useMessageStore();
+  const { addMessage, deleteMessage: removeMessage } = useMessageStore();
   const handleSend = useCallback(
     (content: string, replyToId?: string, attachments?: any[]) => {
       // Optimistic: add message to store immediately
@@ -299,6 +301,14 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
             avatarUrl: user.avatarUrl,
           },
         } as any);
+
+        // After 15s, mark as failed if still a temp message
+        setTimeout(() => {
+          const msgs = useMessageStore.getState().messages[channel.id] ?? [];
+          if (msgs.some((m) => m.id === tempId)) {
+            setFailedTempIds((prev) => new Set(prev).add(tempId));
+          }
+        }, 15000);
       }
       sendMessage(channel.id, content, replyToId, attachments);
     },
@@ -517,6 +527,31 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                   }}
                   onThreadOpen={(m) => setThreadMessage(m)}
                 />
+                {/* Failed optimistic message indicator */}
+                {failedTempIds.has(msg.id) && (
+                  <div className="flex items-center gap-2 px-4 py-1 text-[11px] text-rally-magenta">
+                    <span>{t('chat.messageFailed') || 'Failed to send'}</span>
+                    <button
+                      onClick={() => {
+                        setFailedTempIds((prev) => { const s = new Set(prev); s.delete(msg.id); return s; });
+                        removeMessage(channel.id, msg.id);
+                        sendMessage(channel.id, msg.content);
+                      }}
+                      className="underline hover:text-white transition-colors"
+                    >
+                      {t('common.retry') || 'Retry'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFailedTempIds((prev) => { const s = new Set(prev); s.delete(msg.id); return s; });
+                        removeMessage(channel.id, msg.id);
+                      }}
+                      className="underline hover:text-white transition-colors"
+                    >
+                      {t('common.dismiss') || 'Dismiss'}
+                    </button>
+                  </div>
+                )}
               </React.Fragment>
             );
           })}

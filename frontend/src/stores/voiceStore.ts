@@ -46,7 +46,12 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   remoteScreenStream: null,
   isScreenSharing: false,
 
-  joinChannel: (channelId, localUserId) => set({ channelId, isMuted: false, isDeafened: false, _localUserId: localUserId ?? null }),
+  joinChannel: (channelId, localUserId) => {
+    // Restore mute/deafen state from localStorage if previously set
+    const savedMuted = localStorage.getItem('rally-voice-muted') === 'true';
+    const savedDeafened = localStorage.getItem('rally-voice-deafened') === 'true';
+    set({ channelId, isMuted: savedMuted, isDeafened: savedDeafened, _localUserId: localUserId ?? null });
+  },
   leaveChannel: () =>
     set((s) => {
       // Stop all remote stream tracks to prevent leaks
@@ -72,6 +77,7 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   toggleMute: () =>
     set((s) => {
       const newMuted = !s.isMuted;
+      localStorage.setItem('rally-voice-muted', String(newMuted));
       return {
         isMuted: newMuted,
         participants: s.participants.map((p) =>
@@ -82,9 +88,9 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   toggleDeafen: () =>
     set((s) => {
       const newDeafened = !s.isDeafened;
-      // When deafening: save current mute state, force mute on
-      // When undeafening: restore the saved mute state
       const newMuted = newDeafened ? true : s._mutedBeforeDeafen;
+      localStorage.setItem('rally-voice-deafened', String(newDeafened));
+      localStorage.setItem('rally-voice-muted', String(newMuted));
       return {
         isDeafened: newDeafened,
         isMuted: newMuted,
@@ -143,9 +149,12 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
     screenShareUserId: userId,
     remoteScreenStream: stream,
   }),
-  clearRemoteScreenShare: () => set({
-    screenShareUserId: null,
-    remoteScreenStream: null,
-  }),
+  clearRemoteScreenShare: () =>
+    set((s) => {
+      if (s.remoteScreenStream) {
+        s.remoteScreenStream.getTracks().forEach((t) => t.stop());
+      }
+      return { screenShareUserId: null, remoteScreenStream: null };
+    }),
   setScreenShareUser: (userId) => set({ screenShareUserId: userId }),
 }));
