@@ -23,6 +23,7 @@ import { JoinServerDialog } from './JoinServerDialog';
 import { ServerSettingsModal } from './ServerSettingsModal';
 import { UserSettings } from '@/components/settings/UserSettings';
 import { UserProfilePopup } from './UserProfilePopup';
+import { ToastContainer } from '@/components/ui/Toast';
 
 // electronAPI type is declared in ScreenSharePicker.tsx
 
@@ -126,6 +127,7 @@ export function AppLayout() {
       {activeModal === 'serverSettings' && <ServerSettingsModal />}
       {activeModal === 'userSettings' && <UserSettings onClose={() => useUIStore.getState().closeModal()} />}
       <UserProfilePopup />
+      <ToastContainer />
     </div>
   );
 }

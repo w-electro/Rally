@@ -114,6 +114,8 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   // ------------------------------------------------------------------
   useEffect(() => {
     joinChannel(channel.id);
+    // Clear unread count when entering channel
+    useUIStore.getState().markRead(channel.id);
 
     return () => {
       leaveChannel(channel.id);
@@ -226,10 +228,51 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   // Typing indicator (incoming) -- listen via socket event at component level
   // ------------------------------------------------------------------
   useEffect(() => {
-    // Placeholder: in a real implementation we'd listen to the socket
-    // for 'typing:update' events and update `typingUsers`.
-    // For now this stays empty.
-  }, [channel.id]);
+    const { getSocket } = require('@/hooks/useSocket');
+    const socket = getSocket();
+    if (!socket) return;
+
+    const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+    const handleTypingStarted = (data: { channelId: string; userId: string; username: string }) => {
+      if (data.channelId !== channel.id) return;
+      if (data.userId === user?.id) return;
+      setTypingUsers((prev) =>
+        prev.includes(data.username) ? prev : [...prev, data.username],
+      );
+      // Auto-clear after 5s in case stopped event never fires
+      if (timeouts.has(data.userId)) clearTimeout(timeouts.get(data.userId)!);
+      timeouts.set(
+        data.userId,
+        setTimeout(() => {
+          setTypingUsers((prev) => prev.filter((u) => u !== data.username));
+          timeouts.delete(data.userId);
+        }, 5000),
+      );
+    };
+
+    const handleTypingStopped = (data: { channelId: string; userId: string; username?: string }) => {
+      if (data.channelId !== channel.id) return;
+      if (timeouts.has(data.userId)) {
+        clearTimeout(timeouts.get(data.userId)!);
+        timeouts.delete(data.userId);
+      }
+      // Remove by username if provided, otherwise clear the oldest entry
+      if (data.username) {
+        setTypingUsers((prev) => prev.filter((u) => u !== data.username));
+      }
+    };
+
+    socket.on('typing:started', handleTypingStarted);
+    socket.on('typing:stopped', handleTypingStopped);
+
+    return () => {
+      socket.off('typing:started', handleTypingStarted);
+      socket.off('typing:stopped', handleTypingStopped);
+      timeouts.forEach((t) => clearTimeout(t));
+      setTypingUsers([]);
+    };
+  }, [channel.id, user?.id]);
 
   // ------------------------------------------------------------------
   // Handlers
@@ -361,6 +404,11 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
               className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
               autoFocus
             />
+            {searchQuery && (
+              <span className="text-[10px] text-gray-500 tabular-nums shrink-0">
+                {channelMessages.length} {channelMessages.length === 1 ? 'result' : 'results'}
+              </span>
+            )}
             <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="text-gray-500 hover:text-white">
               <X className="h-4 w-4" />
             </button>
@@ -459,6 +507,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                 <BubbleMessage
                   message={msg}
                   isCompact={isCompact}
+                  highlightQuery={searchQuery}
                   onReply={(m) => setReplyingTo(m)}
                   onEdit={(m) => setEditingMessage(m)}
                   onDelete={handleDelete}

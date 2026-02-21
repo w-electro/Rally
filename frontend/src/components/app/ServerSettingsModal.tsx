@@ -21,6 +21,8 @@ import {
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useToastStore } from '@/stores/toastStore';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import api from '@/lib/api';
 import { cn, getInitials, getStatusColor } from '@/lib/utils';
 import type { ServerMember, Role } from '@/lib/types';
@@ -64,7 +66,7 @@ export function ServerSettingsModal() {
   const [roleColor, setRoleColor] = useState('#00D9FF');
   const [rolePerms, setRolePerms] = useState<bigint>(0n);
   const [isSavingRole, setIsSavingRole] = useState(false);
-  const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ roleId: string; roleName: string } | null>(null);
   const [assignDropdownMember, setAssignDropdownMember] = useState<string | null>(null);
   const [roleActionLoading, setRoleActionLoading] = useState<string | null>(null);
 
@@ -110,16 +112,20 @@ export function ServerSettingsModal() {
           color: roleColor,
           permissions: rolePerms.toString(),
         });
+        useToastStore.getState().addToast('success', 'Role updated');
       } else {
         await api.createRole(activeServer.id, {
           name: roleName.trim(),
           color: roleColor,
           permissions: rolePerms.toString(),
         });
+        useToastStore.getState().addToast('success', 'Role created');
       }
       await loadRoles();
       setShowRoleForm(false);
-    } catch {}
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to save role');
+    }
     setIsSavingRole(false);
   };
 
@@ -129,8 +135,11 @@ export function ServerSettingsModal() {
     try {
       await api.deleteRole(activeServer.id, roleId);
       await loadRoles();
-      setDeletingRoleId(null);
-    } catch {}
+      setConfirmDelete(null);
+      useToastStore.getState().addToast('success', 'Role deleted');
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to delete role');
+    }
     setRoleActionLoading(null);
   };
 
@@ -140,7 +149,10 @@ export function ServerSettingsModal() {
     try {
       await api.assignRole(activeServer.id, memberId, roleId);
       loadMembers(activeServer.id);
-    } catch {}
+      useToastStore.getState().addToast('success', 'Role assigned');
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to assign role');
+    }
     setRoleActionLoading(null);
     setAssignDropdownMember(null);
   };
@@ -151,7 +163,10 @@ export function ServerSettingsModal() {
     try {
       await api.removeRole(activeServer.id, memberId, roleId);
       loadMembers(activeServer.id);
-    } catch {}
+      useToastStore.getState().addToast('success', 'Role removed');
+    } catch (err: any) {
+      useToastStore.getState().addToast('error', err?.message || 'Failed to remove role');
+    }
     setRoleActionLoading(null);
   };
 
@@ -251,7 +266,7 @@ export function ServerSettingsModal() {
     { bit: 1n << 28n, label: 'View Analytics', key: 'viewAnalytics' },
   ];
 
-  const COLOR_PRESETS = ['#00D9FF', '#39FF14', '#8B00FF', '#FF006E', '#FF6B35', '#FFD700', '#00F0FF', '#99AAB5'];
+  const COLOR_PRESETS = ['#FF006E', '#00D9FF', '#39FF14', '#8B00FF', '#FFD700', '#FF4500', '#00FF88', '#FF69B4'];
 
   // Permission bit labels for display
   const permissionLabels: Record<string, string> = Object.fromEntries(
@@ -610,33 +625,17 @@ export function ServerSettingsModal() {
                             <button
                               onClick={() => openRoleForm(role)}
                               className="p-1 rounded text-white/40 hover:text-rally-blue hover:bg-rally-blue/10 transition-colors"
+                              title={t('common.edit')}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
-                            {deletingRoleId === role.id ? (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => handleDeleteRole(role.id)}
-                                  disabled={roleActionLoading === role.id}
-                                  className="px-2 py-0.5 text-[10px] rounded bg-rally-magenta/20 text-rally-magenta hover:bg-rally-magenta/30"
-                                >
-                                  {roleActionLoading === role.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('common.delete')}
-                                </button>
-                                <button
-                                  onClick={() => setDeletingRoleId(null)}
-                                  className="px-2 py-0.5 text-[10px] rounded text-white/40 hover:text-white/70"
-                                >
-                                  {t('common.cancel')}
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setDeletingRoleId(role.id)}
-                                className="p-1 rounded text-white/40 hover:text-rally-magenta hover:bg-rally-magenta/10 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => setConfirmDelete({ roleId: role.id, roleName: role.name })}
+                              className="p-1 rounded text-white/40 hover:text-rally-magenta hover:bg-rally-magenta/10 transition-colors"
+                              title={t('common.delete')}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         )}
                       </div>
@@ -859,6 +858,19 @@ export function ServerSettingsModal() {
           </div>
         )}
       </div>
+
+      {/* Delete Role Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Delete Role"
+        message={`Are you sure you want to delete "${confirmDelete?.roleName}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (confirmDelete) handleDeleteRole(confirmDelete.roleId);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

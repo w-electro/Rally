@@ -112,6 +112,7 @@ function ChannelItem({
   onClick: () => void;
   voiceParticipants?: { displayName: string; avatarUrl?: string }[];
 }) {
+  const unreadCount = useUIStore((s) => s.unreadCounts[channel.id] ?? 0);
   const { t } = useTranslation();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const Icon = getChannelIconComponent(channel.type);
@@ -146,7 +147,12 @@ function ChannelItem({
             isActive ? 'text-[#00D9FF]' : 'text-white/30 group-hover:text-white/50'
           )}
         />
-        <span className="truncate flex-1 text-left">{channel.name}</span>
+        <span className={cn('truncate flex-1 text-left', unreadCount > 0 && !isActive && 'text-white font-semibold')}>{channel.name}</span>
+        {unreadCount > 0 && !isActive && (
+          <span className="ml-auto shrink-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rally-magenta text-white text-[10px] font-bold px-1">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </button>
 
       {/* Voice channel participants */}

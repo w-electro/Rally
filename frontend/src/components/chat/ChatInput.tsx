@@ -5,6 +5,7 @@ import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useToastStore } from '@/stores/toastStore';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -214,14 +215,14 @@ export function ChatInput({
 
     for (const file of Array.from(files)) {
       if (file.size > MAX_FILE_SIZE) {
-        console.error(`File ${file.name} exceeds 25MB limit`);
+        useToastStore.getState().addToast('error', `${file.name} exceeds 25MB limit`);
         continue;
       }
       try {
         const attachment = await uploadFile(file);
         newAttachments.push(attachment);
       } catch (err) {
-        console.error(`Failed to upload ${file.name}:`, err);
+        useToastStore.getState().addToast('error', `Failed to upload ${file.name}`);
       }
     }
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, type SetStateAction } from 'r
 import { useTranslation } from 'react-i18next';
 import { MessageCircle, Loader2, ChevronDown, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -71,6 +72,7 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
     });
   }, [conversationId]);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -307,7 +309,7 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
           {partnerName}
         </h2>
         <button
-          onClick={handleDeleteChat}
+          onClick={() => setConfirmDelete(true)}
           className="p-1.5 rounded hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-colors"
           title="Delete conversation"
         >
@@ -480,6 +482,17 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
         onSend={handleSend}
         onTyping={handleTyping}
         disabled={!receiverId}
+      />
+
+      {/* Confirm delete conversation dialog */}
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        title="Delete Conversation"
+        message={`Are you sure you want to delete this conversation with ${partnerName}? This cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => { setConfirmDelete(false); handleDeleteChat(); }}
+        onCancel={() => setConfirmDelete(false)}
       />
     </div>
   );

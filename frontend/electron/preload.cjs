@@ -24,6 +24,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   installUpdate: () => ipcRenderer.send('update:install'),
 
+  // Global mute shortcut
+  onToggleMute: (callback) => {
+    ipcRenderer.on('voice:toggle-mute', () => callback());
+  },
+
+  // Desktop notifications
+  notify: (options) => ipcRenderer.send('notify', options),
+
   // Platform info
   platform: process.platform,
 });

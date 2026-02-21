@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Reply,
@@ -28,6 +28,7 @@ interface BubbleMessageProps {
   onReaction?: (messageId: string, emoji: string) => void;
   onRepost?: (message: Message) => void;
   onThreadOpen?: (message: Message) => void;
+  highlightQuery?: string;
   className?: string;
 }
 
@@ -41,8 +42,23 @@ const QUICK_REACTIONS = ['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83D\uDE02', '\uD83C
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Wrap matching substrings in a highlight mark */
+function highlightText(text: string, query: string, keyPrefix: string): React.ReactNode[] {
+  if (!query) return [text];
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${escaped})`, 'gi');
+  const parts = text.split(re);
+  return parts.map((p, i) =>
+    re.test(p) ? (
+      <mark key={`${keyPrefix}-hl-${i}`} className="bg-rally-blue/30 text-white rounded-sm px-0.5">{p}</mark>
+    ) : (
+      p
+    ),
+  );
+}
+
 /** Highlight @mentions, #channels, and URLs in message content */
-function renderContent(content: string): React.ReactNode[] {
+function renderContent(content: string, searchQuery?: string): React.ReactNode[] {
   const tokenRe = /(@[\w]+|#[\w-]+|https?:\/\/[^\s<]+)/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -50,7 +66,8 @@ function renderContent(content: string): React.ReactNode[] {
 
   while ((match = tokenRe.exec(content)) !== null) {
     if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index));
+      const plain = content.slice(lastIndex, match.index);
+      parts.push(...highlightText(plain, searchQuery || '', `p-${match.index}`));
     }
 
     const token = match[0];
@@ -91,7 +108,8 @@ function renderContent(content: string): React.ReactNode[] {
   }
 
   if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex));
+    const remaining = content.slice(lastIndex);
+    parts.push(...highlightText(remaining, searchQuery || '', 'end'));
   }
 
   return parts;
@@ -101,7 +119,7 @@ function renderContent(content: string): React.ReactNode[] {
 // Component
 // ---------------------------------------------------------------------------
 
-export function BubbleMessage({
+export const BubbleMessage = React.memo(function BubbleMessage({
   message,
   isCompact = false,
   onReply,
@@ -111,6 +129,7 @@ export function BubbleMessage({
   onReaction,
   onRepost,
   onThreadOpen,
+  highlightQuery,
   className,
 }: BubbleMessageProps) {
   const { t } = useTranslation();
@@ -133,6 +152,11 @@ export function BubbleMessage({
     message.type === 'LEAVE' ||
     message.type === 'PIN' ||
     message.type === 'BOOST';
+
+  const renderedContent = useMemo(
+    () => renderContent(message.content ?? '', highlightQuery),
+    [message.content, highlightQuery],
+  );
 
   // ---- System messages: centered, no bubble ----
   if (isSystem) {
@@ -363,7 +387,7 @@ export function BubbleMessage({
               {t('chat.edited')}
             </span>
           )}
-          {renderContent(message.content ?? '')}
+          {renderedContent}
         </div>
 
         {/* ---- Image attachments ---- */}
@@ -440,4 +464,4 @@ export function BubbleMessage({
       )}
     </div>
   );
-}
+});

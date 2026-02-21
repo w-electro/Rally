@@ -1,8 +1,8 @@
-version: 1.6.1
+version: 1.7.0
 files:
-  - url: Rally.Setup.1.6.1.exe
-    sha512: OqxF0KU2JP0338np3mk1hq7gk8Z3B0XQUsgGRXoRQc5XOfnptGZxe6WJuu7M6lu7hgQKXz3Rl/TgbuxfhgQ0Jw==
-    size: 94592949
-path: Rally.Setup.1.6.1.exe
-sha512: OqxF0KU2JP0338np3mk1hq7gk8Z3B0XQUsgGRXoRQc5XOfnptGZxe6WJuu7M6lu7hgQKXz3Rl/TgbuxfhgQ0Jw==
-releaseDate: '2026-02-21T14:28:39.191Z'
+  - url: Rally.Setup.1.7.0.exe
+    sha512: 0Kz8lWsA8RkQ6zNq2q9SRGLkiAUl3eNGw18F4YRBjx/jDghB0Po/bH7JqXTC5+LYh3bgrO77nvRP6U8VMKcWDA==
+    size: 94596022
+path: Rally.Setup.1.7.0.exe
+sha512: 0Kz8lWsA8RkQ6zNq2q9SRGLkiAUl3eNGw18F4YRBjx/jDghB0Po/bH7JqXTC5+LYh3bgrO77nvRP6U8VMKcWDA==
+releaseDate: '2026-02-21T15:33:30.997Z'

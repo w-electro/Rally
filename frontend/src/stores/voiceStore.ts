@@ -47,18 +47,27 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
   isScreenSharing: false,
 
   joinChannel: (channelId, localUserId) => set({ channelId, isMuted: false, isDeafened: false, _localUserId: localUserId ?? null }),
-  leaveChannel: () => set({
-    channelId: null,
-    _localUserId: null,
-    _mutedBeforeDeafen: false,
-    participants: [],
-    spatialPositions: {},
-    remoteStreams: {},
-    screenShareUserId: null,
-    screenShareStream: null,
-    remoteScreenStream: null,
-    isScreenSharing: false,
-  }),
+  leaveChannel: () =>
+    set((s) => {
+      // Stop all remote stream tracks to prevent leaks
+      Object.values(s.remoteStreams).forEach((stream) =>
+        stream.getTracks().forEach((t) => t.stop()),
+      );
+      if (s.screenShareStream) s.screenShareStream.getTracks().forEach((t) => t.stop());
+      if (s.remoteScreenStream) s.remoteScreenStream.getTracks().forEach((t) => t.stop());
+      return {
+        channelId: null,
+        _localUserId: null,
+        _mutedBeforeDeafen: false,
+        participants: [],
+        spatialPositions: {},
+        remoteStreams: {},
+        screenShareUserId: null,
+        screenShareStream: null,
+        remoteScreenStream: null,
+        isScreenSharing: false,
+      };
+    }),
 
   toggleMute: () =>
     set((s) => {
@@ -116,6 +125,8 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
     })),
   removeRemoteStream: (userId) =>
     set((s) => {
+      const stream = s.remoteStreams[userId];
+      if (stream) stream.getTracks().forEach((t) => t.stop());
       const { [userId]: _, ...rest } = s.remoteStreams;
       return { remoteStreams: rest };
     }),
@@ -123,10 +134,11 @@ export const useVoiceStore = create<VoiceStoreState>((set) => ({
     isScreenSharing: true,
     screenShareStream: stream,
   }),
-  stopScreenShare: () => set({
-    isScreenSharing: false,
-    screenShareStream: null,
-  }),
+  stopScreenShare: () =>
+    set((s) => {
+      if (s.screenShareStream) s.screenShareStream.getTracks().forEach((t) => t.stop());
+      return { isScreenSharing: false, screenShareStream: null };
+    }),
   setRemoteScreenShare: (userId, stream) => set({
     screenShareUserId: userId,
     remoteScreenStream: stream,

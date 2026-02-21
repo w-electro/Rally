@@ -13,6 +13,8 @@ interface UIState {
   showSplash: boolean;
   theme: 'dark';
   activeDmConversationId: string | null;
+  unreadCounts: Record<string, number>;
+  mentionCounts: Record<string, number>;
 
   setView: (view: View) => void;
   setRightPanel: (panel: RightPanel) => void;
@@ -21,6 +23,8 @@ interface UIState {
   toggleSidebar: () => void;
   hideSplash: () => void;
   setActiveDmConversation: (id: string | null) => void;
+  incrementUnread: (channelId: string, hasMention?: boolean) => void;
+  markRead: (channelId: string) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -32,6 +36,8 @@ export const useUIStore = create<UIState>((set) => ({
   showSplash: true,
   theme: 'dark',
   activeDmConversationId: null,
+  unreadCounts: {},
+  mentionCounts: {},
 
   setView: (view) => set({ view }),
   setRightPanel: (rightPanel) => set({ rightPanel }),
@@ -40,4 +46,17 @@ export const useUIStore = create<UIState>((set) => ({
   toggleSidebar: () => set((s) => ({ isSidebarCollapsed: !s.isSidebarCollapsed })),
   hideSplash: () => set({ showSplash: false }),
   setActiveDmConversation: (activeDmConversationId) => set({ activeDmConversationId }),
+  incrementUnread: (channelId, hasMention) =>
+    set((s) => ({
+      unreadCounts: { ...s.unreadCounts, [channelId]: (s.unreadCounts[channelId] ?? 0) + 1 },
+      mentionCounts: hasMention
+        ? { ...s.mentionCounts, [channelId]: (s.mentionCounts[channelId] ?? 0) + 1 }
+        : s.mentionCounts,
+    })),
+  markRead: (channelId) =>
+    set((s) => {
+      const { [channelId]: _u, ...restUnread } = s.unreadCounts;
+      const { [channelId]: _m, ...restMention } = s.mentionCounts;
+      return { unreadCounts: restUnread, mentionCounts: restMention };
+    }),
 }));

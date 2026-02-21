@@ -22,6 +22,8 @@ function ServerIcon({
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const unreadCounts = useUIStore((s) => s.unreadCounts);
+  const hasUnread = server.channels?.some((ch) => (unreadCounts[ch.id] ?? 0) > 0) ?? false;
 
   return (
     <div className="relative flex items-center justify-center w-full mb-2 group">
@@ -38,10 +40,8 @@ function ServerIcon({
       />
 
       {/* Unread indicator dot */}
-      {!isActive && (
-        <div className="absolute left-0 w-1 flex justify-center">
-          {/* Future: conditionally show unread dot */}
-        </div>
+      {!isActive && hasUnread && (
+        <div className="absolute left-0 w-1 h-2 rounded-r-full bg-white" />
       )}
 
       {/* Server icon button */}

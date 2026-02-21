@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../stores/authStore';
 import { useMessageStore } from '../stores/messageStore';
 import { useVoiceStore } from '../stores/voiceStore';
+import { useUIStore } from '../stores/uiStore';
 import { VoicePeerManager } from '../lib/voicePeerManager';
 import type { Message } from '../lib/types';
 
@@ -57,6 +58,21 @@ export function useSocket() {
 
     socket.on('message:new', (message: Message) => {
       addMessage(message.channelId, message);
+      // Track unread if this channel is not currently viewed
+      const { useServerStore } = require('../stores/serverStore');
+      const activeChannel = useServerStore.getState().activeChannel;
+      if (activeChannel?.id !== message.channelId) {
+        const currentUserId = useAuthStore.getState().user?.id;
+        const hasMention = message.content?.includes(`@${useAuthStore.getState().user?.username}`);
+        useUIStore.getState().incrementUnread(message.channelId, hasMention);
+        // Desktop notification for mentions
+        if (hasMention && !document.hasFocus() && (window as any).electronAPI?.notify) {
+          (window as any).electronAPI.notify({
+            title: `${message.author?.displayName ?? 'Someone'} mentioned you`,
+            body: message.content?.substring(0, 100) ?? '',
+          });
+        }
+      }
     });
 
     socket.on('message:updated', (message: Message) => {

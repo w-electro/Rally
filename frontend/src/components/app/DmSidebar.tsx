@@ -19,8 +19,10 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useServerStore } from '@/stores/serverStore';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket, getSocket } from '@/hooks/useSocket';
 import api from '@/lib/api';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useToastStore } from '@/stores/toastStore';
 import { cn, getInitials, getStatusColor, formatDate } from '@/lib/utils';
 import type { DmConversation } from '@/lib/types';
 
@@ -75,6 +77,7 @@ export function DmSidebar() {
   const [inviteDropdownUser, setInviteDropdownUser] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [friendMessage, setFriendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     api.getDmConversations()
@@ -98,6 +101,26 @@ export function DmSidebar() {
     loadFriends();
     loadFriendRequests();
   }, [sidebarView]);
+
+  // Real-time friend request updates via socket
+  useEffect(() => {
+    const s = getSocket();
+    if (!s) return;
+    const handleFriendRequest = () => {
+      loadFriendRequests();
+      useToastStore.getState().addToast('info', 'New friend request received');
+    };
+    const handleFriendAccepted = () => {
+      loadFriends();
+      loadFriendRequests();
+    };
+    s.on('friend:request', handleFriendRequest);
+    s.on('friend:accepted', handleFriendAccepted);
+    return () => {
+      s.off('friend:request', handleFriendRequest);
+      s.off('friend:accepted', handleFriendAccepted);
+    };
+  }, []);
 
   const loadFriends = async () => {
     try {
@@ -158,8 +181,10 @@ export function DmSidebar() {
     try {
       await api.removeFriend(friendshipId);
       setFriends((prev) => prev.filter((f) => f.friendshipId !== friendshipId));
+      useToastStore.getState().addToast('success', 'Friend removed');
     } catch {}
     setFriendActionLoading(null);
+    setConfirmRemove(null);
   };
 
   const handleSearchUsers = async () => {
@@ -393,7 +418,7 @@ export function DmSidebar() {
                           )}
                         </div>
                         <button
-                          onClick={() => handleRemoveFriend(f.friendshipId)}
+                          onClick={() => setConfirmRemove({ id: f.friendshipId, name: f.user.displayName })}
                           className="p-1.5 rounded text-white/40 hover:text-rally-magenta hover:bg-rally-magenta/10 transition-colors"
                           title="Remove Friend"
                           disabled={friendActionLoading === f.friendshipId}
@@ -764,6 +789,17 @@ export function DmSidebar() {
           );
         })}
       </div>
+
+      {/* Confirm remove friend dialog */}
+      <ConfirmDialog
+        isOpen={!!confirmRemove}
+        title="Remove Friend"
+        message={`Are you sure you want to remove ${confirmRemove?.name ?? 'this person'} from your friends?`}
+        confirmLabel="Remove"
+        danger
+        onConfirm={() => confirmRemove && handleRemoveFriend(confirmRemove.id)}
+        onCancel={() => setConfirmRemove(null)}
+      />
     </div>
   );
 }
