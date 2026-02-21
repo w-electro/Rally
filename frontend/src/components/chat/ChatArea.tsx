@@ -66,6 +66,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
     editMessage,
     deleteMessage: deleteMsg,
     addReaction,
+    pinMessage,
     startTyping,
     joinChannel,
     leaveChannel,
@@ -258,6 +259,13 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
     [addReaction],
   );
 
+  const handlePin = useCallback(
+    (messageId: string) => {
+      pinMessage(messageId);
+    },
+    [pinMessage],
+  );
+
   const handleDelete = useCallback(
     (messageId: string) => {
       deleteMsg(messageId);
@@ -380,17 +388,15 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                   isCompact={isCompact}
                   onReply={(m) => setReplyingTo(m)}
                   onEdit={(m) => {
-                    // Simple inline edit: prompt for simplicity; a full modal editor
-                    // can be built separately.
                     const newContent = window.prompt(t('chat.editMessage'), m.content);
                     if (newContent && newContent !== m.content) {
                       editMessage(m.id, newContent);
                     }
                   }}
                   onDelete={handleDelete}
+                  onPin={handlePin}
                   onReaction={handleReaction}
                   onRepost={(m) => {
-                    // Repost: send the content as a quoted message
                     sendMessage(channel.id, `> ${m.content}\n\n-- reposted from @${m.author.displayName}`);
                   }}
                   onThreadOpen={(m) => setThreadMessage(m)}

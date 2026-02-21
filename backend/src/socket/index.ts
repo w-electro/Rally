@@ -211,10 +211,30 @@ export function createSocketServer(httpServer: HttpServer): Server {
 
         io.to(`channel:${message.channelId}`).emit('message:reaction_updated', {
           messageId: data.messageId,
+          channelId: message.channelId,
           reactions,
         });
       } catch (err) {
         socket.emit('error', { message: 'Failed to update reaction' });
+      }
+    });
+
+    socket.on('message:pin', async (data: { messageId: string }) => {
+      try {
+        const message = await prisma.message.findUnique({ where: { id: data.messageId } });
+        if (!message) return;
+
+        const updated = await prisma.message.update({
+          where: { id: data.messageId },
+          data: { isPinned: !message.isPinned },
+          include: {
+            author: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+          },
+        });
+
+        io.to(`channel:${message.channelId}`).emit('message:updated', updated);
+      } catch (err) {
+        socket.emit('error', { message: 'Failed to pin message' });
       }
     });
 
@@ -344,14 +364,10 @@ export function createSocketServer(httpServer: HttpServer): Server {
     });
 
     socket.on('voice:signal', (data: { targetUserId: string; signal: any }) => {
-      // Forward WebRTC signaling to target peer
-      const targetSocketId = findSocketByUserId(data.targetUserId);
-      if (targetSocketId) {
-        io.to(targetSocketId).emit('voice:signal', {
-          fromUserId: userId,
-          signal: data.signal,
-        });
-      }
+      io.to(`user:${data.targetUserId}`).emit('voice:signal', {
+        fromUserId: userId,
+        signal: data.signal,
+      });
     });
 
     socket.on('voice:mute', (data: { channelId: string; isMuted: boolean }) => {
@@ -370,42 +386,28 @@ export function createSocketServer(httpServer: HttpServer): Server {
 
     // ==================== WEBRTC SIGNALING ====================
 
+    // Use user rooms instead of findSocketByUserId for reliable delivery to ALL connections
     socket.on('webrtc:offer', (data: { targetUserId: string; offer: any }) => {
-      const targetSocketId = findSocketByUserId(data.targetUserId);
-      if (targetSocketId) {
-        console.log(`[WebRTC] Forwarding offer from ${userId} to ${data.targetUserId}`);
-        io.to(targetSocketId).emit('webrtc:offer', {
-          fromUserId: userId,
-          offer: data.offer,
-        });
-      } else {
-        console.warn(`[WebRTC] Cannot forward offer: target ${data.targetUserId} not found`);
-      }
+      console.log(`[WebRTC] Forwarding offer from ${userId} to ${data.targetUserId}`);
+      io.to(`user:${data.targetUserId}`).emit('webrtc:offer', {
+        fromUserId: userId,
+        offer: data.offer,
+      });
     });
 
     socket.on('webrtc:answer', (data: { targetUserId: string; answer: any }) => {
-      const targetSocketId = findSocketByUserId(data.targetUserId);
-      if (targetSocketId) {
-        console.log(`[WebRTC] Forwarding answer from ${userId} to ${data.targetUserId}`);
-        io.to(targetSocketId).emit('webrtc:answer', {
-          fromUserId: userId,
-          answer: data.answer,
-        });
-      } else {
-        console.warn(`[WebRTC] Cannot forward answer: target ${data.targetUserId} not found`);
-      }
+      console.log(`[WebRTC] Forwarding answer from ${userId} to ${data.targetUserId}`);
+      io.to(`user:${data.targetUserId}`).emit('webrtc:answer', {
+        fromUserId: userId,
+        answer: data.answer,
+      });
     });
 
     socket.on('webrtc:ice_candidate', (data: { targetUserId: string; candidate: any }) => {
-      const targetSocketId = findSocketByUserId(data.targetUserId);
-      if (targetSocketId) {
-        io.to(targetSocketId).emit('webrtc:ice_candidate', {
-          fromUserId: userId,
-          candidate: data.candidate,
-        });
-      } else {
-        console.warn(`[WebRTC] Cannot forward ICE candidate: target ${data.targetUserId} not found`);
-      }
+      io.to(`user:${data.targetUserId}`).emit('webrtc:ice_candidate', {
+        fromUserId: userId,
+        candidate: data.candidate,
+      });
     });
 
     // ==================== SCREEN SHARING ====================
@@ -517,12 +519,22 @@ export function createSocketServer(httpServer: HttpServer): Server {
   return io;
 }
 
-// Helper: find socket ID by user ID
+// Helper: find socket ID by user ID (returns most recent connection)
 function findSocketByUserId(userId: string): string | undefined {
+  let found: string | undefined;
   for (const [socketId, uid] of connectedUsers.entries()) {
-    if (uid === userId) return socketId;
+    if (uid === userId) found = socketId;
   }
-  return undefined;
+  return found;
+}
+
+// Helper: find ALL socket IDs for a user (for multi-connection support)
+function findAllSocketsByUserId(userId: string): string[] {
+  const sockets: string[] = [];
+  for (const [socketId, uid] of connectedUsers.entries()) {
+    if (uid === userId) sockets.push(socketId);
+  }
+  return sockets;
 }
 
 // Helper: broadcast presence to friends/server members

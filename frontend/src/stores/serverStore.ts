@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import type { Server, Channel, ServerMember } from '../lib/types';
 import api from '../lib/api';
 
+// Per-server caches for instant switching
+const _memberCache = new Map<string, ServerMember[]>();
+const _serverCache = new Map<string, Server>();
+
 interface ServerState {
   servers: Server[];
   activeServer: Server | null;
@@ -45,21 +49,39 @@ export const useServerStore = create<ServerState>((set, get) => ({
       return;
     }
 
-    set({ isLoading: true });
+    // INSTANT: use cached full server if available, otherwise use the list item
+    const cached = _serverCache.get(server.id);
+    const immediate = cached ?? server;
+    const firstTextChannel = immediate.channels?.find(
+      (c: Channel) => c.type === 'TEXT' || c.type === 'FEED'
+    );
+    const cachedMembers = _memberCache.get(server.id) ?? [];
+    set({
+      activeServer: immediate,
+      activeChannel: firstTextChannel || null,
+      members: cachedMembers,
+      isLoading: !cached,
+    });
+
+    // Background refresh: fetch full server data
     try {
       const fullServer = await api.getServer(server.id);
-      const firstTextChannel = fullServer.channels?.find(
+      _serverCache.set(server.id, fullServer);
+      const freshChannel = fullServer.channels?.find(
         (c: Channel) => c.type === 'TEXT' || c.type === 'FEED'
       );
-      set({
-        activeServer: fullServer,
-        activeChannel: firstTextChannel || null,
-        isLoading: false,
-      });
-      get().loadMembers(server.id);
+      // Only update if this server is still the active one
+      if (get().activeServer?.id === server.id) {
+        set({
+          activeServer: fullServer,
+          activeChannel: get().activeChannel ?? freshChannel ?? null,
+          isLoading: false,
+        });
+      }
     } catch {
       set({ isLoading: false });
     }
+    get().loadMembers(server.id);
   },
 
   setActiveChannel: (channel) => set({ activeChannel: channel }),
@@ -88,7 +110,11 @@ export const useServerStore = create<ServerState>((set, get) => ({
     try {
       const data = await api.getServerMembers(serverId);
       const members = Array.isArray(data) ? data : (data as any)?.members ?? [];
-      set({ members });
+      _memberCache.set(serverId, members);
+      // Only update if this server is still active
+      if (get().activeServer?.id === serverId) {
+        set({ members });
+      }
     } catch {}
   },
 

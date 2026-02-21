@@ -147,11 +147,25 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
     const socket = getSocket();
     if (!socket) return;
 
+    // Join the DM room so we receive dm:new events
+    socket.emit('dm:join', conversationId);
+
     const handleNewDm = (dm: DirectMessage) => {
       if (dm.conversationId === conversationId) {
         setMessages((prev) => {
-          // Avoid duplicates
+          // Avoid exact id duplicates
           if (prev.some((m) => m.id === dm.id)) return prev;
+          // Replace optimistic temp message by matching senderId + content
+          if (!dm.id.startsWith('temp-')) {
+            const tempIdx = prev.findIndex(
+              (m) => m.id.startsWith('temp-') && m.senderId === dm.senderId && m.content === dm.content
+            );
+            if (tempIdx >= 0) {
+              const updated = [...prev];
+              updated[tempIdx] = dm;
+              return updated;
+            }
+          }
           return [...prev, dm];
         });
       }

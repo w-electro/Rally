@@ -4,12 +4,13 @@ import { getSocket } from '../hooks/useSocket';
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun3.l.google.com:19302' },
-  { urls: 'stun:stun4.l.google.com:19302' },
+  // Open Relay TURN servers (static auth)
   { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+  // Static auth TURN server
+  { urls: 'turn:staticauth.openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:staticauth.openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
 ];
 
 interface VoicePeerManagerCallbacks {
@@ -30,9 +31,12 @@ export class VoicePeerManager {
   private isMuted = false;
   private isDeafened = false;
   private localUserId: string | null = null;
+  private stopped = false;
 
   // Queue for signals that arrive before peer is created
   private pendingSignals: Map<string, any[]> = new Map();
+  // Track retry counts to avoid infinite reconnects
+  private retryCount: Map<string, number> = new Map();
 
   private onSpeakingChange: (speaking: boolean) => void;
   private onRemoteStream: (userId: string, stream: MediaStream) => void;
@@ -66,6 +70,7 @@ export class VoicePeerManager {
    * Start the voice session: acquire microphone, set up VAD, attach socket listeners.
    */
   async start(): Promise<void> {
+    this.stopped = false;
     // Acquire local microphone stream with preferred device
     const savedDeviceId = localStorage.getItem('rally-audio-input-device');
     const audioConstraints: MediaTrackConstraints = {
@@ -304,18 +309,41 @@ export class VoicePeerManager {
       console.log(`[VoicePeerManager] Peer CLOSED for ${targetUserId}`);
       this.peers.delete(targetUserId);
       this.onPeerDisconnect(targetUserId);
+      // Auto-retry if not intentionally stopped
+      this.maybeRetry(targetUserId);
     });
 
     peer.on('error', (err: Error) => {
       console.error(`[VoicePeerManager] Peer ERROR with ${targetUserId}:`, err.message);
       this.peers.delete(targetUserId);
       this.onPeerDisconnect(targetUserId);
+      // Auto-retry on connection errors
+      this.maybeRetry(targetUserId);
     });
 
     // Flush any signals that arrived before this peer was created
     this.flushPendingSignals(targetUserId, peer);
 
     return peer;
+  }
+
+  /**
+   * Auto-retry a failed peer connection (up to 3 times).
+   */
+  private maybeRetry(userId: string): void {
+    if (this.stopped) return;
+    const count = (this.retryCount.get(userId) ?? 0) + 1;
+    if (count > 3) {
+      console.warn(`[VoicePeerManager] Max retries reached for ${userId}`);
+      this.retryCount.delete(userId);
+      return;
+    }
+    this.retryCount.set(userId, count);
+    console.log(`[VoicePeerManager] Retry #${count} for ${userId} in ${count * 2}s`);
+    setTimeout(() => {
+      if (this.stopped || this.peers.has(userId)) return;
+      this.connectToPeer(userId);
+    }, count * 2000);
   }
 
   /**
@@ -454,6 +482,7 @@ export class VoicePeerManager {
    * Stop the entire voice session.
    */
   stop(): void {
+    this.stopped = true;
     for (const [, peer] of this.peers.entries()) {
       try {
         peer.destroy();
@@ -463,6 +492,7 @@ export class VoicePeerManager {
     }
     this.peers.clear();
     this.pendingSignals.clear();
+    this.retryCount.clear();
 
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {

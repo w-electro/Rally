@@ -8,6 +8,7 @@ import type { Message } from '../lib/types';
 
 let socket: Socket | null = null;
 let peerManager: VoicePeerManager | null = null;
+let socketInitialized = false;
 
 export function getSocket(): Socket | null {
   return socket;
@@ -26,8 +27,16 @@ export function useSocket() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    // GUARD: Only create ONE socket connection per session
+    if (socket?.connected || socketInitialized) {
+      socketRef.current = socket;
+      return;
+    }
+
     const token = localStorage.getItem('accessToken');
     if (!token) return;
+
+    socketInitialized = true;
 
     const serverUrl = localStorage.getItem('rally-server-url')
       || import.meta.env.VITE_API_URL
@@ -58,8 +67,21 @@ export function useSocket() {
       deleteMessage(data.channelId, data.messageId);
     });
 
-    socket.on('message:reaction_updated', (data: { messageId: string; reactions: Record<string, string[]> }) => {
-      // We need channelId but it's not in the event; handle at component level
+    socket.on('message:reaction_updated', (data: { messageId: string; channelId?: string; reactions: Record<string, string[]> }) => {
+      // Find the channelId from the message store if not provided
+      const channelId = data.channelId;
+      if (channelId) {
+        updateReactions(channelId, data.messageId, data.reactions);
+      } else {
+        // Search all channels for this message
+        const allMessages = useMessageStore.getState().messages;
+        for (const [chId, msgs] of Object.entries(allMessages)) {
+          if (msgs.some((m) => m.id === data.messageId)) {
+            updateReactions(chId, data.messageId, data.reactions);
+            break;
+          }
+        }
+      }
     });
 
     socket.on('voice:user_joined', (data: any) => {
@@ -134,13 +156,18 @@ export function useSocket() {
     });
 
     return () => {
-      if (peerManager) {
-        peerManager.stop();
-        peerManager = null;
+      // Only fully disconnect when auth changes (logout)
+      // Not on component unmount
+      if (!useAuthStore.getState().isAuthenticated) {
+        if (peerManager) {
+          peerManager.stop();
+          peerManager = null;
+        }
+        socket?.disconnect();
+        socket = null;
+        socketRef.current = null;
+        socketInitialized = false;
       }
-      socket?.disconnect();
-      socket = null;
-      socketRef.current = null;
     };
   }, [isAuthenticated]);
 
@@ -182,6 +209,10 @@ export function useSocket() {
 
   const addReaction = useCallback((messageId: string, emoji: string) => {
     socketRef.current?.emit('message:reaction', { messageId, emoji });
+  }, []);
+
+  const pinMessage = useCallback((messageId: string) => {
+    socketRef.current?.emit('message:pin', { messageId });
   }, []);
 
   const startTyping = useCallback((channelId: string) => {
@@ -315,6 +346,7 @@ export function useSocket() {
     editMessage,
     deleteMessage: deleteMsg,
     addReaction,
+    pinMessage,
     startTyping,
     stopTyping,
     joinChannel,

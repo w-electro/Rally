@@ -27,7 +27,12 @@ export async function rotateRefreshToken(oldToken: string) {
     return null;
   }
 
-  await prisma.refreshToken.delete({ where: { id: existing.id } });
+  try {
+    await prisma.refreshToken.delete({ where: { id: existing.id } });
+  } catch {
+    // Token already deleted by a concurrent request - that's fine
+    return null;
+  }
 
   const newRefreshToken = await createRefreshToken(existing.userId);
   const accessToken = jwt.sign(
