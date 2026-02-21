@@ -308,6 +308,20 @@ ipcMain.on('notify', (event, { title, body }) => {
   notification.show();
 });
 
+// --- Single Instance Lock ---
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 // App lifecycle
 app.whenReady().then(() => {
   // Auto-grant microphone/camera/screen-capture permissions for WebRTC

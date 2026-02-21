@@ -6,6 +6,17 @@ import api from '../lib/api';
 const _memberCache = new Map<string, ServerMember[]>();
 const _serverCache = new Map<string, Server>();
 
+// Persist server list to localStorage for instant display on launch
+let _cachedServerList: Server[] = [];
+try {
+  const raw = localStorage.getItem('rally-servers');
+  if (raw) _cachedServerList = JSON.parse(raw);
+} catch {}
+
+// Persist last active server/channel IDs so we can restore on launch
+const _lastServerId = localStorage.getItem('rally-active-server') ?? null;
+const _lastChannelId = localStorage.getItem('rally-active-channel') ?? null;
+
 interface ServerState {
   servers: Server[];
   activeServer: Server | null;
@@ -26,7 +37,7 @@ interface ServerState {
 }
 
 export const useServerStore = create<ServerState>((set, get) => ({
-  servers: [],
+  servers: _cachedServerList,
   activeServer: null,
   activeChannel: null,
   members: [],
@@ -38,6 +49,15 @@ export const useServerStore = create<ServerState>((set, get) => ({
       const data = await api.getServers();
       const servers = Array.isArray(data) ? data : (data as any)?.servers ?? [];
       set({ servers, isLoading: false });
+      // Persist for instant display on next launch
+      try { localStorage.setItem('rally-servers', JSON.stringify(servers)); } catch {}
+      // Auto-restore last active server if none is set yet
+      if (!get().activeServer && _lastServerId) {
+        const lastServer = servers.find((s: Server) => s.id === _lastServerId);
+        if (lastServer) {
+          get().setActiveServer(lastServer);
+        }
+      }
     } catch {
       set({ isLoading: false });
     }
@@ -46,22 +66,34 @@ export const useServerStore = create<ServerState>((set, get) => ({
   setActiveServer: async (server) => {
     if (!server) {
       set({ activeServer: null, activeChannel: null, members: [] });
+      localStorage.removeItem('rally-active-server');
+      localStorage.removeItem('rally-active-channel');
       return;
     }
 
     // INSTANT: use cached full server if available, otherwise use the list item
     const cached = _serverCache.get(server.id);
     const immediate = cached ?? server;
-    const firstTextChannel = immediate.channels?.find(
-      (c: Channel) => c.type === 'TEXT' || c.type === 'FEED'
-    );
+    // Try to restore the last active channel in this server
+    let initialChannel: Channel | null = null;
+    if (_lastChannelId && immediate.channels) {
+      initialChannel = immediate.channels.find((c: Channel) => c.id === _lastChannelId) ?? null;
+    }
+    if (!initialChannel) {
+      initialChannel = immediate.channels?.find(
+        (c: Channel) => c.type === 'TEXT' || c.type === 'FEED'
+      ) ?? null;
+    }
     const cachedMembers = _memberCache.get(server.id) ?? [];
     set({
       activeServer: immediate,
-      activeChannel: firstTextChannel || null,
+      activeChannel: initialChannel,
       members: cachedMembers,
       isLoading: !cached,
     });
+    // Persist active IDs
+    localStorage.setItem('rally-active-server', server.id);
+    if (initialChannel) localStorage.setItem('rally-active-channel', initialChannel.id);
 
     // Background refresh: fetch full server data
     try {
@@ -84,7 +116,12 @@ export const useServerStore = create<ServerState>((set, get) => ({
     get().loadMembers(server.id);
   },
 
-  setActiveChannel: (channel) => set({ activeChannel: channel }),
+  setActiveChannel: (channel) => {
+    set({ activeChannel: channel });
+    if (channel) {
+      localStorage.setItem('rally-active-channel', channel.id);
+    }
+  },
 
   createServer: async (data) => {
     const server = await api.createServer(data);

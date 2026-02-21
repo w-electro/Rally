@@ -1,8 +1,8 @@
-version: 1.7.2
+version: 1.7.3
 files:
-  - url: Rally.Setup.1.7.2.exe
-    sha512: inKP+ehmaldLwWt3ONdaEMWtb4lapc7h4ltSyM2ly4kLgBojqH0YJ0pRO14a0EdxLaEaLFAP3XQpEvoUCwW8tg==
-    size: 94596666
-path: Rally.Setup.1.7.2.exe
-sha512: inKP+ehmaldLwWt3ONdaEMWtb4lapc7h4ltSyM2ly4kLgBojqH0YJ0pRO14a0EdxLaEaLFAP3XQpEvoUCwW8tg==
-releaseDate: '2026-02-21T16:14:19.629Z'
+  - url: Rally.Setup.1.7.3.exe
+    sha512: RFuT6/6LeoiRTYmyJZoYRygq0mzKmjzF9te0vTJf82nw3XGCQHyKcdrr8s+XM/U5isOvQ6dLi3XWtsObWW70tg==
+    size: 94597050
+path: Rally.Setup.1.7.3.exe
+sha512: RFuT6/6LeoiRTYmyJZoYRygq0mzKmjzF9te0vTJf82nw3XGCQHyKcdrr8s+XM/U5isOvQ6dLi3XWtsObWW70tg==
+releaseDate: '2026-02-21T17:07:53.336Z'

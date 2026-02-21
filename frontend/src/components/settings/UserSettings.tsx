@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
-import { X, User, Shield, Gamepad2, Bell, Volume2, Palette, Camera, Check, Mic, Speaker, Globe, Download, RefreshCw, Loader2, CheckCircle } from 'lucide-react';
+import { X, User, Shield, Gamepad2, Bell, Volume2, Palette, Camera, Check, Mic, Speaker, Globe, Download, RefreshCw, Loader2, CheckCircle, Info } from 'lucide-react';
+
+declare const __APP_VERSION__: string;
 import { cn } from '@/lib/utils';
 
 const TAB_KEYS = [
@@ -12,6 +14,7 @@ const TAB_KEYS = [
   { id: 'notifications', key: 'settings.notifications', icon: Bell },
   { id: 'audio', key: 'settings.voiceAudio', icon: Volume2 },
   { id: 'appearance', key: 'settings.appearance', icon: Palette },
+  { id: 'about', key: 'settings.about', icon: Info },
 ];
 
 interface UserSettingsProps {
@@ -407,16 +410,29 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'about' && (
+          <div className="space-y-6">
+            {/* Rally Brand Card */}
+            <div className="card-rally rounded-lg p-6 text-center">
+              <div className="flex justify-center mb-4">
+                <img src="/rally-logo.webp" alt="Rally" className="h-16 w-auto" />
+              </div>
+              <h2 className="font-display text-2xl font-bold text-rally-text">Rally</h2>
+              <p className="text-sm text-rally-text-muted mt-1">Next-gen gaming & social platform</p>
+              <p className="text-xs text-rally-text-muted mt-3">
+                Version <span className="text-rally-blue font-mono">v{(window as any).electronAPI?.appVersion ?? __APP_VERSION__}</span>
+              </p>
+            </div>
 
             {/* Check for Updates */}
             <div className="card-rally rounded-lg p-4">
-              <h3 className="font-display font-semibold text-rally-text mb-2 flex items-center gap-2">
+              <h3 className="font-display font-semibold text-rally-text mb-3 flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 Updates
               </h3>
-              <p className="text-xs text-rally-text-muted mb-3">
-                Current version: <span className="text-rally-blue font-mono">v{(window as any).electronAPI?.appVersion ?? 'web'}</span>
-              </p>
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleCheckForUpdates}
