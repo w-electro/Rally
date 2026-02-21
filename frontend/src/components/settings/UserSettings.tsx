@@ -418,7 +418,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             {/* Rally Brand Card */}
             <div className="card-rally rounded-lg p-6 text-center">
               <div className="flex justify-center mb-4">
-                <img src={`${import.meta.env.BASE_URL}rally-logo.webp`} alt="Rally" className="h-16 w-auto" />
+                <img src="./icon.png" alt="Rally" className="h-16 w-16" />
               </div>
               <h2 className="font-display text-2xl font-bold text-rally-text">Rally</h2>
               <p className="text-sm text-rally-text-muted mt-1">Next-gen gaming & social platform</p>
