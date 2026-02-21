@@ -289,6 +289,9 @@ class ApiClient {
   createDmConversation(targetUserId: string) {
     return this.request<any>('/users/dms', { method: 'POST', body: JSON.stringify({ targetUserId }) });
   }
+  deleteConversation(conversationId: string) {
+    return this.request<any>(`/users/dms/${conversationId}`, { method: 'DELETE' });
+  }
   getNotifications() {
     return this.request<any[]>('/users/notifications');
   }

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, Loader2, ChevronDown } from 'lucide-react';
+import { MessageCircle, Loader2, ChevronDown, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
 import { useSocket, getSocket } from '@/hooks/useSocket';
 import { cn, formatTime, formatDate } from '@/lib/utils';
 import api from '@/lib/api';
@@ -53,6 +54,7 @@ const _dmConversationCache = new Map<string, DmConversation>();
 export function DmChatView({ conversationId }: DmChatViewProps) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const { setActiveDmConversation } = useUIStore();
   const { sendDm } = useSocket();
 
   // Local state — initialized from cache for instant display
@@ -138,11 +140,20 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
           if (matched) _dmConversationCache.set(conversationId, matched);
         }
 
-        // Fetch message history
+        // Fetch message history — merge with existing optimistic messages
         const msgData: any = await api.getDmMessages(conversationId);
         if (!cancelled) {
-          const msgs = Array.isArray(msgData) ? msgData : msgData?.messages ?? [];
-          setMessages(msgs);
+          const serverMsgs: DirectMessage[] = Array.isArray(msgData) ? msgData : msgData?.messages ?? [];
+          setMessages((prev) => {
+            // Keep any temp (optimistic) messages that the server hasn't confirmed yet
+            const serverIds = new Set(serverMsgs.map((m) => m.id));
+            const pendingTemps = prev.filter(
+              (m) => m.id.startsWith('temp-') && !serverMsgs.some(
+                (sm) => sm.senderId === m.senderId && sm.content === m.content
+              )
+            );
+            return [...serverMsgs, ...pendingTemps];
+          });
         }
       } catch (err) {
         console.error('Failed to load DM data', err);
@@ -272,6 +283,17 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
     setShowScrollDown(false);
   }, []);
 
+  const handleDeleteChat = useCallback(async () => {
+    try {
+      await api.deleteConversation(conversationId);
+      _dmMessageCache.delete(conversationId);
+      _dmConversationCache.delete(conversationId);
+      setActiveDmConversation(null);
+    } catch (err) {
+      console.error('Failed to delete conversation', err);
+    }
+  }, [conversationId, setActiveDmConversation]);
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -281,9 +303,16 @@ export function DmChatView({ conversationId }: DmChatViewProps) {
       {/* Header */}
       <header className="flex h-12 shrink-0 items-center gap-3 border-b border-white/10 px-4">
         <MessageCircle className="h-5 w-5 text-rally-blue" />
-        <h2 className="font-display text-sm font-semibold text-white truncate">
+        <h2 className="font-display text-sm font-semibold text-white truncate flex-1">
           {partnerName}
         </h2>
+        <button
+          onClick={handleDeleteChat}
+          className="p-1.5 rounded hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-colors"
+          title="Delete conversation"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </header>
 
       {/* Message list */}
