@@ -1,8 +1,8 @@
-version: 1.8.0
+version: 1.9.0
 files:
-  - url: Rally.Setup.1.8.0.exe
-    sha512: OHbXR4DcR9sHOYUG6Cts9ewVGMbZdbPhdH5IDKX12o+9gncwutaLTwBSyKPfBcSOo+P2GhXIDrD4l4wfN2bQCg==
-    size: 94601466
-path: Rally.Setup.1.8.0.exe
-sha512: OHbXR4DcR9sHOYUG6Cts9ewVGMbZdbPhdH5IDKX12o+9gncwutaLTwBSyKPfBcSOo+P2GhXIDrD4l4wfN2bQCg==
-releaseDate: '2026-02-21T20:33:25.628Z'
+  - url: Rally Setup 1.9.0.exe
+    sha512: J0SlEg+TqAxWflrsljOuB6ONKihZJBKxRNprFeLRAa9YNfTB1cRXRA+BGgDkx5T5QpiNNd1rjI07Pj/IRe3Mfw==
+    size: 94658612
+path: Rally Setup 1.9.0.exe
+sha512: J0SlEg+TqAxWflrsljOuB6ONKihZJBKxRNprFeLRAa9YNfTB1cRXRA+BGgDkx5T5QpiNNd1rjI07Pj/IRe3Mfw==
+releaseDate: '2026-02-23T20:51:33.112Z'
