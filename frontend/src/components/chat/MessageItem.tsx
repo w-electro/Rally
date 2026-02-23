@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import {
   Reply,
   MoreHorizontal,
@@ -13,6 +14,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
 import type { Message } from '@/lib/types';
 import { cn, formatTime, formatDate, getInitials } from '@/lib/utils';
+import { renderMarkdown } from '@/lib/markdown';
+import { reactionAppear } from '@/lib/motion';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -37,68 +40,6 @@ interface MessageItemProps {
 
 const QUICK_REACTIONS = ['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83D\uDE02', '\uD83C\uDF89', '\uD83D\uDE22', '\uD83D\uDD25'];
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Highlight @mentions, #channels, and URLs in message content */
-function renderContent(content: string): React.ReactNode[] {
-  // Combined regex: @mentions, #channels, URLs
-  const tokenRe =
-    /(@[\w]+|#[\w-]+|https?:\/\/[^\s<]+)/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = tokenRe.exec(content)) !== null) {
-    // Text before match
-    if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index));
-    }
-
-    const token = match[0];
-
-    if (token.startsWith('@')) {
-      parts.push(
-        <span
-          key={`mention-${match.index}`}
-          className="rounded bg-rally-blue/15 px-0.5 text-rally-blue cursor-pointer hover:underline"
-        >
-          {token}
-        </span>,
-      );
-    } else if (token.startsWith('#')) {
-      parts.push(
-        <span
-          key={`channel-${match.index}`}
-          className="rounded bg-rally-blue/15 px-0.5 text-rally-blue cursor-pointer hover:underline"
-        >
-          {token}
-        </span>,
-      );
-    } else {
-      parts.push(
-        <a
-          key={`link-${match.index}`}
-          href={token}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-rally-blue underline hover:brightness-125 break-all"
-        >
-          {token}
-        </a>,
-      );
-    }
-
-    lastIndex = match.index + token.length;
-  }
-
-  if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex));
-  }
-
-  return parts;
-}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -236,7 +177,7 @@ export function MessageItem({
               )}
             </>
           )}
-          {renderContent(message.content ?? '')}
+          {renderMarkdown(message.content ?? '')}
         </div>
 
         {/* Image attachments */}
@@ -288,8 +229,12 @@ export function MessageItem({
               const ids = Array.isArray(userIds) ? userIds : [];
               const hasReacted = user ? ids.includes(user.id) : false;
               return (
-                <button
+                <motion.button
                   key={emoji}
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={reactionAppear}
+                  whileTap={{ scale: 1.15 }}
                   onClick={() => onReaction?.(message.id, emoji)}
                   className={cn(
                     'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors',
@@ -300,7 +245,7 @@ export function MessageItem({
                 >
                   <span>{emoji}</span>
                   <span className="font-medium">{ids.length}</span>
-                </button>
+                </motion.button>
               );
             })}
           </div>

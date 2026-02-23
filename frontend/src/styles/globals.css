@@ -47,6 +47,17 @@
     background: rgba(0, 217, 255, 0.3);
     color: #ffffff;
   }
+
+  /* Keyboard-only focus ring — never shown on mouse click */
+  *:focus-visible {
+    outline: 2px solid #00D9FF;
+    outline-offset: 2px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+  }
 }
 
 @layer components {
@@ -226,6 +237,35 @@
       linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
   }
+
+  /* Skeleton shimmer — Discord-style left-to-right sweep, Rally-themed */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(0, 217, 255, 0.06) 40%,
+      rgba(255, 255, 255, 0.03) 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  /* Syntax highlighting tokens — Rally-themed */
+  .token-keyword { color: #FF006E; }
+  .token-string { color: #39FF14; }
+  .token-comment { color: #8B949E; font-style: italic; }
+  .token-number { color: #00D9FF; }
+  .token-builtin { color: #8B00FF; }
+  .token-property { color: #00F0FF; }
+  .token-punctuation { color: #8B949E; }
+  .token-operator { color: #FF006E; }
+  .token-tag { color: #FF006E; }
+  .token-attr { color: #00D9FF; }
 }
 
 @layer utilities {
@@ -300,4 +340,20 @@
 [dir="rtl"] .rounded-br-md {
   border-bottom-right-radius: 0.375rem;
   border-bottom-left-radius: 0.25rem;
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .skeleton-shimmer {
+    animation: none;
+    background: rgba(255, 255, 255, 0.05);
+  }
 }

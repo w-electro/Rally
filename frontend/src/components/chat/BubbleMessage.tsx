@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import {
   Reply,
   MoreHorizontal,
@@ -13,6 +14,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
 import type { Message } from '@/lib/types';
 import { cn, formatTime, getInitials } from '@/lib/utils';
+import { renderMarkdown } from '@/lib/markdown';
+import { reactionAppear } from '@/lib/motion';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -38,82 +41,6 @@ interface BubbleMessageProps {
 
 const QUICK_REACTIONS = ['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83D\uDE02', '\uD83C\uDF89', '\uD83D\uDE22', '\uD83D\uDD25'];
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Wrap matching substrings in a highlight mark */
-function highlightText(text: string, query: string, keyPrefix: string): React.ReactNode[] {
-  if (!query) return [text];
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`(${escaped})`, 'gi');
-  const parts = text.split(re);
-  return parts.map((p, i) =>
-    re.test(p) ? (
-      <mark key={`${keyPrefix}-hl-${i}`} className="bg-rally-blue/30 text-white rounded-sm px-0.5">{p}</mark>
-    ) : (
-      p
-    ),
-  );
-}
-
-/** Highlight @mentions, #channels, and URLs in message content */
-function renderContent(content: string, searchQuery?: string): React.ReactNode[] {
-  const tokenRe = /(@[\w]+|#[\w-]+|https?:\/\/[^\s<]+)/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = tokenRe.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      const plain = content.slice(lastIndex, match.index);
-      parts.push(...highlightText(plain, searchQuery || '', `p-${match.index}`));
-    }
-
-    const token = match[0];
-
-    if (token.startsWith('@')) {
-      parts.push(
-        <span
-          key={`mention-${match.index}`}
-          className="rounded bg-[#00D9FF]/15 px-0.5 text-[#00D9FF] cursor-pointer hover:underline"
-        >
-          {token}
-        </span>,
-      );
-    } else if (token.startsWith('#')) {
-      parts.push(
-        <span
-          key={`channel-${match.index}`}
-          className="rounded bg-[#00D9FF]/15 px-0.5 text-[#00D9FF] cursor-pointer hover:underline"
-        >
-          {token}
-        </span>,
-      );
-    } else {
-      parts.push(
-        <a
-          key={`link-${match.index}`}
-          href={token}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#00D9FF] underline hover:brightness-125 break-all"
-        >
-          {token}
-        </a>,
-      );
-    }
-
-    lastIndex = match.index + token.length;
-  }
-
-  if (lastIndex < content.length) {
-    const remaining = content.slice(lastIndex);
-    parts.push(...highlightText(remaining, searchQuery || '', 'end'));
-  }
-
-  return parts;
-}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -154,7 +81,7 @@ export const BubbleMessage = React.memo(function BubbleMessage({
     message.type === 'BOOST';
 
   const renderedContent = useMemo(
-    () => renderContent(message.content ?? '', highlightQuery),
+    () => renderMarkdown(message.content ?? '', highlightQuery),
     [message.content, highlightQuery],
   );
 
@@ -445,8 +372,12 @@ export const BubbleMessage = React.memo(function BubbleMessage({
             const ids = Array.isArray(userIds) ? userIds : [];
             const hasReacted = user ? ids.includes(user.id) : false;
             return (
-              <button
+              <motion.button
                 key={emoji}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={reactionAppear}
+                whileTap={{ scale: 1.15 }}
                 onClick={() => onReaction?.(message.id, emoji)}
                 className={cn(
                   'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors',
@@ -457,7 +388,7 @@ export const BubbleMessage = React.memo(function BubbleMessage({
               >
                 <span>{emoji}</span>
                 <span className="font-medium">{ids.length}</span>
-              </button>
+              </motion.button>
             );
           })}
         </div>

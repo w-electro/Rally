@@ -1,21 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import {
   Hash,
   Search,
   Pin,
   Users,
   ChevronDown,
-  Loader2,
   X,
 } from 'lucide-react';
 import { BubbleMessage } from '@/components/chat/BubbleMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ThreadView } from '@/components/chat/ThreadView';
+import { MessageListSkeleton } from '@/components/ui/Skeleton';
 import { useMessageStore } from '@/stores/messageStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useSocket, getSocket } from '@/hooks/useSocket';
+import { channelTransition, messageAppear } from '@/lib/motion';
 import type { Message, Channel } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
 import api from '@/lib/api';
@@ -98,10 +101,9 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [failedTempIds, setFailedTempIds] = useState<Set<string>>(new Set());
 
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const isInitialLoad = useRef(true);
-  const prevChannelId = useRef<string | null>(null);
+  const [firstItemIndex, setFirstItemIndex] = useState(100000);
 
   const rawMessages = allMessages[channel.id] ?? [];
   // Filter by search query if active
@@ -152,6 +154,9 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
       }
     };
 
+    // Reset virtualization index for new channel
+    setFirstItemIndex(100000);
+
     // If cached messages exist, show them immediately (no flash)
     // but still re-fetch in the background for freshness
     isInitialLoad.current = !hasCached;
@@ -163,68 +168,30 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   }, [channel.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ------------------------------------------------------------------
-  // Auto-scroll on new messages (only if already near bottom)
+  // Load older messages when Virtuoso reaches the top
   // ------------------------------------------------------------------
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
+  const handleStartReached = useCallback(() => {
+    if (!hasMore[channel.id] || isLoading) return;
+    const firstMsg = rawMessages[0];
+    if (!firstMsg) return;
 
-    if (isInitialLoad.current) {
-      // Always scroll to bottom on first load
-      bottomRef.current?.scrollIntoView();
-      return;
-    }
+    setLoading(channel.id, true);
 
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 120;
-
-    if (isNearBottom) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      setShowScrollDown(true);
-    }
-  }, [channelMessages.length]);
-
-  // ------------------------------------------------------------------
-  // Load more (scroll to top)
-  // ------------------------------------------------------------------
-  const handleScroll = useCallback(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    // Track "scroll down" visibility
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    setShowScrollDown(scrollHeight - scrollTop - clientHeight > 300);
-
-    // Load more when scrolled to top
-    if (scrollTop < 60 && hasMore[channel.id] && !isLoading) {
-      const firstMsg = rawMessages[0];
-      if (!firstMsg) return;
-
-      const prevScrollHeight = container.scrollHeight;
-      setLoading(channel.id, true);
-
-      api
-        .getMessages(channel.id, firstMsg.id)
-        .then((raw: any) => {
-          const older = Array.isArray(raw) ? raw : raw?.messages ?? raw?.items ?? [];
-          if (older.length === 0) {
-            setHasMore(channel.id, false);
-          } else {
-            prependMessages(channel.id, older);
-            setHasMore(channel.id, older.length >= 50);
-
-            // Maintain scroll position after prepend
-            requestAnimationFrame(() => {
-              const newScrollHeight = container.scrollHeight;
-              container.scrollTop = newScrollHeight - prevScrollHeight;
-            });
-          }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(channel.id, false));
-    }
-  }, [channel.id, channelMessages, hasMore, isLoading, prependMessages, setHasMore, setLoading]);
+    api
+      .getMessages(channel.id, firstMsg.id)
+      .then((raw: any) => {
+        const older = Array.isArray(raw) ? raw : raw?.messages ?? raw?.items ?? [];
+        if (older.length === 0) {
+          setHasMore(channel.id, false);
+        } else {
+          prependMessages(channel.id, older);
+          setHasMore(channel.id, older.length >= 50);
+          setFirstItemIndex((prev) => prev - older.length);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(channel.id, false));
+  }, [channel.id, rawMessages, hasMore, isLoading, prependMessages, setHasMore, setLoading]);
 
   // ------------------------------------------------------------------
   // Typing indicator (incoming) -- listen via socket event at component level
@@ -341,7 +308,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   );
 
   const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    virtuosoRef.current?.scrollToIndex({ index: 'LAST', behavior: 'smooth' });
     setShowScrollDown(false);
   }, []);
 
@@ -453,37 +420,23 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
         )}
 
         {/* Message list */}
-        <div
-          ref={messagesContainerRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto bg-grid scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
-        >
-          {/* Loading spinner (top) */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-5 w-5 animate-spin text-rally-blue" />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={channel.id}
+            variants={channelTransition}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex-1 min-h-0"
+          >
+          {/* Loading skeleton */}
+          {isLoading && channelMessages.length === 0 ? (
+            <div className="h-full overflow-y-auto bg-grid scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+              <MessageListSkeleton count={10} />
             </div>
-          )}
-
-          {/* Beginning of channel indicator */}
-          {!isLoading && !hasMore[channel.id] && channelMessages.length > 0 && (
-            <div className="px-4 pb-4 pt-6">
-              <div className="flex items-center gap-2 mb-1">
-                <Hash className="h-8 w-8 text-rally-blue" />
-                <h3 className="font-display text-xl font-bold text-white">
-                  {channel.name}
-                </h3>
-              </div>
-              <p className="text-sm text-gray-500">
-                {t('chat.beginningOfChannel', { channel: channel.name })}
-              </p>
-              <div className="mt-4 h-px bg-white/10" />
-            </div>
-          )}
-
-          {/* Empty state */}
-          {!isLoading && channelMessages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
+          ) : channelMessages.length === 0 ? (
+            /* Empty state */
+            <div className="flex flex-col items-center justify-center h-full text-center px-4 bg-grid">
               <Hash className="h-12 w-12 text-gray-700 mb-3" />
               <h3 className="font-display text-lg font-semibold text-gray-400 mb-1">
                 {t('chat.welcomeToChannel', { channel: channel.name })}
@@ -492,72 +445,122 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                 {t('chat.sendToBegin')}
               </p>
             </div>
+          ) : (
+            /* Virtualized message list */
+            <Virtuoso
+              ref={virtuosoRef}
+              data={channelMessages}
+              firstItemIndex={firstItemIndex}
+              initialTopMostItemIndex={channelMessages.length - 1}
+              followOutput="smooth"
+              startReached={handleStartReached}
+              atBottomStateChange={(atBottom) => setShowScrollDown(!atBottom)}
+              className="h-full bg-grid scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
+              components={{
+                Header: () =>
+                  !hasMore[channel.id] ? (
+                    <div className="px-4 pb-4 pt-6">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Hash className="h-8 w-8 text-rally-blue" />
+                        <h3 className="font-display text-xl font-bold text-white">
+                          {channel.name}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {t('chat.beginningOfChannel', { channel: channel.name })}
+                      </p>
+                      <div className="mt-4 h-px bg-white/10" />
+                    </div>
+                  ) : null,
+              }}
+              itemContent={(index, msg) => {
+                const arrayIdx = index - firstItemIndex;
+                const prev = arrayIdx > 0 ? channelMessages[arrayIdx - 1] : undefined;
+                const isCompact = shouldGroup(prev, msg);
+                const showDate = needsDateDivider(prev, msg);
+                const isRecent = Date.now() - new Date(msg.createdAt).getTime() < 2000;
+
+                return (
+                  <>
+                    {showDate && (
+                      <div className="flex items-center gap-3 px-4 py-2 select-none">
+                        <span className="h-px flex-1 bg-white/10" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                          {formatDate(msg.createdAt)}
+                        </span>
+                        <span className="h-px flex-1 bg-white/10" />
+                      </div>
+                    )}
+
+                    {isRecent ? (
+                      <motion.div
+                        variants={messageAppear}
+                        initial="initial"
+                        animate="animate"
+                      >
+                        <BubbleMessage
+                          message={msg}
+                          isCompact={isCompact}
+                          highlightQuery={searchQuery}
+                          onReply={(m) => setReplyingTo(m)}
+                          onEdit={(m) => setEditingMessage(m)}
+                          onDelete={handleDelete}
+                          onPin={handlePin}
+                          onReaction={handleReaction}
+                          onRepost={(m) => {
+                            sendMessage(channel.id, `> ${m.content}\n\n-- reposted from @${m.author.displayName}`);
+                          }}
+                          onThreadOpen={(m) => setThreadMessage(m)}
+                        />
+                      </motion.div>
+                    ) : (
+                      <BubbleMessage
+                        message={msg}
+                        isCompact={isCompact}
+                        highlightQuery={searchQuery}
+                        onReply={(m) => setReplyingTo(m)}
+                        onEdit={(m) => setEditingMessage(m)}
+                        onDelete={handleDelete}
+                        onPin={handlePin}
+                        onReaction={handleReaction}
+                        onRepost={(m) => {
+                          sendMessage(channel.id, `> ${m.content}\n\n-- reposted from @${m.author.displayName}`);
+                        }}
+                        onThreadOpen={(m) => setThreadMessage(m)}
+                      />
+                    )}
+
+                    {failedTempIds.has(msg.id) && (
+                      <div className="flex items-center gap-2 px-4 py-1 text-[11px] text-rally-magenta">
+                        <span>{t('chat.messageFailed') || 'Failed to send'}</span>
+                        <button
+                          onClick={() => {
+                            setFailedTempIds((prev) => { const s = new Set(prev); s.delete(msg.id); return s; });
+                            removeMessage(channel.id, msg.id);
+                            sendMessage(channel.id, msg.content);
+                          }}
+                          className="underline hover:text-white transition-colors"
+                        >
+                          {t('common.retry') || 'Retry'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setFailedTempIds((prev) => { const s = new Set(prev); s.delete(msg.id); return s; });
+                            removeMessage(channel.id, msg.id);
+                          }}
+                          className="underline hover:text-white transition-colors"
+                        >
+                          {t('common.dismiss') || 'Dismiss'}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              }}
+            />
           )}
-
-          {/* Messages */}
-          {channelMessages.map((msg, idx) => {
-            const prev = channelMessages[idx - 1];
-            const isCompact = shouldGroup(prev, msg);
-            const showDate = needsDateDivider(prev, msg);
-
-            return (
-              <React.Fragment key={msg.id}>
-                {/* Date divider */}
-                {showDate && (
-                  <div className="flex items-center gap-3 px-4 py-2 select-none">
-                    <span className="h-px flex-1 bg-white/10" />
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-                      {formatDate(msg.createdAt)}
-                    </span>
-                    <span className="h-px flex-1 bg-white/10" />
-                  </div>
-                )}
-
-                <BubbleMessage
-                  message={msg}
-                  isCompact={isCompact}
-                  highlightQuery={searchQuery}
-                  onReply={(m) => setReplyingTo(m)}
-                  onEdit={(m) => setEditingMessage(m)}
-                  onDelete={handleDelete}
-                  onPin={handlePin}
-                  onReaction={handleReaction}
-                  onRepost={(m) => {
-                    sendMessage(channel.id, `> ${m.content}\n\n-- reposted from @${m.author.displayName}`);
-                  }}
-                  onThreadOpen={(m) => setThreadMessage(m)}
-                />
-                {/* Failed optimistic message indicator */}
-                {failedTempIds.has(msg.id) && (
-                  <div className="flex items-center gap-2 px-4 py-1 text-[11px] text-rally-magenta">
-                    <span>{t('chat.messageFailed') || 'Failed to send'}</span>
-                    <button
-                      onClick={() => {
-                        setFailedTempIds((prev) => { const s = new Set(prev); s.delete(msg.id); return s; });
-                        removeMessage(channel.id, msg.id);
-                        sendMessage(channel.id, msg.content);
-                      }}
-                      className="underline hover:text-white transition-colors"
-                    >
-                      {t('common.retry') || 'Retry'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setFailedTempIds((prev) => { const s = new Set(prev); s.delete(msg.id); return s; });
-                        removeMessage(channel.id, msg.id);
-                      }}
-                      className="underline hover:text-white transition-colors"
-                    >
-                      {t('common.dismiss') || 'Dismiss'}
-                    </button>
-                  </div>
-                )}
-              </React.Fragment>
-            );
-          })}
-
-          <div ref={bottomRef} className="h-1" />
-        </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Scroll-to-bottom button */}
         {showScrollDown && (
@@ -573,24 +576,42 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
         )}
 
         {/* Typing indicator */}
-        {typingUsers.length > 0 && (
-          <div className="px-4 py-1 text-xs text-gray-500">
-            <span className="inline-flex items-center gap-1">
-              <span className="flex gap-0.5">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-rally-blue [animation-delay:0ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-rally-blue [animation-delay:150ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-rally-blue [animation-delay:300ms]" />
+        <AnimatePresence>
+          {typingUsers.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              className="px-4 py-1 text-xs text-gray-500"
+            >
+              <span className="inline-flex items-center gap-1">
+                <span className="flex gap-0.5">
+                  {[0, 1, 2].map((i) => (
+                    <motion.span
+                      key={i}
+                      className="h-1.5 w-1.5 rounded-full bg-rally-blue"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        delay: i * 0.15,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                  ))}
+                </span>
+                <span className="ml-1">
+                  {typingUsers.length === 1
+                    ? `${typingUsers[0]} ${t('chat.isTyping')}`
+                    : typingUsers.length === 2
+                      ? `${typingUsers[0]} and ${typingUsers[1]} ${t('chat.areTyping')}`
+                      : `${typingUsers[0]} ${t('chat.othersTyping', { count: typingUsers.length - 1 })}`}
+                </span>
               </span>
-              <span className="ml-1">
-                {typingUsers.length === 1
-                  ? `${typingUsers[0]} ${t('chat.isTyping')}`
-                  : typingUsers.length === 2
-                    ? `${typingUsers[0]} and ${typingUsers[1]} ${t('chat.areTyping')}`
-                    : `${typingUsers[0]} ${t('chat.othersTyping', { count: typingUsers.length - 1 })}`}
-              </span>
-            </span>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Inline edit bar */}
         {editingMessage && (
