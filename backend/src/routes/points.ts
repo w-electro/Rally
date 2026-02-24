@@ -210,6 +210,18 @@ router.post('/:serverId/earn', async (req: Request, res: Response, next: NextFun
     const { serverId } = req.params;
     const userId = req.user!.userId;
 
+    // Verify server membership
+    const member = await prisma.serverMember.findUnique({
+      where: { userId_serverId: { userId, serverId } },
+    });
+    if (!member) throw new ForbiddenError('You are not a member of this server');
+
+    // Rate limit: max 10 earn requests per minute per user per server
+    const rateLimitKey = `points:earn:${userId}:${serverId}`;
+    const count = await redis.incr(rateLimitKey);
+    if (count === 1) await redis.expire(rateLimitKey, 60);
+    if (count > 10) throw new BadRequestError('Too many earn requests. Try again in a minute.');
+
     const parsed = earnSchema.safeParse(req.body);
     if (!parsed.success) {
       const message = parsed.error.errors.map((e) => e.message).join(', ');

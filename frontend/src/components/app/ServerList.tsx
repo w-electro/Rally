@@ -87,7 +87,7 @@ function ServerIcon({
       {/* Tooltip */}
       {showTooltip && (
         <div className="absolute left-full ml-3 z-50 pointer-events-none">
-          <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
+          <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-elevation-3 border border-white/10 whitespace-nowrap">
             {server.name}
           </div>
         </div>
@@ -140,7 +140,7 @@ export function ServerList() {
         </button>
         {hoveredAction === 'home' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
-            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
+            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-elevation-3 border border-white/10 whitespace-nowrap">
               {t('tooltips.home')}
             </div>
           </div>
@@ -169,7 +169,7 @@ export function ServerList() {
         </button>
         {hoveredAction === 'dms' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
-            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
+            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-elevation-3 border border-white/10 whitespace-nowrap">
               {t('tooltips.directMessages')}
             </div>
           </div>
@@ -206,7 +206,7 @@ export function ServerList() {
         </button>
         {hoveredAction === 'create' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
-            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
+            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-elevation-3 border border-white/10 whitespace-nowrap">
               {t('tooltips.createServer')}
             </div>
           </div>
@@ -225,7 +225,7 @@ export function ServerList() {
         </button>
         {hoveredAction === 'join' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
-            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
+            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-elevation-3 border border-white/10 whitespace-nowrap">
               {t('tooltips.joinServer')}
             </div>
           </div>
@@ -243,7 +243,7 @@ export function ServerList() {
         </button>
         {hoveredAction === 'explore' && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
-            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-xl border border-white/10 whitespace-nowrap">
+            <div className="bg-[#1A1F36] text-white text-sm font-medium px-3 py-2 rounded-md shadow-elevation-3 border border-white/10 whitespace-nowrap">
               {t('tooltips.exploreServers')}
             </div>
           </div>

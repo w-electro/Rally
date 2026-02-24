@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useServerStore } from '@/stores/serverStore';
 import { useUIStore } from '@/stores/uiStore';
+import { MemberListSkeleton } from '@/components/ui/Skeleton';
 import { cn, getInitials, getStatusColor } from '@/lib/utils';
 import type { ServerMember } from '@/lib/types';
 
@@ -10,36 +11,63 @@ export function MemberList() {
   const { members } = useServerStore();
   const { openModal } = useUIStore();
 
-  const sorted = useMemo(() => {
-    const online: ServerMember[] = [];
-    const offline: ServerMember[] = [];
+  const { online, offline } = useMemo(() => {
+    const on: ServerMember[] = [];
+    const off: ServerMember[] = [];
     members.forEach((m) => {
-      if (m.user.status === 'OFFLINE') offline.push(m);
-      else online.push(m);
+      if (m.user.status === 'OFFLINE') off.push(m);
+      else on.push(m);
     });
-    return [...online, ...offline];
+    return { online: on, offline: off };
   }, [members]);
 
-  const onlineCount = sorted.filter((m) => m.user.status !== 'OFFLINE').length;
+  const isLoading = members.length === 0;
 
   return (
-    <div className="w-60 bg-[#0D1117] border-l border-white/5 flex flex-col h-full">
-      <div className="p-3 border-b border-white/5">
-        <h3 className="text-xs font-display font-semibold uppercase tracking-wider text-white/40">
-          {t('members.membersOnline', { count: onlineCount })}
-        </h3>
-      </div>
-      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
-        {sorted.map((m) => (
-          <MemberCard
-            key={m.id}
-            member={m}
-            dimmed={m.user.status === 'OFFLINE'}
-            onClick={() => openModal('userProfile', m.user)}
-          />
-        ))}
-      </div>
-    </div>
+    <aside aria-label={t('chat.members')} className="w-60 bg-[#0D1117] border-l border-white/5 flex flex-col h-full">
+      {isLoading ? (
+        <MemberListSkeleton />
+      ) : (
+        <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-white/10">
+          {/* Online section */}
+          {online.length > 0 && (
+            <div className="mb-2">
+              <h3 className="px-1.5 py-1.5 text-[11px] font-display font-semibold uppercase tracking-wider text-white/50">
+                {t('members.online')} — {online.length}
+              </h3>
+              <div className="space-y-0.5">
+                {online.map((m) => (
+                  <MemberCard
+                    key={m.id}
+                    member={m}
+                    onClick={() => openModal('userProfile', m.user)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Offline section */}
+          {offline.length > 0 && (
+            <div>
+              <h3 className="px-1.5 py-1.5 text-[11px] font-display font-semibold uppercase tracking-wider text-white/50">
+                {t('members.offline')} — {offline.length}
+              </h3>
+              <div className="space-y-0.5">
+                {offline.map((m) => (
+                  <MemberCard
+                    key={m.id}
+                    member={m}
+                    dimmed
+                    onClick={() => openModal('userProfile', m.user)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </aside>
   );
 }
 
@@ -49,7 +77,7 @@ function MemberCard({ member, dimmed, onClick }: { member: ServerMember; dimmed?
     <button
       onClick={onClick}
       className={cn(
-        'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/5 transition-colors text-left',
+        'w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-white/5 transition-colors text-left',
         dimmed && 'opacity-40',
       )}
     >
@@ -70,7 +98,6 @@ function MemberCard({ member, dimmed, onClick }: { member: ServerMember; dimmed?
         <p className="text-sm font-medium text-white truncate leading-tight">
           {member.nickname || member.user.displayName}
         </p>
-        {/* Role badges */}
         {member.roles && member.roles.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-0.5">
             {member.roles
@@ -98,7 +125,7 @@ function MemberCard({ member, dimmed, onClick }: { member: ServerMember; dimmed?
           </p>
         )}
         {!member.user.currentGame && member.user.customStatus && (
-          <p className="text-[11px] text-white/30 truncate leading-tight mt-0.5">
+          <p className="text-[11px] text-white/50 truncate leading-tight mt-0.5">
             {member.user.customStatus}
           </p>
         )}

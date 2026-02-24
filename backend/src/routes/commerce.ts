@@ -289,7 +289,7 @@ router.post('/products/:productId/purchase', async (req: Request, res: Response,
         buyerId: userId,
         amount: product.price,
         currency: product.currency,
-        status: 'COMPLETED',
+        status: product.price > 0 ? 'PENDING' : 'COMPLETED',
       },
       include: {
         product: {

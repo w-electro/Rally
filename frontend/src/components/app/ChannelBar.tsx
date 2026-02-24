@@ -186,7 +186,7 @@ export function ChannelBar() {
                     ? 'text-[#00D9FF]'
                     : isVoiceActive
                       ? 'text-[#39FF14]/70'
-                      : 'text-white/30'
+                      : 'text-white/50'
                 )}
               />
               {isRenaming ? (
@@ -259,7 +259,7 @@ export function ChannelBar() {
         <button
           onClick={() => setShowSettingsMenu(!showSettingsMenu)}
           className={cn(
-            'w-9 h-9 flex items-center justify-center text-white/30 hover:text-white/60 transition-colors border-l border-white/5',
+            'w-9 h-9 flex items-center justify-center text-white/50 hover:text-white/70 transition-colors border-l border-white/5',
             showSettingsMenu && 'text-white/60'
           )}
         >
@@ -272,7 +272,7 @@ export function ChannelBar() {
               className="fixed inset-0 z-40"
               onClick={() => setShowSettingsMenu(false)}
             />
-            <div className="absolute top-full right-0 z-50 mt-1 bg-[#1A1F36] border border-white/10 rounded-lg shadow-xl py-1 min-w-[160px]">
+            <div className="absolute top-full right-0 z-50 mt-1 bg-[#1A1F36] border border-white/10 rounded-lg shadow-elevation-3 py-1 min-w-[160px]">
               <button
                 onClick={() => {
                   setShowSettingsMenu(false);
@@ -314,7 +314,7 @@ export function ChannelBar() {
         <>
           <div className="fixed inset-0 z-[100]" onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }} />
           <div
-            className="fixed z-[101] bg-[#1A1F36] border border-white/10 rounded-lg shadow-xl py-1 min-w-[150px]"
+            className="fixed z-[101] bg-[#1A1F36] border border-white/10 rounded-lg shadow-elevation-3 py-1 min-w-[150px]"
             style={{ top: ctxMenu.y, left: ctxMenu.x }}
           >
             <button

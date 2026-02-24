@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle,
   Compass,
@@ -58,7 +59,7 @@ function ServerTab({
       onDragEnd={onDragEnd}
       style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       className={cn(
-        'relative flex items-center gap-2 px-3 h-full shrink-0 transition-colors duration-150',
+        'relative flex items-center gap-2 px-3 h-full shrink-0 transition-colors duration-normal',
         isActive
           ? 'bg-white/10 text-white'
           : 'text-white/50 hover:text-white/80 hover:bg-white/5',
@@ -84,9 +85,13 @@ function ServerTab({
         {server.name}
       </span>
 
-      {/* Active cyan underline */}
+      {/* Active cyan underline — animated slide via layoutId */}
       {isActive && (
-        <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-[#00D9FF] rounded-full" />
+        <motion.div
+          layoutId="topnav-active-indicator"
+          className="absolute bottom-0 left-1 right-1 h-[2px] bg-[#00D9FF] rounded-full"
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+        />
       )}
 
       {/* Pinned indicator */}
@@ -216,7 +221,7 @@ export function TopNav() {
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         onClick={handleHomeClick}
         className={cn(
-          'flex items-center gap-2 px-4 h-full shrink-0 transition-colors duration-150',
+          'flex items-center gap-2 px-4 h-full shrink-0 transition-colors duration-normal',
           isHomeActive
             ? 'bg-[#00D9FF]/15 text-[#00D9FF]'
             : 'text-white/50 hover:text-white/80 hover:bg-white/5'
@@ -288,8 +293,8 @@ export function TopNav() {
             <MoreHorizontal className="w-4 h-4" />
           </button>
           {showHiddenDropdown && (
-            <div className="absolute top-full right-0 mt-1 z-50 w-48 rounded-lg border border-white/10 bg-[#0A0E27] py-1 shadow-xl">
-              <p className="px-3 py-1 text-[10px] font-semibold uppercase text-white/30">
+            <div className="absolute top-full right-0 mt-1 z-50 w-48 rounded-lg border border-white/10 bg-[#0A0E27] py-1 shadow-elevation-3">
+              <p className="px-3 py-1 text-[10px] font-semibold uppercase text-white/50">
                 {t('server.hiddenServers')}
               </p>
               {hiddenServers.map((s) => (
@@ -315,7 +320,7 @@ export function TopNav() {
         {/* Create Server */}
         <button
           onClick={() => openModal('createServer')}
-          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-[#39FF14] hover:bg-white/5 transition-colors duration-150"
+          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-[#39FF14] hover:bg-white/5 transition-colors duration-normal"
           title={t('nav.createServer')}
         >
           <Plus className="w-4 h-4" />
@@ -324,7 +329,7 @@ export function TopNav() {
         {/* Join Server */}
         <button
           onClick={() => openModal('joinServer')}
-          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-[#39FF14] hover:bg-white/5 transition-colors duration-150"
+          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-[#39FF14] hover:bg-white/5 transition-colors duration-normal"
           title={t('nav.joinServer')}
         >
           <UserPlus className="w-4 h-4" />
@@ -337,7 +342,7 @@ export function TopNav() {
         <button
           onClick={handleDmClick}
           className={cn(
-            'w-9 h-full flex items-center justify-center transition-colors duration-150',
+            'w-9 h-full flex items-center justify-center transition-colors duration-normal',
             isDmActive
               ? 'bg-[#00D9FF]/15 text-[#00D9FF]'
               : 'text-white/40 hover:text-white/80 hover:bg-white/5'
@@ -349,7 +354,7 @@ export function TopNav() {
 
         {/* Explore */}
         <button
-          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-150"
+          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-normal"
           title={t('nav.exploreServers')}
         >
           <Compass className="w-4 h-4" />
@@ -361,7 +366,7 @@ export function TopNav() {
         {/* User Settings */}
         <button
           onClick={() => openModal('userSettings')}
-          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-150"
+          className="w-9 h-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-normal"
           title={t('nav.userSettings')}
         >
           <Settings className="w-4 h-4" />
@@ -370,7 +375,7 @@ export function TopNav() {
         {/* User Avatar */}
         <button
           onClick={() => openModal('userSettings')}
-          className="h-full px-2 flex items-center justify-center hover:bg-white/5 transition-colors duration-150"
+          className="h-full px-2 flex items-center justify-center hover:bg-white/5 transition-colors duration-normal"
           title={user?.displayName || 'Profile'}
         >
           {user?.avatarUrl ? (

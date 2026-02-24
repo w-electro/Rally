@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { tooltipVariants } from '@/lib/motion';
 
 interface TooltipProps {
-  content: string;
+  content: React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
 }
@@ -30,7 +32,7 @@ export function Tooltip({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const show = useCallback(() => {
-    timeoutRef.current = setTimeout(() => setVisible(true), 400);
+    timeoutRef.current = setTimeout(() => setVisible(true), 300);
   }, []);
 
   const hide = useCallback(() => {
@@ -45,24 +47,30 @@ export function Tooltip({
     <div className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide}>
       {children}
 
-      {visible && (
-        <div
-          className={cn(
-            'absolute z-50 pointer-events-none whitespace-nowrap animate-fade-in',
-            positionClasses[position],
-          )}
-        >
-          <div className="relative px-2.5 py-1.5 text-xs font-body text-rally-text bg-rally-surface-light border border-rally-blue/20 shadow-neon-blue rounded-sm">
-            {content}
-            <span
-              className={cn(
-                'absolute w-0 h-0 border-4',
-                arrowClasses[position],
-              )}
-            />
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            className={cn(
+              'absolute z-50 pointer-events-none whitespace-nowrap',
+              positionClasses[position],
+            )}
+            variants={tooltipVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <div className="relative px-2.5 py-1.5 text-xs font-body text-rally-text bg-rally-surface-light border border-rally-blue/20 shadow-elevation-2 rounded-sm">
+              {content}
+              <span
+                className={cn(
+                  'absolute w-0 h-0 border-4',
+                  arrowClasses[position],
+                )}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

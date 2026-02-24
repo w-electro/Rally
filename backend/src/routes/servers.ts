@@ -10,6 +10,7 @@ import {
   hasPermission,
   computePermissions,
 } from '../utils/permissions';
+import { getIO } from '../lib/socketInstance';
 
 const router = Router();
 
@@ -298,6 +299,9 @@ router.patch(
       },
     });
 
+    // Broadcast to all server members
+    getIO()?.to(`server:${serverId}`).emit('server:updated', { serverId, ...data });
+
     res.json(server);
   }),
 );
@@ -365,6 +369,9 @@ router.post(
       },
     });
 
+    // Broadcast new member to all server members
+    getIO()?.to(`server:${serverId}`).emit('member:joined', { serverId, member });
+
     res.status(201).json(member);
   }),
 );
@@ -392,6 +399,9 @@ router.post(
     await prisma.serverMember.delete({
       where: { userId_serverId: { userId, serverId } },
     });
+
+    // Broadcast member departure to all server members
+    getIO()?.to(`server:${serverId}`).emit('member:left', { serverId, userId });
 
     res.json({ message: 'You have left the server' });
   }),
@@ -505,6 +515,9 @@ router.post(
       },
     });
 
+    // Broadcast new channel to all server members
+    getIO()?.to(`server:${serverId}`).emit('channel:created', { serverId, channel });
+
     res.status(201).json(channel);
   }),
 );
@@ -565,6 +578,9 @@ router.patch(
       },
     });
 
+    // Broadcast channel update to all server members
+    getIO()?.to(`server:${serverId}`).emit('channel:updated', { serverId, channel: updated });
+
     res.json(updated);
   }),
 );
@@ -606,6 +622,9 @@ router.delete(
 
     await prisma.channel.delete({ where: { id: channelId } });
 
+    // Broadcast channel deletion to all server members
+    getIO()?.to(`server:${serverId}`).emit('channel:deleted', { serverId, channelId });
+
     res.json({ message: 'Channel deleted' });
   }),
 );
@@ -624,6 +643,12 @@ router.get(
 
     const channel = await prisma.channel.findUnique({ where: { id: channelId } });
     if (!channel) throw new NotFoundError('Channel not found');
+
+    // Authorization: verify user is a member of the channel's server
+    const member = await prisma.serverMember.findUnique({
+      where: { userId_serverId: { userId: req.user!.userId, serverId: channel.serverId } },
+    });
+    if (!member) throw new ForbiddenError('You are not a member of this server');
 
     const messages = await prisma.message.findMany({
       where: { channelId },

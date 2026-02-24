@@ -238,6 +238,12 @@
     background-size: 40px 40px;
   }
 
+  /*
+   * Color contrast: minimum text-white/50 for readable text on dark backgrounds.
+   * text-white/30 and text-white/40 fail WCAG AA contrast ratios.
+   * Use text-white/50+ for labels, text-white/60+ for body text, text-white/70+ for important content.
+   */
+
   /* Skeleton shimmer — Discord-style left-to-right sweep, Rally-themed */
   @keyframes shimmer {
     0% { background-position: -200% 0; }

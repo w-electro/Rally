@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
   ChevronRight,
@@ -23,6 +24,7 @@ import { useVoiceStore } from '@/stores/voiceStore';
 import { useSocket } from '@/hooks/useSocket';
 import api from '@/lib/api';
 import { cn, getInitials, getStatusColor } from '@/lib/utils';
+import { slideInLeft } from '@/lib/motion';
 import type { Channel, Story } from '@/lib/types';
 
 function getChannelIconComponent(type: string) {
@@ -144,7 +146,7 @@ function ChannelItem({
         <Icon
           className={cn(
             'w-4 h-4 shrink-0 transition-colors',
-            isActive ? 'text-[#00D9FF]' : 'text-white/30 group-hover:text-white/50'
+            isActive ? 'text-[#00D9FF]' : 'text-white/50 group-hover:text-white/70'
           )}
         />
         <span className={cn('truncate flex-1 text-left', unreadCount > 0 && !isActive && 'text-white font-semibold')}>{channel.name}</span>
@@ -178,7 +180,7 @@ function ChannelItem({
       {/* Context menu */}
       {contextMenu && (
         <div
-          className="fixed z-50 bg-[#1A1F36] border border-white/10 rounded-lg shadow-xl py-1 min-w-[160px]"
+          className="fixed z-50 bg-[#1A1F36] border border-white/10 rounded-lg shadow-elevation-3 py-1 min-w-[160px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           <button className="w-full text-left px-3 py-1.5 text-sm text-white/70 hover:bg-white/10 hover:text-white">
@@ -324,7 +326,7 @@ export function ChannelSidebar() {
               className="fixed inset-0 z-40"
               onClick={() => setShowServerMenu(false)}
             />
-            <div className="absolute top-full left-2 right-2 z-50 mt-1 bg-[#1A1F36] border border-white/10 rounded-lg shadow-xl py-1">
+            <div className="absolute top-full left-2 right-2 z-50 mt-1 bg-[#1A1F36] border border-white/10 rounded-lg shadow-elevation-3 py-1">
               <button
                 onClick={() => {
                   setShowServerMenu(false);
@@ -365,32 +367,42 @@ export function ChannelSidebar() {
 
       {/* Channel List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 py-2 px-1">
-        {/* Uncategorized channels */}
-        {uncategorized.length > 0 && (
-          <div className="space-y-0.5 px-1 mb-2">
-            {uncategorized
-              .sort((a, b) => a.position - b.position)
-              .map((channel) => (
-                <ChannelItem
-                  key={channel.id}
-                  channel={channel}
-                  isActive={activeChannel?.id === channel.id}
-                  onClick={() => handleChannelClick(channel)}
-                />
-              ))}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeServer.id}
+            variants={slideInLeft}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {/* Uncategorized channels */}
+            {uncategorized.length > 0 && (
+              <div className="space-y-0.5 px-1 mb-2">
+                {uncategorized
+                  .sort((a, b) => a.position - b.position)
+                  .map((channel) => (
+                    <ChannelItem
+                      key={channel.id}
+                      channel={channel}
+                      isActive={activeChannel?.id === channel.id}
+                      onClick={() => handleChannelClick(channel)}
+                    />
+                  ))}
+              </div>
+            )}
 
-        {/* Category groups */}
-        {categoryGroups.map((group) => (
-          <CategoryGroup
-            key={group.name}
-            name={group.name}
-            channels={group.channels}
-            activeChannelId={activeChannel?.id ?? null}
-            onChannelClick={handleChannelClick}
-          />
-        ))}
+            {/* Category groups */}
+            {categoryGroups.map((group) => (
+              <CategoryGroup
+                key={group.name}
+                name={group.name}
+                channels={group.channels}
+                activeChannelId={activeChannel?.id ?? null}
+                onChannelClick={handleChannelClick}
+              />
+            ))}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* User Panel (bottom) */}
@@ -421,7 +433,7 @@ export function ChannelSidebar() {
           <p className="text-sm text-white font-medium truncate leading-tight">
             {user?.displayName ?? 'User'}
           </p>
-          <p className="text-[10px] text-white/30 truncate leading-tight">
+          <p className="text-[10px] text-white/50 truncate leading-tight">
             {user?.customStatus || user?.status?.toLowerCase() || 'offline'}
           </p>
         </div>

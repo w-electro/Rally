@@ -875,46 +875,6 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
-// DELETE /dms/:conversationId — Leave / delete conversation
-// ---------------------------------------------------------------------------
-
-router.delete(
-  '/dms/:conversationId',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const userId = req.user!.userId;
-      const { conversationId } = req.params;
-
-      // Verify the user is a member of this conversation
-      const membership = await prisma.conversationMember.findUnique({
-        where: { conversationId_userId: { conversationId, userId } },
-      });
-      if (!membership) throw new NotFoundError('Conversation not found');
-
-      // Remove user from conversation
-      await prisma.conversationMember.delete({
-        where: { conversationId_userId: { conversationId, userId } },
-      });
-
-      // Check if any members remain
-      const remaining = await prisma.conversationMember.count({
-        where: { conversationId },
-      });
-
-      // If no members remain, delete all messages and the conversation
-      if (remaining === 0) {
-        await prisma.directMessage.deleteMany({ where: { conversationId } });
-        await prisma.conversation.delete({ where: { id: conversationId } });
-      }
-
-      res.json({ success: true });
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// ---------------------------------------------------------------------------
 // POST /dms/:conversationId/messages — Send DM
 // ---------------------------------------------------------------------------
 

@@ -100,6 +100,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
   const [showPinnedPanel, setShowPinnedPanel] = useState(false);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [failedTempIds, setFailedTempIds] = useState<Set<string>>(new Set());
+  const [focusedMsgIdx, setFocusedMsgIdx] = useState<number | null>(null);
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const isInitialLoad = useRef(true);
@@ -427,7 +428,36 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="flex-1 min-h-0"
+            className="flex-1 min-h-0 outline-none"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              // Message keyboard navigation when not in an input
+              const tag = (e.target as HTMLElement)?.tagName;
+              if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+              if (channelMessages.length === 0) return;
+
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setFocusedMsgIdx((prev) =>
+                  prev === null ? channelMessages.length - 1 : Math.max(0, prev - 1),
+                );
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setFocusedMsgIdx((prev) =>
+                  prev === null ? 0 : Math.min(channelMessages.length - 1, prev + 1),
+                );
+              } else if (e.key === 'Escape') {
+                setFocusedMsgIdx(null);
+              } else if (focusedMsgIdx !== null) {
+                const msg = channelMessages[focusedMsgIdx];
+                if (!msg) return;
+                const isOwn = msg.authorId === user?.id;
+                if (e.key === 'e' && isOwn) setEditingMessage(msg);
+                else if (e.key === 'r') setReplyingTo(msg);
+                else if (e.key === 'p') handlePin(msg.id);
+                else if (e.key === 'Delete' && isOwn) handleDelete(msg.id);
+              }
+            }}
           >
           {/* Loading skeleton */}
           {isLoading && channelMessages.length === 0 ? (
@@ -435,13 +465,15 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
               <MessageListSkeleton count={10} />
             </div>
           ) : channelMessages.length === 0 ? (
-            /* Empty state */
+            /* Empty state — branded welcome */
             <div className="flex flex-col items-center justify-center h-full text-center px-4 bg-grid">
-              <Hash className="h-12 w-12 text-gray-700 mb-3" />
-              <h3 className="font-display text-lg font-semibold text-gray-400 mb-1">
+              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-rally-cyan/10 border border-rally-cyan/20">
+                <Hash className="h-10 w-10 text-rally-cyan/60" />
+              </div>
+              <h3 className="font-display text-xl font-bold text-white/80 mb-1">
                 {t('chat.welcomeToChannel', { channel: channel.name })}
               </h3>
-              <p className="text-sm text-gray-600 max-w-md">
+              <p className="text-sm text-white/60 max-w-md font-body">
                 {t('chat.sendToBegin')}
               </p>
             </div>
@@ -455,6 +487,9 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
               followOutput="smooth"
               startReached={handleStartReached}
               atBottomStateChange={(atBottom) => setShowScrollDown(!atBottom)}
+              role="log"
+              aria-live="polite"
+              aria-label="Messages"
               className="h-full bg-grid scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
               components={{
                 Header: () =>
@@ -479,9 +514,10 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                 const isCompact = shouldGroup(prev, msg);
                 const showDate = needsDateDivider(prev, msg);
                 const isRecent = Date.now() - new Date(msg.createdAt).getTime() < 2000;
+                const isFocused = focusedMsgIdx === arrayIdx;
 
                 return (
-                  <>
+                  <div className={isFocused ? 'ring-1 ring-rally-blue/30 rounded' : undefined}>
                     {showDate && (
                       <div className="flex items-center gap-3 px-4 py-2 select-none">
                         <span className="h-px flex-1 bg-white/10" />
@@ -554,7 +590,7 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
                         </button>
                       </div>
                     )}
-                  </>
+                  </div>
                 );
               }}
             />
@@ -562,18 +598,26 @@ export function ChatArea({ channel, className }: ChatAreaProps) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Scroll-to-bottom button */}
-        {showScrollDown && (
-          <div className="relative">
-            <button
-              onClick={scrollToBottom}
-              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/10 bg-rally-navy/90 px-3 py-1.5 text-xs text-gray-300 shadow-lg backdrop-blur hover:bg-rally-navy transition-colors"
+        {/* Scroll-to-bottom FAB */}
+        <AnimatePresence>
+          {showScrollDown && (
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.15 }}
             >
-              <ChevronDown className="h-3.5 w-3.5" />
-              {t('chat.newMessages')}
-            </button>
-          </div>
-        )}
+              <button
+                onClick={scrollToBottom}
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 rounded-full border border-rally-cyan/20 bg-rally-navy/90 px-3 py-1.5 text-xs text-white/70 shadow-elevation-2 backdrop-blur hover:bg-rally-navy hover:text-white transition-colors"
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
+                {t('chat.newMessages')}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Typing indicator */}
         <AnimatePresence>

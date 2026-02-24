@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useUIStore } from '@/stores/uiStore';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useServerStore } from '@/stores/serverStore';
 import { useVoiceStore } from '@/stores/voiceStore';
 import { TopNav } from './TopNav';
@@ -24,6 +26,7 @@ import { ServerSettingsModal } from './ServerSettingsModal';
 import { UserSettings } from '@/components/settings/UserSettings';
 import { UserProfilePopup } from './UserProfilePopup';
 import { ToastContainer } from '@/components/ui/Toast';
+import { QuickSwitcher } from './QuickSwitcher';
 
 // electronAPI type is declared in ScreenSharePicker.tsx
 
@@ -38,6 +41,7 @@ function ModalHost() {
       {activeModal === 'joinServer' && <JoinServerDialog />}
       {activeModal === 'serverSettings' && <ServerSettingsModal />}
       {activeModal === 'userSettings' && <UserSettings onClose={() => useUIStore.getState().closeModal()} />}
+      {(activeModal as string) === 'quickSwitcher' && <QuickSwitcher />}
     </>
   );
 }
@@ -52,6 +56,8 @@ export function AppLayout() {
   const isServerLoading = useServerStore((s) => s.isLoading);
   const voiceChannelId = useVoiceStore((s) => s.channelId);
   const loadServers = useServerStore((s) => s.loadServers);
+
+  useKeyboardShortcuts();
 
   useEffect(() => {
     loadServers();
@@ -69,8 +75,10 @@ export function AppLayout() {
       return (
         <div className="flex-1 flex items-center justify-center bg-[#0D1117]">
           <div className="text-center">
-            <img src="./icon.png" alt="Rally" className="w-16 h-16 mx-auto mb-4 opacity-30" />
-            <p className="text-white/30 text-sm">{t('chat.selectConversation')}</p>
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-rally-cyan/10 border border-rally-cyan/20">
+              <img src="./icon.png" alt="Rally" className="w-10 h-10 opacity-50" />
+            </div>
+            <p className="text-white/50 text-sm font-body font-medium">{t('chat.selectConversation')}</p>
           </div>
         </div>
       );
@@ -109,38 +117,53 @@ export function AppLayout() {
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#000000]">
       {/* Top Nav (includes window controls) */}
-      <TopNav />
+      <nav aria-label="Main navigation">
+        <TopNav />
+      </nav>
 
       {/* Channel Bar (horizontal, for server views) */}
-      {view === 'servers' && activeServer && <ChannelBar />}
+      {view === 'servers' && activeServer && (
+        <nav aria-label="Channel navigation">
+          <ChannelBar />
+        </nav>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* DM Sidebar (only for DM view) */}
         {view === 'dms' && (
-          <div className="w-60 shrink-0 flex flex-col overflow-hidden">
+          <aside aria-label="Direct messages" className="w-60 shrink-0 flex flex-col overflow-hidden">
             <DmSidebar />
-          </div>
+          </aside>
         )}
 
         {/* Center: main content */}
-        <div className="flex-1 flex overflow-hidden min-w-0">
+        <main className="flex-1 flex overflow-hidden min-w-0">
           {mainContent}
-        </div>
+        </main>
 
-        {/* Right Panel (toggleable) */}
-        {showRightPanel && (
-          <div className="w-60 shrink-0 overflow-hidden">
-            {rightPanel === 'members' && <MemberList />}
-            {rightPanel === 'ai' && <AiAssistant />}
-            {rightPanel === 'trending' && (
-              <div className="h-full bg-[#0D1117] flex items-center justify-center text-white/30 text-sm">
-                {t('settings.trendingComingSoon')}
-              </div>
-            )}
-            {rightPanel === 'points' && <PointsPanel />}
-          </div>
-        )}
+        {/* Right Panel (toggleable, animated slide) */}
+        <AnimatePresence mode="wait">
+          {showRightPanel && (
+            <motion.div
+              key={rightPanel}
+              className="w-60 shrink-0 overflow-hidden"
+              initial={{ x: 16, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 16, opacity: 0 }}
+              transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {rightPanel === 'members' && <MemberList />}
+              {rightPanel === 'ai' && <AiAssistant />}
+              {rightPanel === 'trending' && (
+                <div className="h-full bg-[#0D1117] flex items-center justify-center text-white/30 text-sm">
+                  {t('settings.trendingComingSoon')}
+                </div>
+              )}
+              {rightPanel === 'points' && <PointsPanel />}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Voice Bar — full-width bottom bar */}

@@ -16,7 +16,7 @@ export function VoiceChannelPreview({ channelId }: VoiceChannelPreviewProps) {
   const extraCount = isActive ? Math.max(0, participants.length - 5) : 0;
 
   return (
-    <div className="absolute top-full left-0 mt-1 z-50 min-w-[160px] rounded-lg border border-white/10 bg-[#0A0E27] p-2 shadow-xl">
+    <div className="absolute top-full left-0 mt-1 z-50 min-w-[160px] rounded-lg border border-white/10 bg-[#0A0E27] p-2 shadow-elevation-3">
       {!isActive || participants.length === 0 ? (
         <span className="text-xs text-white/40">{t('voice.empty')}</span>
       ) : (

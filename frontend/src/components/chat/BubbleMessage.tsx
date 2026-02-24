@@ -11,6 +11,8 @@ import {
   Share2,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
+import { Lightbox } from '@/components/ui/Lightbox';
+import { LinkPreview, extractFirstUrl } from '@/components/chat/LinkPreview';
 import { useAuthStore } from '@/stores/authStore';
 import type { Message } from '@/lib/types';
 import { cn, formatTime, getInitials } from '@/lib/utils';
@@ -41,6 +43,43 @@ interface BubbleMessageProps {
 
 const QUICK_REACTIONS = ['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83D\uDE02', '\uD83C\uDF89', '\uD83D\uDE22', '\uD83D\uDD25'];
 
+
+// ---------------------------------------------------------------------------
+// Image gallery with lightbox support
+// ---------------------------------------------------------------------------
+
+function ImageAttachmentGallery({ attachments }: { attachments: { url: string; name: string }[] }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const urls = attachments.map((a) => a.url);
+
+  return (
+    <>
+      <div className="mt-1 flex flex-wrap gap-2">
+        {attachments.map((att, i) => (
+          <button
+            key={i}
+            onClick={() => setLightboxIndex(i)}
+            className="block overflow-hidden rounded border border-white/10 max-w-xs cursor-zoom-in hover:border-rally-cyan/30 transition-colors"
+          >
+            <img
+              src={att.url}
+              alt={att.name}
+              className="max-h-64 object-contain"
+              loading="lazy"
+            />
+          </button>
+        ))}
+      </div>
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={urls}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+    </>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -179,7 +218,7 @@ export const BubbleMessage = React.memo(function BubbleMessage({
               </button>
               {showEmojiPicker && (
                 <div className={cn(
-                  'absolute top-0 flex flex-col gap-0.5 rounded border border-white/10 bg-[#0A0E27] p-1 shadow-xl z-20',
+                  'absolute top-0 flex flex-col gap-0.5 rounded border border-white/10 bg-[#0A0E27] p-1 shadow-elevation-3 z-20',
                   isOwn ? 'right-full mr-1' : 'left-full ml-1',
                 )}>
                   {QUICK_REACTIONS.map((emoji) => (
@@ -229,7 +268,7 @@ export const BubbleMessage = React.memo(function BubbleMessage({
               </button>
               {showMoreMenu && (
                 <div className={cn(
-                  'absolute top-0 w-40 rounded border border-white/10 bg-[#0A0E27] py-1 shadow-xl z-20',
+                  'absolute top-0 w-40 rounded border border-white/10 bg-[#0A0E27] py-1 shadow-elevation-3 z-20',
                   isOwn ? 'right-full mr-1' : 'left-full ml-1',
                 )}>
                   {isOwn && (
@@ -317,26 +356,9 @@ export const BubbleMessage = React.memo(function BubbleMessage({
           {renderedContent}
         </div>
 
-        {/* ---- Image attachments ---- */}
+        {/* ---- Image attachments (click to open lightbox) ---- */}
         {imageAttachments.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-2">
-            {imageAttachments.map((att, i) => (
-              <a
-                key={i}
-                href={att.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block overflow-hidden rounded border border-white/10 max-w-xs"
-              >
-                <img
-                  src={att.url}
-                  alt={att.name}
-                  className="max-h-64 object-contain"
-                  loading="lazy"
-                />
-              </a>
-            ))}
-          </div>
+          <ImageAttachmentGallery attachments={imageAttachments} />
         )}
 
         {/* ---- File attachments ---- */}
@@ -358,6 +380,12 @@ export const BubbleMessage = React.memo(function BubbleMessage({
             ))}
           </div>
         )}
+
+        {/* ---- Link Preview Embed ---- */}
+        {message.type === 'DEFAULT' && (() => {
+          const url = extractFirstUrl(message.content);
+          return url ? <LinkPreview url={url} /> : null;
+        })()}
       </div>
 
       {/* ---- Reactions ---- */}

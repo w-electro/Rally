@@ -4,6 +4,7 @@ import { Plus, UserPlus, Users, MessageSquare, Zap, Pin } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useServerStore } from '@/stores/serverStore';
 import { useUIStore } from '@/stores/uiStore';
+import { ServerCardSkeleton } from '@/components/ui/Skeleton';
 import { cn, getInitials } from '@/lib/utils';
 import { useServerPrefs } from '@/hooks/useServerPrefs';
 import { ServerContextMenu } from '@/components/app/ServerContextMenu';
@@ -81,7 +82,7 @@ function ServerCard({
 export function Dashboard() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const { servers } = useServerStore();
+  const { servers, isLoading } = useServerStore();
   const { openModal } = useUIStore();
   const { sortServers, togglePin, toggleHide, isPinned } = useServerPrefs();
   const [contextMenu, setContextMenu] = useState<{ serverId: string; x: number; y: number } | null>(null);
@@ -127,8 +128,19 @@ export function Dashboard() {
         </button>
       </div>
 
-      {/* Server Grid or Empty State */}
-      {servers.length > 0 ? (
+      {/* Server Grid, Skeleton, or Empty State */}
+      {isLoading && servers.length === 0 ? (
+        <>
+          <h2 className="mb-4 font-display text-lg font-semibold text-white/80">
+            {t('dashboard.yourServers')}
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ServerCardSkeleton key={i} />
+            ))}
+          </div>
+        </>
+      ) : servers.length > 0 ? (
         <>
           <h2 className="mb-4 font-display text-lg font-semibold text-white/80">
             {t('dashboard.yourServers')}
@@ -149,13 +161,13 @@ export function Dashboard() {
         </>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/5">
-            <MessageSquare className="h-10 w-10 text-white/20" />
+          <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-rally-cyan/10 border border-rally-cyan/20">
+            <Zap className="h-10 w-10 text-rally-cyan/60" />
           </div>
-          <h3 className="font-display text-xl font-semibold text-white/60">
+          <h3 className="font-display text-xl font-bold text-white/80">
             {t('dashboard.noServers')}
           </h3>
-          <p className="mt-2 max-w-sm font-body text-sm text-white/30">
+          <p className="mt-2 max-w-sm font-body text-sm text-white/40">
             {t('dashboard.createOwn')}
           </p>
           <div className="mt-6 flex items-center gap-3">

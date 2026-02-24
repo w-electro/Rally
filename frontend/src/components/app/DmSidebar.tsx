@@ -359,9 +359,11 @@ export function DmSidebar() {
           {friendsTab === 'all' && (
             friends.length === 0 ? (
               <div className="text-center py-12 px-4">
-                <Users className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                <p className="text-white/30 text-sm">{t('dm.noFriends')}</p>
-                <p className="text-white/15 text-xs mt-1">{t('dm.addFriends')}</p>
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rally-cyan/10 border border-rally-cyan/20">
+                  <Users className="w-8 h-8 text-rally-cyan/50" />
+                </div>
+                <p className="text-white/60 text-sm font-medium font-body">{t('dm.noFriends')}</p>
+                <p className="text-white/50 text-xs mt-1 font-body">{t('dm.addFriends')}</p>
               </div>
             ) : (
               <div className="space-y-0.5">
@@ -387,7 +389,7 @@ export function DmSidebar() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white/80 truncate">{f.user.displayName}</p>
-                        <p className="text-[10px] text-white/30">@{f.user.username}</p>
+                        <p className="text-[10px] text-white/50">@{f.user.username}</p>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
@@ -408,8 +410,8 @@ export function DmSidebar() {
                           {inviteDropdownUser === f.user.id && (
                             <>
                               <div className="fixed inset-0 z-40" onClick={() => setInviteDropdownUser(null)} />
-                              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/10 bg-[#1A1F36] py-1 shadow-xl">
-                                <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
+                              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/10 bg-[#1A1F36] py-1 shadow-elevation-3">
+                                <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/50">
                                   {t('dm.selectServer')}
                                 </p>
                                 {servers.map((s) => (
@@ -461,7 +463,7 @@ export function DmSidebar() {
             <>
               {pendingRequests.received.length > 0 && (
                 <>
-                  <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
+                  <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/50">
                     {t('dm.received')} — {pendingRequests.received.length}
                   </p>
                   {pendingRequests.received.map((req) => (
@@ -475,7 +477,7 @@ export function DmSidebar() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white/80 truncate">{req.requester.displayName}</p>
-                        <p className="text-[10px] text-white/30">@{req.requester.username}</p>
+                        <p className="text-[10px] text-white/50">@{req.requester.username}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -502,7 +504,7 @@ export function DmSidebar() {
 
               {pendingRequests.sent.length > 0 && (
                 <>
-                  <p className="px-3 py-1 mt-2 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
+                  <p className="px-3 py-1 mt-2 text-[10px] font-display font-semibold uppercase tracking-wider text-white/50">
                     {t('dm.sent')} — {pendingRequests.sent.length}
                   </p>
                   {pendingRequests.sent.map((req) => (
@@ -516,7 +518,7 @@ export function DmSidebar() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white/80 truncate">{req.target.displayName}</p>
-                        <p className="text-[10px] text-white/30">{t('dm.pendingStatus')}</p>
+                        <p className="text-[10px] text-white/50">{t('dm.pendingStatus')}</p>
                       </div>
                     </div>
                   ))}
@@ -526,7 +528,7 @@ export function DmSidebar() {
               {pendingRequests.received.length === 0 && pendingRequests.sent.length === 0 && (
                 <div className="text-center py-12 px-4">
                   <Inbox className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                  <p className="text-white/30 text-sm">{t('dm.noPendingRequests')}</p>
+                  <p className="text-white/50 text-sm">{t('dm.noPendingRequests')}</p>
                 </div>
               )}
             </>
@@ -570,7 +572,7 @@ export function DmSidebar() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white/80 truncate">{u.displayName}</p>
-                        <p className="text-[10px] text-white/30">@{u.username}</p>
+                        <p className="text-[10px] text-white/50">@{u.username}</p>
                       </div>
                       <button
                         onClick={() => handleSendFriendRequest(u.id)}
@@ -660,7 +662,7 @@ export function DmSidebar() {
 
       {/* Section Header */}
       <div className="px-4 pt-3 pb-1.5 flex items-center justify-between">
-        <span className="text-[11px] font-display font-semibold uppercase tracking-wider text-white/30">
+        <span className="text-[11px] font-display font-semibold uppercase tracking-wider text-white/50">
           {t('dm.directMessages')}
         </span>
         <span className="text-[10px] text-white/20 font-body">
@@ -676,18 +678,20 @@ export function DmSidebar() {
             {searchQuery ? (
               <>
                 <Search className="w-8 h-8 text-white/10 mx-auto mb-3" />
-                <p className="text-white/30 text-sm font-body">{t('dm.noConversations')}</p>
+                <p className="text-white/50 text-sm font-body">{t('dm.noConversations')}</p>
                 <p className="text-white/15 text-xs mt-1 font-body">
                   {t('dm.tryDifferent')}
                 </p>
               </>
             ) : (
               <>
-                <Inbox className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                <p className="text-white/30 text-sm font-body font-medium">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rally-purple/10 border border-rally-purple/20">
+                  <Inbox className="w-8 h-8 text-rally-purple/50" />
+                </div>
+                <p className="text-white/60 text-sm font-body font-medium">
                   {t('dm.noConversationsYet')}
                 </p>
-                <p className="text-white/15 text-xs mt-1.5 font-body leading-relaxed">
+                <p className="text-white/50 text-xs mt-1.5 font-body leading-relaxed">
                   {t('dm.startConversation')}
                 </p>
               </>

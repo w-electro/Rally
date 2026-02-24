@@ -751,7 +751,7 @@ export function ServerSettingsModal() {
                           {assignDropdownMember === member.id && (
                             <>
                               <div className="fixed inset-0 z-40" onClick={() => setAssignDropdownMember(null)} />
-                              <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-[#1A1F36] py-1 shadow-xl">
+                              <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-[#1A1F36] py-1 shadow-elevation-3">
                                 <p className="px-3 py-1 text-[10px] font-display font-semibold uppercase tracking-wider text-white/30">
                                   {t('server.assignRank')}
                                 </p>

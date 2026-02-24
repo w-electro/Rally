@@ -51,3 +51,10 @@ export const config = {
     key: process.env.ENCRYPTION_KEY || '',
   },
 };
+
+// Production safety checks
+if (config.nodeEnv === 'production') {
+  if (config.jwt.secret === 'dev-jwt-secret' || config.jwt.refreshSecret === 'dev-refresh-secret') {
+    throw new Error('JWT secrets must be set in production! Set JWT_SECRET and JWT_REFRESH_SECRET environment variables.');
+  }
+}

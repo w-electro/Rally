@@ -168,7 +168,7 @@ export function StreamView() {
                       <ChevronDown size={12} />
                     </button>
                     {showQualityMenu && (
-                      <div className="absolute bottom-full right-0 mb-1 overflow-hidden rounded border border-rally-border/30 bg-rally-dark-surface shadow-xl">
+                      <div className="absolute bottom-full right-0 mb-1 overflow-hidden rounded border border-rally-border/30 bg-rally-dark-surface shadow-elevation-3">
                         {qualityOptions.map((q) => (
                           <button
                             key={q}

@@ -84,6 +84,14 @@ export function useSocket() {
         const currentUserId = useAuthStore.getState().user?.id;
         const hasMention = message.content?.includes(`@${useAuthStore.getState().user?.username}`);
         useUIStore.getState().incrementUnread(message.channelId, hasMention);
+
+        // Play notification sound for messages in non-active channels
+        try {
+          const audio = new Audio('./notification.mp3');
+          audio.volume = 0.3;
+          audio.play().catch(() => {});
+        } catch {}
+
         // Desktop notification for mentions
         if (hasMention && !document.hasFocus() && (window as any).electronAPI?.notify) {
           (window as any).electronAPI.notify({
@@ -197,6 +205,75 @@ export function useSocket() {
           return m;
         });
         useServerStore.setState({ members: updatedMembers });
+      }
+    });
+
+    // ── Real-time CRUD broadcasts ─────────────────────────────────
+    socket.on('server:updated', (data: { serverId: string; name?: string; description?: string; iconUrl?: string; bannerUrl?: string }) => {
+      const state = useServerStore.getState();
+      const updated = state.servers.map((s) =>
+        s.id === data.serverId ? { ...s, ...data } : s
+      );
+      useServerStore.setState({ servers: updated });
+      if (state.activeServer?.id === data.serverId) {
+        useServerStore.setState({ activeServer: { ...state.activeServer, ...data } as any });
+      }
+    });
+
+    socket.on('channel:created', (data: { serverId: string; channel: any }) => {
+      const state = useServerStore.getState();
+      if (state.activeServer?.id === data.serverId) {
+        const channels = [...(state.activeServer.channels || []), data.channel];
+        useServerStore.setState({
+          activeServer: { ...state.activeServer, channels } as any,
+        });
+      }
+    });
+
+    socket.on('channel:updated', (data: { serverId: string; channel: any }) => {
+      const state = useServerStore.getState();
+      if (state.activeServer?.id === data.serverId) {
+        const channels = (state.activeServer.channels || []).map((c: any) =>
+          c.id === data.channel.id ? { ...c, ...data.channel } : c
+        );
+        useServerStore.setState({
+          activeServer: { ...state.activeServer, channels } as any,
+        });
+      }
+    });
+
+    socket.on('channel:deleted', (data: { serverId: string; channelId: string }) => {
+      const state = useServerStore.getState();
+      if (state.activeServer?.id === data.serverId) {
+        const channels = (state.activeServer.channels || []).filter((c: any) => c.id !== data.channelId);
+        useServerStore.setState({
+          activeServer: { ...state.activeServer, channels } as any,
+        });
+        // If the deleted channel was active, clear selection
+        if (state.activeChannel?.id === data.channelId) {
+          useServerStore.setState({ activeChannel: channels[0] ?? null });
+        }
+      }
+    });
+
+    socket.on('member:joined', (data: { serverId: string; member: any }) => {
+      const state = useServerStore.getState();
+      if (state.activeServer?.id === data.serverId) {
+        const alreadyExists = state.members.some((m) => m.userId === data.member.userId || (m as any).user?.id === data.member.user?.id);
+        if (!alreadyExists) {
+          useServerStore.setState({ members: [...state.members, data.member] });
+        }
+      }
+    });
+
+    socket.on('member:left', (data: { serverId: string; userId: string }) => {
+      const state = useServerStore.getState();
+      if (state.activeServer?.id === data.serverId) {
+        const filtered = state.members.filter((m) => {
+          const id = m.userId ?? (m as any).user?.id;
+          return id !== data.userId;
+        });
+        useServerStore.setState({ members: filtered });
       }
     });
 
