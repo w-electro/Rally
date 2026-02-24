@@ -39,15 +39,19 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const [resolvedVersion, setResolvedVersion] = useState<string | null>(null);
 
   useEffect(() => {
     const api = (window as any).electronAPI;
-    if (!api?.onUpdateResult) return;
-    api.onUpdateResult((result: { status: string; version?: string; message?: string }) => {
+    if (!api) return;
+    // Listen for update results
+    api.onUpdateResult?.((result: { status: string; version?: string; message?: string }) => {
       setUpdateStatus(result.status);
       setUpdateVersion(result.version ?? null);
       setUpdateMessage(result.message ?? null);
     });
+    // Fetch authoritative version from main process
+    api.getVersion?.().then((v: string) => setResolvedVersion(v)).catch(() => {});
   }, []);
 
   const handleCheckForUpdates = () => {
@@ -423,7 +427,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
               <h2 className="font-display text-2xl font-bold text-rally-text">Rally</h2>
               <p className="text-sm text-rally-text-muted mt-1">Next-gen gaming & social platform</p>
               <p className="text-xs text-rally-text-muted mt-3">
-                Version <span className="text-rally-blue font-mono">v{(window as any).electronAPI?.appVersion ?? __APP_VERSION__}</span>
+                Version <span className="text-rally-blue font-mono">v{resolvedVersion ?? (window as any).electronAPI?.appVersion ?? __APP_VERSION__}</span>
               </p>
             </div>
 
@@ -433,7 +437,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 <Download className="w-4 h-4" />
                 Updates
               </h3>
-              {navigator.userAgent.includes('Electron') ? (
+              {(navigator.userAgent.includes('Electron') || (window as any).electronAPI) ? (
                 <div className="flex items-center gap-3 flex-wrap">
                   <button
                     onClick={handleCheckForUpdates}

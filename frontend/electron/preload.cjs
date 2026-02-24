@@ -1,5 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Read version safely — if require fails inside asar, the whole exposeInMainWorld would crash
+let appVersion = 'unknown';
+try {
+  appVersion = require('../package.json').version;
+} catch (_) {
+  // Fallback handled via getVersion IPC below
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
   // Window controls (custom titlebar)
   minimize: () => ipcRenderer.send('window:minimize'),
@@ -38,5 +46,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Platform info
   platform: process.platform,
-  appVersion: require('../package.json').version,
+  appVersion,
+  getVersion: () => ipcRenderer.invoke('app:getVersion'),
 });

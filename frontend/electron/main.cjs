@@ -248,6 +248,7 @@ ipcMain.on('window:maximize', () => {
 });
 ipcMain.on('window:close', () => mainWindow?.close());
 ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false);
+ipcMain.handle('app:getVersion', () => app.getVersion());
 
 // Game detection placeholder
 ipcMain.handle('gaming:detect', async () => {
